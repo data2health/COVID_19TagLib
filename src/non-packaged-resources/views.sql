@@ -1,4 +1,4 @@
-create table raw (raw jsonb);
+create table raw_zotero (raw jsonb);
 
 create materialized view note as 
 select
@@ -10,7 +10,7 @@ select
     ((raw->>'data')::jsonb->>'parentItem')::text as parent,
     ((raw->>'data')::jsonb->>'tags')::jsonb as tags,
     ((raw->>'data')::jsonb->>'relations')::jsonb as relations
-from raw
+from raw_zotero
 where (raw->>'data')::jsonb->>'itemType' = 'note'
 ;
 
@@ -58,7 +58,7 @@ select
     ((raw->>'data')::jsonb->>'creators')::jsonb as creators,
     ((raw->>'data')::jsonb->>'relations')::jsonb as relations,
     ((raw->>'data')::jsonb->>'collections')::jsonb as collections
-from raw
+from raw_zotero
 where (raw->>'data')::jsonb->>'itemType' = 'journalArticle'
 ;
 
@@ -129,7 +129,7 @@ select
     ((raw->>'data')::jsonb->>'creators')::jsonb as creators,
     ((raw->>'data')::jsonb->>'relations')::jsonb as relations,
     ((raw->>'data')::jsonb->>'collections')::jsonb as collections
-from raw
+from raw_zotero
 where (raw->>'data')::jsonb->>'itemType' = 'book'
 ;
 
@@ -200,7 +200,7 @@ select
     ((raw->>'data')::jsonb->>'creators')::jsonb as creators,
     ((raw->>'data')::jsonb->>'relations')::jsonb as relations,
     ((raw->>'data')::jsonb->>'collections')::jsonb as collections
-from raw
+from raw_zotero
 where (raw->>'data')::jsonb->>'itemType' = 'bookSection'
 ;
 
@@ -268,7 +268,7 @@ select
     ((raw->>'data')::jsonb->>'creators')::jsonb as creators,
     ((raw->>'data')::jsonb->>'relations')::jsonb as relations,
     ((raw->>'data')::jsonb->>'collections')::jsonb as collections
-from raw
+from raw_zotero
 where (raw->>'data')::jsonb->>'itemType' = 'report'
 ;
 
@@ -327,7 +327,7 @@ select
     ((raw->>'data')::jsonb->>'creators')::jsonb as creators,
     ((raw->>'data')::jsonb->>'relations')::jsonb as relations,
     ((raw->>'data')::jsonb->>'collections')::jsonb as collections
-from raw
+from raw_zotero
 where (raw->>'data')::jsonb->>'itemType' = 'webpage'
 ;
 
@@ -365,3 +365,12 @@ cross join lateral
     jsonb_array_elements_text(collections) with ordinality as t(collection,seqnum)
 ;
 
+///////////////////////
+
+create materialized view biorxiv_current as 
+select
+    (raw->>'rel_doi')::text as doi,
+    (raw->>'rel_title')::text as title,
+    (raw->>'rel_date')::date as pub_date
+from raw_biorxiv
+;
