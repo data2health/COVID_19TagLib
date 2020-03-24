@@ -29,7 +29,7 @@ public class ZoteroLoader {
 	PropertyConfigurator.configure(args[0]);
 	initialize();
 
-	simpleStmt("truncate covid.raw");
+	simpleStmt("truncate covid.raw_zotero");
 	
 	items();
 
@@ -80,7 +80,7 @@ public class ZoteroLoader {
 		JSONObject theObject = resultArray.getJSONObject(i);
 		logger.debug("object: " + theObject.toString(3));
 
-		PreparedStatement citeStmt = conn.prepareStatement("insert into covid.raw values (?::jsonb)");
+		PreparedStatement citeStmt = conn.prepareStatement("insert into covid.raw_zotero values (?::jsonb)");
 		citeStmt.setString(1, theObject.toString());
 		citeStmt.executeUpdate();
 		citeStmt.close();

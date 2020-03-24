@@ -371,6 +371,10 @@ create materialized view biorxiv_current as
 select
     (raw->>'rel_doi')::text as doi,
     (raw->>'rel_title')::text as title,
-    (raw->>'rel_date')::date as pub_date
+    (raw->>'rel_authors')::text as authors,
+    (raw->>'rel_link')::text as link,
+    (raw->>'rel_site')::text as site,
+    (raw->>'rel_date')::date as pub_date,
+    (raw->>'rel_abs')::text as abstract
 from raw_biorxiv
 ;

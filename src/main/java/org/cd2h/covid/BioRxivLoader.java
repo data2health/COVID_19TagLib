@@ -14,7 +14,6 @@ import java.util.Properties;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -31,12 +30,14 @@ public class BioRxivLoader {
 		PropertyConfigurator.configure(args[0]);
 		initialize();
 
-//		 simpleStmt("truncate covid.raw_biorxiv");
+		simpleStmt("truncate covid.raw_biorxiv");
 
-//		items();
+		items();
+		
+		simpleStmt("refresh materialized view covid.biorxiv_current");
+
 		fetch();
 
-		// simpleStmt("refresh materialized view covid.book");
 		// simpleStmt("refresh materialized view covid.book_collection");
 		// simpleStmt("refresh materialized view covid.book_creator");
 		// simpleStmt("refresh materialized view covid.book_tag");
@@ -74,12 +75,12 @@ public class BioRxivLoader {
 
 		JSONObject results = new JSONObject(new JSONTokener(reader));
 		JSONArray resultArray = results.getJSONArray("rels");
-		logger.trace("array: " + resultArray.toString(3));
+		logger.info("array: " + resultArray.toString(3));
 
 		for (int i = 0; i < resultArray.length(); i++) {
 			if (resultArray.isNull(i))
 				continue;
-			JSONObject theObject = resultArray.getJSONArray(i).getJSONObject(0);
+			JSONObject theObject = resultArray.getJSONObject(i);
 			logger.info("object: " + theObject.toString(3));
 
 			PreparedStatement citeStmt = conn.prepareStatement("insert into covid.raw_biorxiv values (?::jsonb)");
