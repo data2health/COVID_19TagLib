@@ -93,11 +93,17 @@
  	<artifactId>GitHubTagLib</artifactId>
  	<version>0.0.1-SNAPSHOT</version>
  </dependency>
+ <dependency>
+    <groupId>org.jsoup</groupId>
+    <artifactId>jsoup</artifactId>
+    <version>1.7.3</version>
+ </dependency>
 <dependency>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parsers</artifactId>
     <version>1.24</version>
-  </dependency>  </dependencies>
+  </dependency>
+  </dependencies>
 	<build>
 	  	<plugins>
      	     <plugin>
