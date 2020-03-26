@@ -45,47 +45,18 @@ public class BioRxivLoader {
 	PropertyConfigurator.configure("/Users/eichmann/Documents/Components/log4j.info");
 	initialize();
 
-//	scan_feed();
+	scan_feed();
 
-//	fetch();
+	fetch();
 	
-//	scan_html();
+	scan_html();
 	scan_pdf();
-//	logger.info(parseToPlainText(filePrefix+"2020.03.10.20033852v1.full.pdf"));
 
-	// simpleStmt("refresh materialized view covid.book_collection");
-	// simpleStmt("refresh materialized view covid.book_creator");
-	// simpleStmt("refresh materialized view covid.book_tag");
-	//
-	// simpleStmt("refresh materialized view covid.book_section");
-	// simpleStmt("refresh materialized view
-	// covid.book_section_collection");
-	// simpleStmt("refresh materialized view covid.book_section_creator");
-	// simpleStmt("refresh materialized view covid.book_section_tag");
-	//
-	// simpleStmt("refresh materialized view covid.journal_article");
-	// simpleStmt("refresh materialized view
-	// covid.journal_article_collection");
-	// simpleStmt("refresh materialized view
-	// covid.journal_article_creator");
-	// simpleStmt("refresh materialized view covid.journal_article_tag");
-	//
-	// simpleStmt("refresh materialized view covid.note");
-	// simpleStmt("refresh materialized view covid.note_tag");
-	//
-	// simpleStmt("refresh materialized view covid.report");
-	// simpleStmt("refresh materialized view covid.report_collection");
-	// simpleStmt("refresh materialized view covid.report_creator");
-	// simpleStmt("refresh materialized view covid.report_tag");
-	//
-	// simpleStmt("refresh materialized view covid.webpage");
-	// simpleStmt("refresh materialized view covid.webpage_collection");
-	// simpleStmt("refresh materialized view covid.webpage_creator");
-	// simpleStmt("refresh materialized view covid.webpage_tag");
     }
 
     static public void scan_feed() throws SQLException, IOException {
-	simpleStmt("truncate covid.raw_biorxiv");
+	int count = 0;
+	simpleStmt("truncate covid_biorxiv.raw_biorxiv");
 
 	URL theURL = new URL("https://connect.biorxiv.org/relate/collection_json.php?grp=181");
 	BufferedReader reader = new BufferedReader(new InputStreamReader(theURL.openConnection().getInputStream()));
@@ -98,42 +69,48 @@ public class BioRxivLoader {
 	    if (resultArray.isNull(i))
 		continue;
 	    JSONObject theObject = resultArray.getJSONObject(i);
-	    logger.info("object: " + theObject.toString(3));
+	    logger.trace("object: " + theObject.toString(3));
+	    logger.info("title: " + theObject.getString("rel_title"));
 
-	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid.raw_biorxiv values (?::jsonb)");
+	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.raw_biorxiv values (?::jsonb)");
 	    citeStmt.setString(1, theObject.toString());
 	    citeStmt.executeUpdate();
 	    citeStmt.close();
+	    
+	    count++;
 	}
+	
+	logger.info("total preprints: " + count);
 
-	simpleStmt("refresh materialized view covid.biorxiv_current");
+	simpleStmt("refresh materialized view covid_biorxiv.biorxiv_current");
     }
     
     static public void scan_html() throws SQLException, IOException, InterruptedException {
-	PreparedStatement fetchStmt = conn.prepareStatement("select doi,link from covid.biorxiv_current where doi not in (select doi from covid.biorxiv_map)");
+	PreparedStatement fetchStmt = conn.prepareStatement("select doi,link from covid_biorxiv.biorxiv_current where doi not in (select doi from covid_biorxiv.biorxiv_map)");
 	ResultSet rs = fetchStmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
 	    String link = rs.getString(2);
 	    logger.info("doi: " + doi + "\tlink: " + link);
-	    Document doc = Jsoup.connect(link).timeout(0).get();
-	    Element element = doc.getElementsByClass("article-dl-pdf-link").first();
-	    logger.trace("element: " + element);
-	    String href = element.attr("href");
-	    logger.trace("\thref: " + href);
-	    
-	    String old_href = null;
-	    PreparedStatement urlStmt = conn.prepareStatement("select url from covid.biorxiv_map where doi = ?");
-	    urlStmt.setString(1, doi);
-	    ResultSet urlRS =  urlStmt.executeQuery();
-	    while (urlRS.next()) {
+	    try {
+		Document doc = Jsoup.connect(link).timeout(0).get();
+		Element element = doc.getElementsByClass("article-dl-pdf-link").first();
+		logger.trace("element: " + element);
+		String href = element.attr("href");
+		logger.trace("\thref: " + href);
+		
+		String old_href = null;
+		PreparedStatement urlStmt = conn.prepareStatement("select url from covid_biorxiv.biorxiv_map where doi = ?");
+		urlStmt.setString(1, doi);
+		ResultSet urlRS =  urlStmt.executeQuery();
+		while (urlRS.next()) {
 		old_href = urlRS.getString(1);
-	    }
-	    urlStmt.close();
-	    
-	    if (old_href == null) {
+		}
+		urlStmt.close();
+		
+		if (old_href == null) {
 		// new entry
-		PreparedStatement citeStmt = conn.prepareStatement("insert into covid.biorxiv_map values (?,?)");
+		PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.biorxiv_map values (?,?)");
 		citeStmt.setString(1, doi);
 		citeStmt.setString(2, href);
 		citeStmt.executeUpdate();
@@ -141,9 +118,9 @@ public class BioRxivLoader {
 		URL fetchURL = new URL(new URL(link.replace("http", "https")), href);
 		logger.info("\tfetching... " + fetchURL);
 		Files.copy(fetchURL.openStream(), Paths.get(filePrefix+fetchURL.getFile().substring(fetchURL.getFile().lastIndexOf('/')+1)), StandardCopyOption.REPLACE_EXISTING);
-	    } else if (!href.equals(old_href)) {
+		} else if (!href.equals(old_href)) {
 		// updated entry
-		PreparedStatement citeStmt = conn.prepareStatement("update covid.biorxiv_map set url = ? where doi = ?");
+		PreparedStatement citeStmt = conn.prepareStatement("update covid_biorxiv.biorxiv_map set url = ? where doi = ?");
 		citeStmt.setString(1, href);
 		citeStmt.setString(2, doi);
 		citeStmt.executeUpdate();
@@ -151,8 +128,11 @@ public class BioRxivLoader {
 		URL fetchURL = new URL(new URL(link.replace("http", "https")), href);
 		logger.info("\tfetching... " + fetchURL);
 		Files.copy(fetchURL.openStream(), Paths.get(filePrefix+fetchURL.getFile().substring(fetchURL.getFile().lastIndexOf('/')+1)), StandardCopyOption.REPLACE_EXISTING);
-	    } else {
+		} else {
 		logger.info("\tskipping...");
+		}
+	    } catch (Exception e) {
+		logger.error("Exception raised: " + e);
 	    }
 	    Thread.sleep(5000);
 	}
@@ -161,7 +141,7 @@ public class BioRxivLoader {
 
     static public void scan_pdf() throws SQLException, IOException, SAXException, TikaException {
 	PreparedStatement fetchStmt = conn
-		.prepareStatement("select doi,url from covid.biorxiv_map where doi not in (select doi from covid.biorxiv_text)");
+		.prepareStatement("select doi,url from covid_biorxiv.biorxiv_map where doi not in (select doi from covid_biorxiv.biorxiv_text)");
 	ResultSet rs = fetchStmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
@@ -170,30 +150,18 @@ public class BioRxivLoader {
 	    logger.info("DOI: " + doi + "\tfile: " + file);
 	    
 	    String contents = parseToPlainText(file);
-		PreparedStatement citeStmt = conn.prepareStatement("insert into covid.biorxiv_text values (?,?)");
+		PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.biorxiv_text values (?,?)");
 		citeStmt.setString(1, doi);
 		citeStmt.setString(2, contents);
 		citeStmt.executeUpdate();
 		citeStmt.close();
 
 	}
-	// for (int i = 0; i < resultArray.length(); i++) {
-	// if (resultArray.isNull(i))
-	// continue;
-	// JSONObject theObject = resultArray.getJSONArray(i).getJSONObject(0);
-	// logger.info("object: " + theObject.toString(3));
-	//
-	// PreparedStatement citeStmt = conn.prepareStatement("insert into
-	// covid.raw_biorxiv values (?::jsonb)");
-	// citeStmt.setString(1, theObject.toString());
-	// citeStmt.executeUpdate();
-	// citeStmt.close();
-	// }
     }
 
     static public void fetch() throws SQLException, IOException {
 	PreparedStatement fetchStmt = conn
-		.prepareStatement("select doi from covid.biorxiv_current where doi not in (select doi from covid.biorxiv_meta_raw) order by pub_date");
+		.prepareStatement("select doi from covid_biorxiv.biorxiv_current where doi !~ '\\.200' and doi not in (select doi from covid_biorxiv.biorxiv_meta_raw) order by pub_date");
 	ResultSet rs = fetchStmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
@@ -205,7 +173,7 @@ public class BioRxivLoader {
 		JSONObject results = new JSONObject(new JSONTokener(reader));
 		// JSONArray resultArray = results.getJSONArray("rels");
 		logger.info("results: " + results.toString(3));
-		PreparedStatement citeStmt = conn.prepareStatement("insert into covid.biorxiv_meta_raw values (?,?::jsonb)");
+		PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.biorxiv_meta_raw values (?,?::jsonb)");
 		citeStmt.setString(1, doi);
 		citeStmt.setString(2, results.toString(3));
 		citeStmt.executeUpdate();
@@ -215,18 +183,6 @@ public class BioRxivLoader {
 	    }
 
 	}
-	// for (int i = 0; i < resultArray.length(); i++) {
-	// if (resultArray.isNull(i))
-	// continue;
-	// JSONObject theObject = resultArray.getJSONArray(i).getJSONObject(0);
-	// logger.info("object: " + theObject.toString(3));
-	//
-	// PreparedStatement citeStmt = conn.prepareStatement("insert into
-	// covid.raw_biorxiv values (?::jsonb)");
-	// citeStmt.setString(1, theObject.toString());
-	// citeStmt.executeUpdate();
-	// citeStmt.close();
-	// }
     }
 
     static public String parseToPlainText(String path) throws IOException, SAXException, TikaException {

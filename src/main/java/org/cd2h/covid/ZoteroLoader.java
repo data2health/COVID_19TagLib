@@ -29,37 +29,37 @@ public class ZoteroLoader {
 	PropertyConfigurator.configure(args[0]);
 	initialize();
 
-	simpleStmt("truncate covid.raw_zotero");
+	simpleStmt("truncate covid_zotero.raw_zotero");
 	
 	items();
 
-	simpleStmt("refresh materialized view covid.book");
-	simpleStmt("refresh materialized view covid.book_collection");
-	simpleStmt("refresh materialized view covid.book_creator");
-	simpleStmt("refresh materialized view covid.book_tag");
+	simpleStmt("refresh materialized view covid_zotero.book");
+	simpleStmt("refresh materialized view covid_zotero.book_collection");
+	simpleStmt("refresh materialized view covid_zotero.book_creator");
+	simpleStmt("refresh materialized view covid_zotero.book_tag");
 
-	simpleStmt("refresh materialized view covid.book_section");
-	simpleStmt("refresh materialized view covid.book_section_collection");
-	simpleStmt("refresh materialized view covid.book_section_creator");
-	simpleStmt("refresh materialized view covid.book_section_tag");
+	simpleStmt("refresh materialized view covid_zotero.book_section");
+	simpleStmt("refresh materialized view covid_zotero.book_section_collection");
+	simpleStmt("refresh materialized view covid_zotero.book_section_creator");
+	simpleStmt("refresh materialized view covid_zotero.book_section_tag");
 
-	simpleStmt("refresh materialized view covid.journal_article");
-	simpleStmt("refresh materialized view covid.journal_article_collection");
-	simpleStmt("refresh materialized view covid.journal_article_creator");
-	simpleStmt("refresh materialized view covid.journal_article_tag");
+	simpleStmt("refresh materialized view covid_zotero.journal_article");
+	simpleStmt("refresh materialized view covid_zotero.journal_article_collection");
+	simpleStmt("refresh materialized view covid_zotero.journal_article_creator");
+	simpleStmt("refresh materialized view covid_zotero.journal_article_tag");
 
-	simpleStmt("refresh materialized view covid.note");
-	simpleStmt("refresh materialized view covid.note_tag");
+	simpleStmt("refresh materialized view covid_zotero.note");
+	simpleStmt("refresh materialized view covid_zotero.note_tag");
 
-	simpleStmt("refresh materialized view covid.report");
-	simpleStmt("refresh materialized view covid.report_collection");
-	simpleStmt("refresh materialized view covid.report_creator");
-	simpleStmt("refresh materialized view covid.report_tag");
+	simpleStmt("refresh materialized view covid_zotero.report");
+	simpleStmt("refresh materialized view covid_zotero.report_collection");
+	simpleStmt("refresh materialized view covid_zotero.report_creator");
+	simpleStmt("refresh materialized view covid_zotero.report_tag");
 
-	simpleStmt("refresh materialized view covid.webpage");
-	simpleStmt("refresh materialized view covid.webpage_collection");
-	simpleStmt("refresh materialized view covid.webpage_creator");
-	simpleStmt("refresh materialized view covid.webpage_tag");
+	simpleStmt("refresh materialized view covid_zotero.webpage");
+	simpleStmt("refresh materialized view covid_zotero.webpage_collection");
+	simpleStmt("refresh materialized view covid_zotero.webpage_creator");
+	simpleStmt("refresh materialized view covid_zotero.webpage_tag");
     }
 
     static public void items() throws SQLException, IOException {
@@ -80,7 +80,7 @@ public class ZoteroLoader {
 		JSONObject theObject = resultArray.getJSONObject(i);
 		logger.debug("object: " + theObject.toString(3));
 
-		PreparedStatement citeStmt = conn.prepareStatement("insert into covid.raw_zotero values (?::jsonb)");
+		PreparedStatement citeStmt = conn.prepareStatement("insert into covid_zotero.raw_zotero values (?::jsonb)");
 		citeStmt.setString(1, theObject.toString());
 		citeStmt.executeUpdate();
 		citeStmt.close();
