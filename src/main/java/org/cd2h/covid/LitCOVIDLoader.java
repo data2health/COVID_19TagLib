@@ -32,12 +32,13 @@ public class LitCOVIDLoader {
 	PropertyConfigurator.configure("log4j.info");
 	initialize();
 	
-//	stageList();
+	stageList();
 	fetchRecords();
+	refreshViews();
     }
     
     static void stageList() throws IOException, SQLException {
-	simpleStmt("truncate litcovid.litcovid");
+	simpleStmt("truncate covid_litcovid.litcovid");
 	
 	URL theURL = new URL("https://www.ncbi.nlm.nih.gov/research/coronavirus-api/export");
 	BufferedReader reader = new BufferedReader(new InputStreamReader(theURL.openConnection().getInputStream()));
@@ -48,7 +49,7 @@ public class LitCOVIDLoader {
 	    logger.info(buffer);
 	    String[] split = buffer.split("\t");
 
-	    PreparedStatement citeStmt = conn.prepareStatement("insert into litcovid.litcovid values (?,?,?)");
+	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_litcovid.litcovid values (?,?,?)");
 	    citeStmt.setInt(1, Integer.parseInt(split[0]));
 	    citeStmt.setString(2, split[1]);
 	    citeStmt.setString(3, split[2]);
@@ -58,12 +59,51 @@ public class LitCOVIDLoader {
     }
 
     static void fetchRecords() throws Exception {
-	PreparedStatement fetchStmt = conn.prepareStatement("select pmid from litcovid.litcovid where pmid not in (select pmid from litcovid.raw)");
+	PreparedStatement fetchStmt = conn.prepareStatement("select pmid from covid_litcovid.litcovid where pmid not in (select pmid from covid_litcovid.raw)");
 	ResultSet rs = fetchStmt.executeQuery();
 	while (rs.next()) {
 	    int pmid = rs.getInt(1);
 	    parseDocument(pmid);
 	}
+    }
+    
+    static void refreshViews() {
+	simpleStmt("refresh materialized view covid_litcovid.article");
+	simpleStmt("refresh materialized view covid_litcovid.article_title");
+	simpleStmt("refresh materialized view covid_litcovid.vernacular_title");
+	simpleStmt("refresh materialized view covid_litcovid.e_location_id");
+	simpleStmt("refresh materialized view covid_litcovid.abstract");
+	simpleStmt("refresh materialized view covid_litcovid.author");
+	simpleStmt("refresh materialized view covid_litcovid.author_identifier");
+	simpleStmt("refresh materialized view covid_litcovid.author_affiliation");
+	simpleStmt("refresh materialized view covid_litcovid.language");
+	simpleStmt("refresh materialized view covid_litcovid.data_bank");
+	simpleStmt("refresh materialized view covid_litcovid.accession_number");
+	simpleStmt("refresh materialized view covid_litcovid.grant_info");
+	simpleStmt("refresh materialized view covid_litcovid.publication_type");
+	simpleStmt("refresh materialized view covid_litcovid.medline_journal_info");
+	simpleStmt("refresh materialized view covid_litcovid.chemical");
+	simpleStmt("refresh materialized view covid_litcovid.suppl_mesh_name");
+	simpleStmt("refresh materialized view covid_litcovid.citation_subset");
+	simpleStmt("refresh materialized view covid_litcovid.comments_corrections");
+	simpleStmt("refresh materialized view covid_litcovid.gene_symbol");
+	simpleStmt("refresh materialized view covid_litcovid.mesh_heading");
+	simpleStmt("refresh materialized view covid_litcovid.mesh_qualifier");
+	simpleStmt("refresh materialized view covid_litcovid.personal_name_subject");
+	simpleStmt("refresh materialized view covid_litcovid.other_id");
+	simpleStmt("refresh materialized view covid_litcovid.other_abstract");
+	simpleStmt("refresh materialized view covid_litcovid.keyword");
+	simpleStmt("refresh materialized view covid_litcovid.space_flight_mission");
+	simpleStmt("refresh materialized view covid_litcovid.investigator");
+	simpleStmt("refresh materialized view covid_litcovid.investigator_identifier");
+	simpleStmt("refresh materialized view covid_litcovid.investigator_affiliation");
+	simpleStmt("refresh materialized view covid_litcovid.general_note");
+	simpleStmt("refresh materialized view covid_litcovid.history");
+	simpleStmt("refresh materialized view covid_litcovid.article_id");
+	simpleStmt("refresh materialized view covid_litcovid.object");
+	simpleStmt("refresh materialized view covid_litcovid.reference");
+	simpleStmt("refresh materialized view covid_litcovid.reference_article_id");
+	
     }
 
     @SuppressWarnings("unchecked")
@@ -81,7 +121,7 @@ public class LitCOVIDLoader {
 	for (Element citation : (List<Element>) root.selectNodes("PubmedArticle/MedlineCitation")) {
 	    logger.info("citation:" + citation.asXML());
 
-	    PreparedStatement citeStmt = conn.prepareStatement("insert into litcovid.raw values (?,?::xml)");
+	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_litcovid.raw values (?,?::xml)");
 	    citeStmt.setInt(1, pmid);
 	    citeStmt.setString(2, citation.asXML());
 	    citeStmt.executeUpdate();
