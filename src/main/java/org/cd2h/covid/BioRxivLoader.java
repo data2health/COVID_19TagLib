@@ -86,6 +86,9 @@ public class BioRxivLoader {
     }
     
     static public void scan_html() throws SQLException, IOException, InterruptedException {
+	logger.info("");
+	logger.info("Fetching PDF links...");
+	logger.info("");
 	PreparedStatement fetchStmt = conn.prepareStatement("select doi,link from covid_biorxiv.biorxiv_current where doi not in (select doi from covid_biorxiv.biorxiv_map)");
 	ResultSet rs = fetchStmt.executeQuery();
 	while (rs.next()) {
@@ -140,6 +143,9 @@ public class BioRxivLoader {
     }
 
     static public void scan_pdf() throws SQLException, IOException, SAXException, TikaException {
+	logger.info("");
+	logger.info("Extracting text from PDF...");
+	logger.info("");
 	PreparedStatement fetchStmt = conn
 		.prepareStatement("select doi,url from covid_biorxiv.biorxiv_map where doi not in (select doi from covid_biorxiv.biorxiv_text)");
 	ResultSet rs = fetchStmt.executeQuery();
@@ -160,6 +166,9 @@ public class BioRxivLoader {
     }
 
     static public void fetch() throws SQLException, IOException {
+	logger.info("");
+	logger.info("Fetching metadata...");
+	logger.info("");
 	PreparedStatement fetchStmt = conn
 		.prepareStatement("select doi from covid_biorxiv.biorxiv_current where doi !~ '\\.200' and doi not in (select doi from covid_biorxiv.biorxiv_meta_raw) order by pub_date");
 	ResultSet rs = fetchStmt.executeQuery();
