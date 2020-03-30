@@ -31,6 +31,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 
+import edu.uiowa.lucene.biomedical.BiomedicalAnalyzer;
 import edu.uiowa.slis.GitHubTagLib.util.LocalProperties;
 import edu.uiowa.slis.GitHubTagLib.util.PropertyLoader;
 
@@ -74,7 +75,7 @@ public class FacetIndexer {
     }
     
     public static void mergeIndices(String[] requests, String targetPath) throws SQLException, CorruptIndexException, IOException {
-	IndexWriterConfig config = new IndexWriterConfig(org.apache.lucene.util.Version.LUCENE_43, new StandardAnalyzer(org.apache.lucene.util.Version.LUCENE_43));
+	IndexWriterConfig config = new IndexWriterConfig(org.apache.lucene.util.Version.LUCENE_43, new BiomedicalAnalyzer());
 	config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 	config.setRAMBufferSizeMB(500);
 	IndexWriter theWriter = new IndexWriter(FSDirectory.open(new File(targetPath)), config);
@@ -101,7 +102,7 @@ public class FacetIndexer {
 	Directory indexDir = FSDirectory.open(new File(pathPrefix + "biorxiv"));
 	Directory taxoDir = FSDirectory.open(new File(pathPrefix + "biorxiv_tax"));
 
-	IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, new StandardAnalyzer(org.apache.lucene.util.Version.LUCENE_43));
+	IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, new BiomedicalAnalyzer());
 	config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 	IndexWriter indexWriter = new IndexWriter(indexDir, config);
 
@@ -147,25 +148,25 @@ public class FacetIndexer {
 	    theDocument.add(new Field("id", doi, Field.Store.YES, Field.Index.NOT_ANALYZED));
 
 	    if (title == null) {
-		theDocument.add(new Field("label", site+" "+doi, Field.Store.YES, Field.Index.ANALYZED));
+		theDocument.add(new Field("label", site+" "+ doi + " ", Field.Store.YES, Field.Index.ANALYZED));
 	    } else {
-		theDocument.add(new Field("label", title, Field.Store.YES, Field.Index.ANALYZED));		
-		theDocument.add(new Field("content", title, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("label", title + " ", Field.Store.YES, Field.Index.ANALYZED));		
+		theDocument.add(new Field("content", title + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    }
 	    
 	    if (authors != null)
-		theDocument.add(new Field("content", authors, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", authors + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    if (pub_date != null)
-		theDocument.add(new Field("content", pub_date, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", pub_date + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    if (abstr != null)
-		theDocument.add(new Field("content", abstr, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", abstr + " ", Field.Store.NO, Field.Index.ANALYZED));
 
 	    PreparedStatement substmt = wintermuteConn.prepareStatement("select contents from covid_biorxiv.biorxiv_text where doi = ?");
 	    substmt.setString(1, doi);
 	    ResultSet subrs = substmt.executeQuery();
 	    while (subrs.next()) {
 		String contents = subrs.getString(1);
-		theDocument.add(new Field("content", contents, Field.Store.NO, Field.Index.NOT_ANALYZED));
+		theDocument.add(new Field("content", contents + " ", Field.Store.NO, Field.Index.ANALYZED));
 		logger.trace("\tcontents: " + contents);
 	    }
 	    substmt.close();
@@ -181,7 +182,7 @@ public class FacetIndexer {
 	Directory indexDir = FSDirectory.open(new File(pathPrefix + "litcovid"));
 	Directory taxoDir = FSDirectory.open(new File(pathPrefix + "litcovid_tax"));
 
-	IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, new StandardAnalyzer(org.apache.lucene.util.Version.LUCENE_43));
+	IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, new BiomedicalAnalyzer());
 	config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 	IndexWriter indexWriter = new IndexWriter(indexDir, config);
 
@@ -222,10 +223,10 @@ public class FacetIndexer {
 	    theDocument.add(new Field("id", pmid + "", Field.Store.YES, Field.Index.NOT_ANALYZED));
 
 	    if (title == null) {
-		theDocument.add(new Field("label", "PubMed "+pmid, Field.Store.YES, Field.Index.ANALYZED));
+		theDocument.add(new Field("label", "PubMed "+ pmid + " ", Field.Store.YES, Field.Index.ANALYZED));
 	    } else {
-		theDocument.add(new Field("label", title, Field.Store.YES, Field.Index.ANALYZED));		
-		theDocument.add(new Field("content", title, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("label", title + " ", Field.Store.YES, Field.Index.ANALYZED));		
+		theDocument.add(new Field("content", title + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    }
 	    
 	    indexMEDLINE(pmid, theDocument);
@@ -244,7 +245,7 @@ public class FacetIndexer {
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
 	    String theAbstract = rs.getString(1);
-	    theDocument.add(new Field("content", theAbstract, Field.Store.NO, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("content", theAbstract + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    logger.trace("\tabstract: " + theAbstract);
 	}
 	stmt.close();
@@ -259,15 +260,15 @@ public class FacetIndexer {
 	    String suffix = rs.getString(4);
 	    String collective_name = rs.getString(5);
 	    if (last_name != null)
-		theDocument.add(new Field("content", last_name, Field.Store.NO, Field.Index.NOT_ANALYZED));
+		theDocument.add(new Field("content", last_name + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    if (fore_name != null)
-		theDocument.add(new Field("content", fore_name, Field.Store.NO, Field.Index.NOT_ANALYZED));
+		theDocument.add(new Field("content", fore_name + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    if (initials != null)
-		theDocument.add(new Field("content", initials, Field.Store.NO, Field.Index.NOT_ANALYZED));
+		theDocument.add(new Field("content", initials + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    if (suffix != null)
-		theDocument.add(new Field("content", suffix, Field.Store.NO, Field.Index.NOT_ANALYZED));
+		theDocument.add(new Field("content", suffix + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    if (collective_name != null)
-		theDocument.add(new Field("content", collective_name, Field.Store.NO, Field.Index.NOT_ANALYZED));
+		theDocument.add(new Field("content", collective_name + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    logger.trace("\tauthor: " + last_name + ", " + fore_name);
 	}
 	stmt.close();
@@ -277,7 +278,7 @@ public class FacetIndexer {
 	rs = stmt.executeQuery();
 	while (rs.next()) {
 	    String affiliation = rs.getString(1);
-	    theDocument.add(new Field("content", affiliation, Field.Store.NO, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("content", affiliation + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    logger.trace("\taffiliation: " + affiliation);
 	}
 	stmt.close();
@@ -287,7 +288,7 @@ public class FacetIndexer {
 	rs = stmt.executeQuery();
 	while (rs.next()) {
 	    String keyword = rs.getString(1);
-	    theDocument.add(new Field("content", keyword, Field.Store.NO, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("content", keyword + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    logger.trace("\tkeyword: " + keyword);
 	}
 	stmt.close();
@@ -297,7 +298,7 @@ public class FacetIndexer {
 	rs = stmt.executeQuery();
 	while (rs.next()) {
 	    String descriptor = rs.getString(1);
-	    theDocument.add(new Field("content", descriptor, Field.Store.NO, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("content", descriptor + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    logger.trace("\tdescriptor: " + descriptor);
 	}
 	stmt.close();
@@ -308,8 +309,8 @@ public class FacetIndexer {
 	while (rs.next()) {
 	    String registry = rs.getString(1);
 	    String substance = rs.getString(2);
-	    theDocument.add(new Field("content", registry, Field.Store.NO, Field.Index.NOT_ANALYZED));
-	    theDocument.add(new Field("content", substance, Field.Store.NO, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("content", registry + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    theDocument.add(new Field("content", substance + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    logger.trace("\tregistry: " + registry + "\tsubstance: " + substance);
 	}
 	stmt.close();
@@ -319,7 +320,7 @@ public class FacetIndexer {
 	rs = stmt.executeQuery();
 	while (rs.next()) {
 	    String gene = rs.getString(1);
-	    theDocument.add(new Field("content", gene, Field.Store.NO, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("content", gene + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    logger.trace("\tgene: " + gene);
 	}
 	stmt.close();
@@ -330,7 +331,7 @@ public class FacetIndexer {
 	Directory indexDir = FSDirectory.open(new File(pathPrefix + "clinical_trials"));
 	Directory taxoDir = FSDirectory.open(new File(pathPrefix + "clinical_trials_tax"));
 
-	IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, new StandardAnalyzer(org.apache.lucene.util.Version.LUCENE_43));
+	IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, new BiomedicalAnalyzer());
 	config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 	IndexWriter indexWriter = new IndexWriter(indexDir, config);
 
@@ -368,14 +369,14 @@ public class FacetIndexer {
 
 	    theDocument.add(new Field("uri", "http://ClinicalTrials.gov/"+name, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    if (name != null ) {
-		theDocument.add(new Field("label", name+(title == null ? "" : (", "+title)), Field.Store.YES, Field.Index.ANALYZED));
-		theDocument.add(new Field("content", name, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("label", name+(title == null ? "" : (", "+title)) + " ", Field.Store.YES, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", name + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    }
 	    if (title == null)
 		paths.add(new CategoryPath("Entity/Person/unknown", '/'));
 	    else {
-		theDocument.add(new Field("title", title, Field.Store.YES, Field.Index.ANALYZED));
-		theDocument.add(new Field("content", title, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("title", title + " ", Field.Store.YES, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", title + " ", Field.Store.NO, Field.Index.ANALYZED));
 		try {
 		    paths.add(new CategoryPath("Entity/Person/"+title, '/'));
 		} catch (Exception e) {
@@ -385,7 +386,7 @@ public class FacetIndexer {
 	    
 	    if (site != null) {
 		theDocument.add(new Field("site", site, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		theDocument.add(new Field("content", site, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", site + " ", Field.Store.NO, Field.Index.ANALYZED));
 		try {
 		    paths.add(new CategoryPath("Site/"+site.replaceAll("/", "_"), '/'));
 		} catch (Exception e) {
@@ -427,17 +428,17 @@ public class FacetIndexer {
 	    paths.add(new CategoryPath("Entity/Clinical Trial", '/'));
 
 	    theDocument.add(new Field("uri", "https://clinicaltrials.gov/ct2/show/"+nctID, Field.Store.YES, Field.Index.NOT_ANALYZED));
-	    theDocument.add(new Field("content", nctID, Field.Store.NO, Field.Index.ANALYZED));
+	    theDocument.add(new Field("content", nctID + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    if (briefTitle != null ) {
-		theDocument.add(new Field("label", briefTitle, Field.Store.YES, Field.Index.ANALYZED));
-		theDocument.add(new Field("content", briefTitle, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("label", briefTitle + " ", Field.Store.YES, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", briefTitle + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    }
 	    if (title != null)  {
-		theDocument.add(new Field("content", title, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", title + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    }
 	    
 	    if (status != null) {
-		theDocument.add(new Field("content", status, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", status + " ", Field.Store.NO, Field.Index.ANALYZED));
 		try {
 		    paths.add(new CategoryPath("Status/"+status, '/'));
 		} catch (Exception e) {
@@ -452,7 +453,7 @@ public class FacetIndexer {
 		String phase = subrs.getString(1);
 		if (phase == null || phase.startsWith("Http"))
 		    continue;
-		theDocument.add(new Field("content", phase, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", phase + " ", Field.Store.NO, Field.Index.ANALYZED));
 		try {
 		    paths.add(new CategoryPath("Phase/" + phase, '/'));
 		} catch (Exception e) {
@@ -462,7 +463,7 @@ public class FacetIndexer {
 	    substmt.close();
 
 	    if (type != null) {
-		theDocument.add(new Field("content", type, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", type + " ", Field.Store.NO, Field.Index.ANALYZED));
 		try {
 		    paths.add(new CategoryPath("Type/"+type, '/'));
 		} catch (Exception e) {
@@ -477,7 +478,7 @@ public class FacetIndexer {
 		String condition = subrs.getString(1);
 		if (condition == null || condition.startsWith("Http"))
 		    continue;
-		theDocument.add(new Field("content", condition, Field.Store.NO, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", condition + " ", Field.Store.NO, Field.Index.ANALYZED));
 		try {
 		    paths.add(new CategoryPath("Condition/" + condition, '/'));
 		} catch (Exception e) {
