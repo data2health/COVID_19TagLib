@@ -165,7 +165,7 @@ public class BioRxivLoader {
 	}
     }
 
-    static public void fetch() throws SQLException, IOException {
+    static public void fetch() throws SQLException, IOException, InterruptedException {
 	logger.info("");
 	logger.info("Fetching metadata...");
 	logger.info("");
@@ -190,7 +190,7 @@ public class BioRxivLoader {
 	    } catch (java.io.FileNotFoundException e) {
 		logger.error("\tDOI not found...");
 	    }
-
+	    Thread.sleep(5000);
 	}
     }
 
