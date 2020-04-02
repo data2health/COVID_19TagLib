@@ -341,7 +341,7 @@ public class FacetIndexer {
 	// Reused across documents, to add the necessary facet fields
 	FacetFields facetFields = new FacetFields(taxoWriter);
 	
-	indexClinicalTrialOfficialContact(indexWriter, facetFields);
+//	indexClinicalTrialOfficialContact(indexWriter, facetFields);
 	indexClinicalTrials(indexWriter, facetFields);
 
 	taxoWriter.close();
