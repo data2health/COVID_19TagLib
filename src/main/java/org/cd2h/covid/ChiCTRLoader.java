@@ -98,7 +98,7 @@ public class ChiCTRLoader {
 		statement.execute();
 		statement.close();
 	    }
-	    Thread.sleep(5000);
+	    Thread.sleep(1000);
 	}
     }
 
