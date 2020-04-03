@@ -44,6 +44,7 @@ public class FacetIndexer {
     static String[] sites = {
 	    			pathPrefix + "biorxiv",
 	    			pathPrefix + "litcovid",
+	    			pathPrefix + "chictr",
 	    			pathPrefix + "clinical_trials"
 	    			};
     
@@ -61,6 +62,9 @@ public class FacetIndexer {
 	    break;
 	case "clinical_trials":
 	    indexClinicalTrials();
+	    break;
+	case "chictr":
+	    indexChiCTRTrials();
 	    break;
 	case "biorxiv":
 	    indexBioRxiv();
@@ -483,6 +487,181 @@ public class FacetIndexer {
 		    paths.add(new CategoryPath("Condition/" + condition, '/'));
 		} catch (Exception e) {
 		    logger.error("error adding condition facet", e);
+		}
+	    }
+	    substmt.close();
+
+	    facetFields.addFields(theDocument, paths);
+	    indexWriter.addDocument(theDocument);
+	    count++;
+	}
+	stmt.close();
+	logger.info("\ttrials indexed: " + count);
+    }
+    
+    static void indexChiCTRTrials() throws IOException, SQLException {
+	Directory indexDir = FSDirectory.open(new File(pathPrefix + "chictr"));
+	Directory taxoDir = FSDirectory.open(new File(pathPrefix + "chictr_tax"));
+
+	IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, new BiomedicalAnalyzer());
+	config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+	IndexWriter indexWriter = new IndexWriter(indexDir, config);
+
+	// Writes facet ords to a separate directory from the main index
+	DirectoryTaxonomyWriter taxoWriter = new DirectoryTaxonomyWriter(taxoDir);
+
+	// Reused across documents, to add the necessary facet fields
+	FacetFields facetFields = new FacetFields(taxoWriter);
+	
+	indexChiCTRTrials(indexWriter, facetFields);
+
+	taxoWriter.close();
+	indexWriter.close();
+    }
+    
+    @SuppressWarnings("deprecation")
+    static void indexChiCTRTrials(IndexWriter indexWriter, FacetFields facetFields) throws SQLException, IOException {
+	int count = 0;
+	logger.info("indexing ClinicalTrials.gov trials...");
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select id,reg_name,primary_sponsor,public_title,acronym,scientific_title,scientific_acronym,target_size,recruitment_status,url,study_type,study_design,phase,hc_freetext,i_freetext from covid_chictr.study");
+	ResultSet rs = stmt.executeQuery();
+	while (rs.next()) {
+	    String ID = rs.getString(1);
+	    String reg_name = rs.getString(2);
+	    String primary_sponsor = rs.getString(3);
+	    String public_title = rs.getString(4);
+	    String acronym = rs.getString(5);
+	    String scientific_title = rs.getString(6);
+	    String scientific_acronym = rs.getString(7);
+	    String target_size = rs.getString(8);
+	    String recruitment_status = rs.getString(9);
+	    String url = rs.getString(10);
+	    String study_type = rs.getString(11);
+	    String study_design = rs.getString(12);
+	    String phase = rs.getString(13);
+	    String hc_freetext = rs.getString(14);
+	    String i_freetext = rs.getString(15);
+	    
+	    logger.debug("trial: " + ID + "\t" + public_title);
+
+	    Document theDocument = new Document();
+	    List<CategoryPath> paths = new ArrayList<CategoryPath>();
+	    
+	    theDocument.add(new Field("source", reg_name, Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    paths.add(new CategoryPath("Source/"+reg_name, '/'));
+	    paths.add(new CategoryPath("Entity/Clinical Trial", '/'));
+
+	    theDocument.add(new Field("uri", url, Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("content", ID + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    if (scientific_title != null ) {
+		theDocument.add(new Field("label", scientific_title + " ", Field.Store.YES, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", scientific_title + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (primary_sponsor != null)  {
+		theDocument.add(new Field("content", primary_sponsor + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (public_title != null)  {
+		theDocument.add(new Field("content", public_title + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (acronym != null)  {
+		theDocument.add(new Field("content", acronym + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (scientific_acronym != null)  {
+		theDocument.add(new Field("content", scientific_acronym + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (target_size != null)  {
+		theDocument.add(new Field("content", target_size + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (study_design != null)  {
+		theDocument.add(new Field("content", study_design + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (hc_freetext != null)  {
+		theDocument.add(new Field("content", hc_freetext + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (i_freetext != null)  {
+		theDocument.add(new Field("content", i_freetext + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    
+	    if (recruitment_status != null) {
+		theDocument.add(new Field("content", recruitment_status + " ", Field.Store.NO, Field.Index.ANALYZED));
+		try {
+		    paths.add(new CategoryPath("Status/"+recruitment_status, '/'));
+		} catch (Exception e) {
+		    logger.error("error adding status facet", e);
+		}
+	    }
+	    if (study_type != null) {
+		theDocument.add(new Field("content", study_type + " ", Field.Store.NO, Field.Index.ANALYZED));
+		try {
+		    paths.add(new CategoryPath("Type/"+study_type, '/'));
+		} catch (Exception e) {
+		    logger.error("error adding type facet", e);
+		}
+	    }
+	    if (phase != null) {
+		theDocument.add(new Field("content", phase + " ", Field.Store.NO, Field.Index.ANALYZED));
+		try {
+		    paths.add(new CategoryPath("Phase/"+phase, '/'));
+		} catch (Exception e) {
+		    logger.error("error adding type facet", e);
+		}
+	    }
+
+	    PreparedStatement substmt = wintermuteConn.prepareStatement("select inclusion_criteria,exclusion_criteria from covid_chictr.criteria where id = ?");
+	    substmt.setString(1, ID);
+	    ResultSet subrs = substmt.executeQuery();
+	    while (subrs.next()) {
+		String inclusion_criteria = subrs.getString(1);
+		String exclusion_criteria = subrs.getString(1);
+		if (inclusion_criteria != null) {
+		    theDocument.add(new Field("content", inclusion_criteria + " ", Field.Store.NO, Field.Index.ANALYZED));
+		}
+		if (exclusion_criteria != null) {
+		    theDocument.add(new Field("content", exclusion_criteria + " ", Field.Store.NO, Field.Index.ANALYZED));
+		}
+	    }
+	    substmt.close();
+
+	    substmt = wintermuteConn.prepareStatement("select prim_outcome from covid_chictr.primary_outcome where id = ?");
+	    substmt.setString(1, ID);
+	    subrs = substmt.executeQuery();
+	    while (subrs.next()) {
+		String prim_outcome = subrs.getString(1);
+		if (prim_outcome != null) {
+		    theDocument.add(new Field("content", prim_outcome + " ", Field.Store.NO, Field.Index.ANALYZED));
+		}
+	    }
+	    substmt.close();
+
+	    substmt = wintermuteConn.prepareStatement("select sec_id from covid_chictr.secondary_id where id = ?");
+	    substmt.setString(1, ID);
+	    subrs = substmt.executeQuery();
+	    while (subrs.next()) {
+		String sec_id = subrs.getString(1);
+		if (sec_id != null) {
+		    theDocument.add(new Field("content", sec_id + " ", Field.Store.NO, Field.Index.ANALYZED));
+		}
+	    }
+	    substmt.close();
+
+	    substmt = wintermuteConn.prepareStatement("select sec_outcome from covid_chictr.secondary_outcome where id = ?");
+	    substmt.setString(1, ID);
+	    subrs = substmt.executeQuery();
+	    while (subrs.next()) {
+		String sec_outcome = subrs.getString(1);
+		if (sec_outcome != null) {
+		    theDocument.add(new Field("content", sec_outcome + " ", Field.Store.NO, Field.Index.ANALYZED));
+		}
+	    }
+	    substmt.close();
+
+	    substmt = wintermuteConn.prepareStatement("select source_support from covid_chictr.source_support where id = ?");
+	    substmt.setString(1, ID);
+	    subrs = substmt.executeQuery();
+	    while (subrs.next()) {
+		String source_support = subrs.getString(1);
+		if (source_support != null) {
+		    theDocument.add(new Field("content", source_support + " ", Field.Store.NO, Field.Index.ANALYZED));
 		}
 	    }
 	    substmt.close();
