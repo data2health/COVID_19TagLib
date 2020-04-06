@@ -16,12 +16,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.jsoup.Jsoup;
 
 import edu.uiowa.slis.GitHubTagLib.util.LocalProperties;
@@ -43,33 +38,21 @@ public class ChiCTRLoader {
 	
 	scan();
 
-//	simpleStmt("refresh materialized view covid_zotero.book");
-//	simpleStmt("refresh materialized view covid_zotero.book_collection");
-//	simpleStmt("refresh materialized view covid_zotero.book_creator");
-//	simpleStmt("refresh materialized view covid_zotero.book_tag");
-//
-//	simpleStmt("refresh materialized view covid_zotero.book_section");
-//	simpleStmt("refresh materialized view covid_zotero.book_section_collection");
-//	simpleStmt("refresh materialized view covid_zotero.book_section_creator");
-//	simpleStmt("refresh materialized view covid_zotero.book_section_tag");
-//
-//	simpleStmt("refresh materialized view covid_zotero.journal_article");
-//	simpleStmt("refresh materialized view covid_zotero.journal_article_collection");
-//	simpleStmt("refresh materialized view covid_zotero.journal_article_creator");
-//	simpleStmt("refresh materialized view covid_zotero.journal_article_tag");
-//
-//	simpleStmt("refresh materialized view covid_zotero.note");
-//	simpleStmt("refresh materialized view covid_zotero.note_tag");
-//
-//	simpleStmt("refresh materialized view covid_zotero.report");
-//	simpleStmt("refresh materialized view covid_zotero.report_collection");
-//	simpleStmt("refresh materialized view covid_zotero.report_creator");
-//	simpleStmt("refresh materialized view covid_zotero.report_tag");
-//
-//	simpleStmt("refresh materialized view covid_zotero.webpage");
-//	simpleStmt("refresh materialized view covid_zotero.webpage_collection");
-//	simpleStmt("refresh materialized view covid_zotero.webpage_creator");
-//	simpleStmt("refresh materialized view covid_zotero.webpage_tag");
+	simpleStmt("refresh materialized view covid_chictr.study");
+	simpleStmt("refresh materialized view covid_chictr.contact");
+	simpleStmt("refresh materialized view covid_chictr.country");
+	simpleStmt("refresh materialized view covid_chictr.criteria");
+	simpleStmt("refresh materialized view covid_chictr.health_condition_code");
+	simpleStmt("refresh materialized view covid_chictr.health_condition_keyword");
+	simpleStmt("refresh materialized view covid_chictr.intervention_code");
+	simpleStmt("refresh materialized view covid_chictr.intervention_keyword");
+	simpleStmt("refresh materialized view covid_chictr.primary_outcome");
+	simpleStmt("refresh materialized view covid_chictr.secondary_outcome");
+	simpleStmt("refresh materialized view covid_chictr.secondary_sponsor");
+	simpleStmt("refresh materialized view covid_chictr.secondary_id");
+	simpleStmt("refresh materialized view covid_chictr.source_support");
+	simpleStmt("refresh materialized view covid_chictr.ethics_review");
+
     }
 
     static public void scan() throws SQLException, IOException, DocumentException, InterruptedException {
@@ -81,8 +64,10 @@ public class ChiCTRLoader {
 	    String web = rs.getString(2);
 	    String id = web.substring(web.indexOf('=') + 1);
 	    logger.info("trial_id: " + trialID + "\tid: " + id);
+	    boolean success = false;
 	    org.jsoup.nodes.Document doc = Jsoup.connect(web).timeout(0).get();
 	    for (org.jsoup.nodes.Element element : doc.getElementsByClass("bt_subm")) {
+		success = true;
 		String description = element.text();
 		String htmlURL = element.attr("href");
 		logger.info("description: " + description + "\turl: " + htmlURL);
@@ -98,6 +83,8 @@ public class ChiCTRLoader {
 		statement.execute();
 		statement.close();
 	    }
+	    if (!success)
+		break;
 	    Thread.sleep(1000);
 	}
     }
