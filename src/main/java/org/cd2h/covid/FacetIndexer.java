@@ -522,7 +522,7 @@ public class FacetIndexer {
     @SuppressWarnings("deprecation")
     static void indexChiCTRTrials(IndexWriter indexWriter, FacetFields facetFields) throws SQLException, IOException {
 	int count = 0;
-	logger.info("indexing ClinicalTrials.gov trials...");
+	logger.info("indexing ChiCTR trials...");
 	PreparedStatement stmt = wintermuteConn.prepareStatement("select id,reg_name,primary_sponsor,public_title,acronym,scientific_title,scientific_acronym,target_size,recruitment_status,url,study_type,study_design,phase,hc_freetext,i_freetext from covid_chictr.study");
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
