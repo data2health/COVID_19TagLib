@@ -45,6 +45,7 @@ public class FacetIndexer {
 	    			pathPrefix + "biorxiv",
 	    			pathPrefix + "litcovid",
 	    			pathPrefix + "chictr",
+	    			pathPrefix + "ictrp",
 	    			pathPrefix + "clinical_trials"
 	    			};
     
@@ -65,6 +66,9 @@ public class FacetIndexer {
 	    break;
 	case "chictr":
 	    indexChiCTRTrials();
+	    break;
+	case "ictrp":
+	    indexICTRPTrials();
 	    break;
 	case "biorxiv":
 	    indexBioRxiv();
@@ -665,6 +669,135 @@ public class FacetIndexer {
 		}
 	    }
 	    substmt.close();
+
+	    facetFields.addFields(theDocument, paths);
+	    indexWriter.addDocument(theDocument);
+	    count++;
+	}
+	stmt.close();
+	logger.info("\ttrials indexed: " + count);
+    }
+    
+    static void indexICTRPTrials() throws IOException, SQLException {
+	Directory indexDir = FSDirectory.open(new File(pathPrefix + "ictrp"));
+	Directory taxoDir = FSDirectory.open(new File(pathPrefix + "ictrp_tax"));
+
+	IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, new BiomedicalAnalyzer());
+	config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+	IndexWriter indexWriter = new IndexWriter(indexDir, config);
+
+	// Writes facet ords to a separate directory from the main index
+	DirectoryTaxonomyWriter taxoWriter = new DirectoryTaxonomyWriter(taxoDir);
+
+	// Reused across documents, to add the necessary facet fields
+	FacetFields facetFields = new FacetFields(taxoWriter);
+	
+	indexICTRPTrials(indexWriter, facetFields);
+
+	taxoWriter.close();
+	indexWriter.close();
+    }
+    
+    @SuppressWarnings("deprecation")
+    static void indexICTRPTrials(IndexWriter indexWriter, FacetFields facetFields) throws SQLException, IOException {
+	int count = 0;
+	logger.info("indexing WHO ICTRP trials...");
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select trialid,public_title,scientific_title,web_address,study_type,study_design,phase,countries,contact_firstname,contact_affiliation,inclusion_criteria,exclusion_criteria,condition,intervention,primary_outcome,recruitment_status from who_ictrp.who where source_register != 'ChiCTR' and source_register != 'ClinicalTrials.gov'");
+	ResultSet rs = stmt.executeQuery();
+	while (rs.next()) {
+	    String ID = rs.getString(1);
+	    String public_title = rs.getString(2);
+	    String scientific_title = rs.getString(3);
+	    String url = rs.getString(4);
+	    String study_type = rs.getString(5);
+	    String study_design = rs.getString(6);
+	    String phase = rs.getString(7);
+	    String countries = rs.getString(8);
+	    String contact_firstname = rs.getString(9);
+	    String contact_affiliation = rs.getString(10);
+	    String inclusion_criteria = rs.getString(11);
+	    String exclusion_criteria = rs.getString(12);
+	    String condition = rs.getString(13);
+	    String intervention = rs.getString(14);
+	    String primary_outcome = rs.getString(15);
+	    String recruitment_status = rs.getString(16);
+	    
+	    logger.debug("trial: " + ID + "\t" + public_title);
+
+	    Document theDocument = new Document();
+	    List<CategoryPath> paths = new ArrayList<CategoryPath>();
+	    
+	    theDocument.add(new Field("source", "WHO ICTRP", Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    paths.add(new CategoryPath("Source/WHO ICTRP",'/'));
+	    paths.add(new CategoryPath("Entity/Clinical Trial", '/'));
+
+	    theDocument.add(new Field("uri", url, Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("content", ID + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    if (scientific_title != null ) {
+		theDocument.add(new Field("label", scientific_title + " ", Field.Store.YES, Field.Index.ANALYZED));
+		theDocument.add(new Field("content", scientific_title + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (public_title != null)  {
+		theDocument.add(new Field("content", public_title + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (public_title != null)  {
+		theDocument.add(new Field("content", public_title + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (study_design != null)  {
+		theDocument.add(new Field("content", study_design + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (countries != null)  {
+		theDocument.add(new Field("content", countries + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (contact_firstname != null)  {
+		theDocument.add(new Field("content", contact_firstname + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (study_design != null)  {
+		theDocument.add(new Field("content", study_design + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (contact_affiliation != null)  {
+		theDocument.add(new Field("content", contact_affiliation + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (inclusion_criteria != null)  {
+		theDocument.add(new Field("content", inclusion_criteria + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (exclusion_criteria != null)  {
+		theDocument.add(new Field("content", exclusion_criteria + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (condition != null)  {
+		theDocument.add(new Field("content", condition + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (intervention != null)  {
+		theDocument.add(new Field("content", intervention + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    if (primary_outcome != null)  {
+		theDocument.add(new Field("content", primary_outcome + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    
+	    if (recruitment_status != null) {
+		theDocument.add(new Field("content", recruitment_status + " ", Field.Store.NO, Field.Index.ANALYZED));
+		try {
+		    paths.add(new CategoryPath("Status/"+recruitment_status, '/'));
+		} catch (Exception e) {
+		    logger.error("error adding status facet", e);
+		}
+	    }
+	    if (study_type != null) {
+		theDocument.add(new Field("content", study_type + " ", Field.Store.NO, Field.Index.ANALYZED));
+		try {
+		    paths.add(new CategoryPath("Type/"+study_type, '/'));
+		} catch (Exception e) {
+		    logger.error("error adding type facet", e);
+		}
+	    }
+	    if (phase != null) {
+		theDocument.add(new Field("content", phase + " ", Field.Store.NO, Field.Index.ANALYZED));
+		try {
+		    paths.add(new CategoryPath("Phase/"+phase, '/'));
+		} catch (Exception e) {
+		    logger.error("error adding type facet", e);
+		}
+	    }
 
 	    facetFields.addFields(theDocument, paths);
 	    indexWriter.addDocument(theDocument);
