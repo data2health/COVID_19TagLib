@@ -146,21 +146,25 @@ public class BioRxivLoader {
 	logger.info("");
 	logger.info("Extracting text from PDF...");
 	logger.info("");
-	PreparedStatement fetchStmt = conn
-		.prepareStatement("select doi,url from covid_biorxiv.biorxiv_map where doi not in (select doi from covid_biorxiv.biorxiv_text)");
+	PreparedStatement fetchStmt = conn.prepareStatement(
+		"select doi,url from covid_biorxiv.biorxiv_map where doi not in (select doi from covid_biorxiv.biorxiv_text)");
 	ResultSet rs = fetchStmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
 	    String fetchURL = rs.getString(2);
-	    String file = filePrefix+fetchURL.substring(fetchURL.lastIndexOf('/')+1);
+	    String file = filePrefix + fetchURL.substring(fetchURL.lastIndexOf('/') + 1);
 	    logger.info("DOI: " + doi + "\tfile: " + file);
-	    
-	    String contents = parseToPlainText(file);
+
+	    try {
+		String contents = parseToPlainText(file);
 		PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.biorxiv_text values (?,?)");
 		citeStmt.setString(1, doi);
 		citeStmt.setString(2, contents);
 		citeStmt.executeUpdate();
 		citeStmt.close();
+	    } catch (Exception e) {
+		logger.error("Exception raised: " + e);
+	    }
 
 	}
     }
