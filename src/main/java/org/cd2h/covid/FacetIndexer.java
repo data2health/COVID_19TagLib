@@ -8,8 +8,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Properties;
+import java.util.Vector;
 
 import javax.servlet.jsp.JspTagException;
 
@@ -75,6 +77,9 @@ public class FacetIndexer {
 	    break;
 	case "litcovid":
 	    indexLitCOVID();
+	    break;
+	case "results":
+	    indexTrialResults();
 	    break;
 	case "-merge":
 	    mergeIndices(sites, pathPrefix + "covidsearch");
@@ -245,6 +250,35 @@ public class FacetIndexer {
 	stmt.close();
 	logger.info("\tpublications indexed: " + count);
     }
+    
+    @SuppressWarnings("deprecation")
+    static void indexMEDLINE(int pmid, Document theDocument, List<CategoryPath> paths, String urlLabel) throws SQLException {
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select article_title from covid_litcovid.article_title where pmid = ? and seqnum = 1");
+	stmt.setInt(1, pmid);
+	ResultSet rs = stmt.executeQuery();
+
+	while (rs.next()) {
+	    String title = rs.getString(1);
+
+	    logger.trace("article: " + pmid + "\t" + title);
+
+	    paths.add(new CategoryPath("Source/LitCOVID", '/'));
+	    
+	    theDocument.add(new Field("source", "LitCOVID", Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field(urlLabel, "https://www.ncbi.nlm.nih.gov/pubmed/" + pmid, Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("pub id", pmid + "", Field.Store.YES, Field.Index.NOT_ANALYZED));
+
+	    if (title == null) {
+		theDocument.add(new Field("pub label", "PubMed "+ pmid + " ", Field.Store.YES, Field.Index.ANALYZED));
+	    } else {
+		theDocument.add(new Field("pub label", title + " ", Field.Store.YES, Field.Index.ANALYZED));		
+		theDocument.add(new Field("content", title + " ", Field.Store.NO, Field.Index.ANALYZED));
+	    }
+	    
+	    indexMEDLINE(pmid, theDocument);
+	}
+	stmt.close();
+   }
 
     @SuppressWarnings("deprecation")
     static void indexMEDLINE(int pmid, Document theDocument) throws SQLException {
@@ -523,39 +557,56 @@ public class FacetIndexer {
 	indexWriter.close();
     }
     
-    @SuppressWarnings("deprecation")
+
     static void indexChiCTRTrials(IndexWriter indexWriter, FacetFields facetFields) throws SQLException, IOException {
 	int count = 0;
 	logger.info("indexing ChiCTR trials...");
-	PreparedStatement stmt = wintermuteConn.prepareStatement("select id,reg_name,primary_sponsor,public_title,acronym,scientific_title,scientific_acronym,target_size,recruitment_status,url,study_type,study_design,phase,hc_freetext,i_freetext from covid_chictr.study");
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select id covid_chictr.study");
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
 	    String ID = rs.getString(1);
-	    String reg_name = rs.getString(2);
-	    String primary_sponsor = rs.getString(3);
-	    String public_title = rs.getString(4);
-	    String acronym = rs.getString(5);
-	    String scientific_title = rs.getString(6);
-	    String scientific_acronym = rs.getString(7);
-	    String target_size = rs.getString(8);
-	    String recruitment_status = rs.getString(9);
-	    String url = rs.getString(10);
-	    String study_type = rs.getString(11);
-	    String study_design = rs.getString(12);
-	    String phase = rs.getString(13);
-	    String hc_freetext = rs.getString(14);
-	    String i_freetext = rs.getString(15);
-	    
-	    logger.debug("trial: " + ID + "\t" + public_title);
 
 	    Document theDocument = new Document();
 	    List<CategoryPath> paths = new ArrayList<CategoryPath>();
+
+	    paths.add(new CategoryPath("Entity/Clinical Trial", '/'));
+	    indexChiCTRTrial(ID, theDocument, paths, "uri");
+
+	    facetFields.addFields(theDocument, paths);
+	    indexWriter.addDocument(theDocument);
+	    count++;
+	}
+	stmt.close();
+	logger.info("\ttrials indexed: " + count);
+    }
+
+    @SuppressWarnings("deprecation")
+    static void indexChiCTRTrial(String ID, Document theDocument, List<CategoryPath> paths, String urlLabel) throws SQLException {
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select reg_name,primary_sponsor,public_title,acronym,scientific_title,scientific_acronym,target_size,recruitment_status,url,study_type,study_design,phase,hc_freetext,i_freetext from covid_chictr.study where id = ?");
+	stmt.setString(1, ID);
+	ResultSet rs = stmt.executeQuery();
+	while (rs.next()) {
+	    String reg_name = rs.getString(1);
+	    String primary_sponsor = rs.getString(2);
+	    String public_title = rs.getString(3);
+	    String acronym = rs.getString(4);
+	    String scientific_title = rs.getString(5);
+	    String scientific_acronym = rs.getString(6);
+	    String target_size = rs.getString(7);
+	    String recruitment_status = rs.getString(8);
+	    String url = rs.getString(9);
+	    String study_type = rs.getString(10);
+	    String study_design = rs.getString(11);
+	    String phase = rs.getString(12);
+	    String hc_freetext = rs.getString(13);
+	    String i_freetext = rs.getString(14);
 	    
+	    logger.debug("trial: " + ID + "\t" + public_title);
+
 	    theDocument.add(new Field("source", reg_name, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    paths.add(new CategoryPath("Source/"+reg_name, '/'));
-	    paths.add(new CategoryPath("Entity/Clinical Trial", '/'));
 
-	    theDocument.add(new Field("uri", url, Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field(urlLabel, url, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    theDocument.add(new Field("content", ID + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    if (scientific_title != null ) {
 		theDocument.add(new Field("label", scientific_title + " ", Field.Store.YES, Field.Index.ANALYZED));
@@ -670,12 +721,8 @@ public class FacetIndexer {
 	    }
 	    substmt.close();
 
-	    facetFields.addFields(theDocument, paths);
-	    indexWriter.addDocument(theDocument);
-	    count++;
 	}
 	stmt.close();
-	logger.info("\ttrials indexed: " + count);
     }
     
     static void indexICTRPTrials() throws IOException, SQLException {
@@ -698,40 +745,57 @@ public class FacetIndexer {
 	indexWriter.close();
     }
     
-    @SuppressWarnings("deprecation")
     static void indexICTRPTrials(IndexWriter indexWriter, FacetFields facetFields) throws SQLException, IOException {
 	int count = 0;
-	logger.info("indexing WHO ICTRP trials...");
-	PreparedStatement stmt = wintermuteConn.prepareStatement("select trialid,public_title,scientific_title,web_address,study_type,study_design,phase,countries,contact_firstname,contact_affiliation,inclusion_criteria,exclusion_criteria,condition,intervention,primary_outcome,recruitment_status from who_ictrp.who where source_register != 'ChiCTR' and source_register != 'ClinicalTrials.gov'");
+	logger.info("indexing ChiCTR trials...");
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select trialid from who_ictrp.who where source_register != 'ChiCTR'"); // and source_register != 'ClinicalTrials.gov'");
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
 	    String ID = rs.getString(1);
-	    String public_title = rs.getString(2);
-	    String scientific_title = rs.getString(3);
-	    String url = rs.getString(4);
-	    String study_type = rs.getString(5);
-	    String study_design = rs.getString(6);
-	    String phase = rs.getString(7);
-	    String countries = rs.getString(8);
-	    String contact_firstname = rs.getString(9);
-	    String contact_affiliation = rs.getString(10);
-	    String inclusion_criteria = rs.getString(11);
-	    String exclusion_criteria = rs.getString(12);
-	    String condition = rs.getString(13);
-	    String intervention = rs.getString(14);
-	    String primary_outcome = rs.getString(15);
-	    String recruitment_status = rs.getString(16);
-	    
-	    logger.debug("trial: " + ID + "\t" + public_title);
 
 	    Document theDocument = new Document();
 	    List<CategoryPath> paths = new ArrayList<CategoryPath>();
+
+	    paths.add(new CategoryPath("Entity/Clinical Trial", '/'));
+	    indexICTRPTrial(ID, theDocument, paths, "uri");
+
+	    facetFields.addFields(theDocument, paths);
+	    indexWriter.addDocument(theDocument);
+	    count++;
+	}
+	stmt.close();
+	logger.info("\ttrials indexed: " + count);
+    }
+
+    @SuppressWarnings("deprecation")
+    static void indexICTRPTrial(String ID, Document theDocument, List<CategoryPath> paths, String urlLabel) throws SQLException, IOException {
+	logger.info("indexing WHO ICTRP trials...");
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select public_title,scientific_title,web_address,study_type,study_design,phase,countries,contact_firstname,contact_affiliation,inclusion_criteria,exclusion_criteria,condition,intervention,primary_outcome,recruitment_status from who_ictrp.who where trialid = ?");
+	stmt.setString(1, ID);
+	ResultSet rs = stmt.executeQuery();
+	while (rs.next()) {
+	    String public_title = rs.getString(1);
+	    String scientific_title = rs.getString(2);
+	    String url = rs.getString(3);
+	    String study_type = rs.getString(4);
+	    String study_design = rs.getString(5);
+	    String phase = rs.getString(6);
+	    String countries = rs.getString(7);
+	    String contact_firstname = rs.getString(8);
+	    String contact_affiliation = rs.getString(9);
+	    String inclusion_criteria = rs.getString(10);
+	    String exclusion_criteria = rs.getString(11);
+	    String condition = rs.getString(12);
+	    String intervention = rs.getString(13);
+	    String primary_outcome = rs.getString(14);
+	    String recruitment_status = rs.getString(15);
 	    
+	    logger.debug("trial: " + ID + "\t" + public_title);
+
 	    theDocument.add(new Field("source", "WHO ICTRP", Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    paths.add(new CategoryPath("Source/WHO ICTRP",'/'));
-	    paths.add(new CategoryPath("Entity/Clinical Trial", '/'));
 
-	    theDocument.add(new Field("uri", url, Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field(urlLabel, url, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    theDocument.add(new Field("content", ID + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    if (scientific_title != null ) {
 		theDocument.add(new Field("label", scientific_title + " ", Field.Store.YES, Field.Index.ANALYZED));
@@ -799,12 +863,137 @@ public class FacetIndexer {
 		}
 	    }
 
+	}
+	stmt.close();
+    }
+    
+    static Hashtable<String,Vector<String>> chictrPreprintEmailCache = new Hashtable<String,Vector<String>>();
+    static Hashtable<String,Vector<String>> chictrPreprintIDCache = new Hashtable<String,Vector<String>>();
+    static Hashtable<String,Vector<String>> chictrPubEmailCache = new Hashtable<String,Vector<String>>();
+    static Hashtable<String,Vector<String>> chictrPubIDCache = new Hashtable<String,Vector<String>>();
+    static Hashtable<String,Vector<String>> whoPreprintEmailCache = new Hashtable<String,Vector<String>>();
+    static Hashtable<String,Vector<String>> whoPreprintIDCache = new Hashtable<String,Vector<String>>();
+    static Hashtable<String,Vector<String>> whoPubEmailCache = new Hashtable<String,Vector<String>>();
+    static Hashtable<String,Vector<String>> whoPubIDCache = new Hashtable<String,Vector<String>>();
+    
+    @SuppressWarnings("deprecation")
+    public static void indexTrialResults() throws SQLException, IOException {
+	int count = 0;
+	initializeCaches();
+	Directory indexDir = FSDirectory.open(new File(pathPrefix + "trial_results"));
+	Directory taxoDir = FSDirectory.open(new File(pathPrefix + "trial_results_tax"));
+
+	IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, new BiomedicalAnalyzer());
+	config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+	IndexWriter indexWriter = new IndexWriter(indexDir, config);
+
+	// Writes facet ords to a separate directory from the main index
+	DirectoryTaxonomyWriter taxoWriter = new DirectoryTaxonomyWriter(taxoDir);
+
+	// Reused across documents, to add the necessary facet fields
+	FacetFields facetFields = new FacetFields(taxoWriter);
+	
+	
+	logger.info("scanning trial-preprint bindings...");
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select id,doi from covid.trial_preprint_map");
+	ResultSet rs = stmt.executeQuery();
+	while (rs.next()) {
+	    String ID = rs.getString(1);
+	    String doi = rs.getString(2);
+	    logger.info("\ttrial: " + ID + "\tdoi: " + doi);
+
+	    Document theDocument = new Document();
+	    List<CategoryPath> paths = new ArrayList<CategoryPath>();
+	    
+	    if (chictrPreprintEmailCache.containsKey(ID) || chictrPreprintIDCache.containsKey(ID)) {
+		theDocument.add(new Field("trial source", "ChiCTR", Field.Store.YES, Field.Index.NOT_ANALYZED));
+		paths.add(new CategoryPath("Trial Source/ChiCTR",'/'));
+		indexChiCTRTrial(ID, theDocument, paths, "trial uri");
+	    } else if (whoPreprintEmailCache.containsKey(ID) || whoPreprintIDCache.containsKey(ID)) {
+		theDocument.add(new Field("trial source", "WHO ICTRP", Field.Store.YES, Field.Index.NOT_ANALYZED));
+		paths.add(new CategoryPath("Trial Source/WHO ICTRP",'/'));
+		indexICTRPTrial(ID, theDocument, paths, "trial uri");
+	    } else {
+		theDocument.add(new Field("trial source", "Unknown", Field.Store.YES, Field.Index.NOT_ANALYZED));
+		paths.add(new CategoryPath("Trial Source/Unknown",'/'));		
+	    }
+	    
+	    facetFields.addFields(theDocument, paths);
+	    indexWriter.addDocument(theDocument);
+	    count++;
+	    
+	}
+	stmt.close();
+	logger.info("preprint count: " + count);
+	
+	count = 0;
+	logger.info("scanning trial-publication bindings...");
+	stmt = wintermuteConn.prepareStatement("select id,pmid from covid.trial_pub_map");
+	rs = stmt.executeQuery();
+	while (rs.next()) {
+	    String ID = rs.getString(1);
+	    String pmid = rs.getString(2);
+	    logger.info("\ttrial: " + ID + "\tpmid: " + pmid);
+
+	    Document theDocument = new Document();
+	    List<CategoryPath> paths = new ArrayList<CategoryPath>();
+	    
+	    if (chictrPubEmailCache.containsKey(ID) || chictrPubIDCache.containsKey(ID)) {
+		theDocument.add(new Field("trial source", "ChiCTR", Field.Store.YES, Field.Index.NOT_ANALYZED));
+		paths.add(new CategoryPath("Trial Source/ChiCTR",'/'));
+		indexChiCTRTrial(ID, theDocument, paths, "trial uri");
+	    } else if (whoPubEmailCache.containsKey(ID) || whoPubIDCache.containsKey(ID)) {
+		theDocument.add(new Field("trial source", "WHO ICTRP", Field.Store.YES, Field.Index.NOT_ANALYZED));
+		paths.add(new CategoryPath("Trial Source/WHO ICTRP",'/'));
+		indexICTRPTrial(ID, theDocument, paths, "trial uri");
+	    } else {
+		theDocument.add(new Field("trial source", "Unknown", Field.Store.YES, Field.Index.NOT_ANALYZED));
+		paths.add(new CategoryPath("Trial Source/Unknown",'/'));		
+	    }
+	    indexMEDLINE(Integer.parseInt(pmid), theDocument, paths, "pub uri");
+	    
 	    facetFields.addFields(theDocument, paths);
 	    indexWriter.addDocument(theDocument);
 	    count++;
 	}
 	stmt.close();
-	logger.info("\ttrials indexed: " + count);
+	logger.info("publication count: " + count);
+
+	taxoWriter.close();
+	indexWriter.close();
+    }
+    
+    public static void initializeCaches() throws SQLException {
+	initializeCache(chictrPreprintEmailCache, "chictr_preprint_email_map", "doi");
+	initializeCache(chictrPreprintIDCache, "chictr_preprint_id_map", "doi");
+	initializeCache(chictrPubEmailCache, "chictr_pub_email_map", "pmid");
+	initializeCache(chictrPubIDCache, "chictr_pub_id_map", "pmid");
+	initializeCache(whoPreprintEmailCache, "who_preprint_email_map", "doi");
+	initializeCache(whoPreprintIDCache, "who_preprint_id_map", "doi");
+	initializeCache(whoPubEmailCache, "who_pub_email_map", "pmid");
+	initializeCache(whoPubIDCache, "who_pub_id_map", "pmid");
+    }
+    
+    public static void initializeCache(Hashtable<String,Vector<String>> cache, String tableName, String attributeName) throws SQLException {
+	int count = 0;
+	logger.info("initializing " + tableName + " cache...");
+	
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select id,"+attributeName+" from covid."+tableName);
+	ResultSet rs = stmt.executeQuery();
+	while (rs.next()) {
+	    count++;
+	    String ID = rs.getString(1);
+	    String pub = rs.getString(2);
+	    Vector<String> pubs = cache.get(ID);
+	    if (pubs == null) {
+		pubs = new Vector<String>();
+		cache.put(ID, pubs);
+	    }
+	    pubs.add(pub);
+	}
+	stmt.close();
+	
+	logger.info("\tcount: " + count);
     }
     
     public static Connection getConnection(String property_file) throws SQLException, ClassNotFoundException {
