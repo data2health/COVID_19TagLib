@@ -155,7 +155,6 @@ public class FacetIndexer {
 
     @SuppressWarnings("deprecation")
     static void indexBioRxiv(String doi, Document theDocument, List<CategoryPath> paths, String urlLabel) throws IOException, SQLException {
-	logger.info("indexing bioRxiv/medRxiv preprints...");
 	PreparedStatement stmt = wintermuteConn.prepareStatement("select title,authors,link,site,pub_date,abstract from covid_biorxiv.biorxiv_current where doi = ?");
 	stmt.setString(1, doi);
 	ResultSet rs = stmt.executeQuery();
@@ -573,7 +572,7 @@ public class FacetIndexer {
     static void indexChiCTRTrials(IndexWriter indexWriter, FacetFields facetFields) throws SQLException, IOException {
 	int count = 0;
 	logger.info("indexing ChiCTR trials...");
-	PreparedStatement stmt = wintermuteConn.prepareStatement("select id covid_chictr.study");
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select id from covid_chictr.study");
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
 	    String ID = rs.getString(1);
