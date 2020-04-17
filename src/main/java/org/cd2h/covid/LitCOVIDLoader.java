@@ -52,7 +52,7 @@ public class LitCOVIDLoader {
 	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_litcovid.litcovid values (?,?,?)");
 	    citeStmt.setInt(1, Integer.parseInt(split[0]));
 	    citeStmt.setString(2, split[1]);
-	    citeStmt.setString(3, split[2]);
+	    citeStmt.setString(3, split.length > 2 ? split[2] : null);
 	    citeStmt.executeUpdate();
 	    citeStmt.close();
 	}
