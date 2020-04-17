@@ -17,7 +17,6 @@ import javax.servlet.jsp.JspTagException;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.facet.index.FacetFields;
@@ -131,33 +130,50 @@ public class FacetIndexer {
 	indexWriter.close();
     }
     
-    @SuppressWarnings("deprecation")
     static void indexBioRxiv(IndexWriter indexWriter, FacetFields facetFields) throws IOException, SQLException {
 	int count = 0;
 	logger.info("indexing bioRxiv/medRxiv preprints...");
-	PreparedStatement stmt = wintermuteConn.prepareStatement("select doi,title,authors,link,site,pub_date,abstract from covid_biorxiv.biorxiv_current");
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select doi from covid_biorxiv.biorxiv_current");
 	ResultSet rs = stmt.executeQuery();
 
 	while (rs.next()) {
 	    count++;
 	    String doi = rs.getString(1);
-	    String title = rs.getString(2);
-	    String authors = rs.getString(3);
-	    String link = rs.getString(4);
-	    String site = rs.getString(5);
-	    String pub_date = rs.getString(6);
-	    String abstr = rs.getString(7);
-
-	    logger.trace("preprint: " + doi + "\t" + title);
 
 	    Document theDocument = new Document();
 	    List<CategoryPath> paths = new ArrayList<CategoryPath>();
-
 	    paths.add(new CategoryPath("Entity/Preprint", '/'));
+	    
+	    indexBioRxiv(doi, theDocument, paths, "uri");
+	    
+	    facetFields.addFields(theDocument, paths);
+	    indexWriter.addDocument(theDocument);
+	}
+	stmt.close();
+	logger.info("\tpublications indexed: " + count);
+    }
+
+    @SuppressWarnings("deprecation")
+    static void indexBioRxiv(String doi, Document theDocument, List<CategoryPath> paths, String urlLabel) throws IOException, SQLException {
+	logger.info("indexing bioRxiv/medRxiv preprints...");
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select title,authors,link,site,pub_date,abstract from covid_biorxiv.biorxiv_current where doi = ?");
+	stmt.setString(1, doi);
+	ResultSet rs = stmt.executeQuery();
+
+	while (rs.next()) {
+	    String title = rs.getString(1);
+	    String authors = rs.getString(2);
+	    String link = rs.getString(3);
+	    String site = rs.getString(4);
+	    String pub_date = rs.getString(5);
+	    String abstr = rs.getString(6);
+
+	    logger.trace("preprint: " + doi + "\t" + title);
+
 	    paths.add(new CategoryPath("Source/"+site, '/'));
 	    
 	    theDocument.add(new Field("source", site, Field.Store.YES, Field.Index.NOT_ANALYZED));
-	    theDocument.add(new Field("uri", link, Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field(urlLabel, link, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    theDocument.add(new Field("id", doi, Field.Store.YES, Field.Index.NOT_ANALYZED));
 
 	    if (title == null) {
@@ -183,12 +199,8 @@ public class FacetIndexer {
 		logger.trace("\tcontents: " + contents);
 	    }
 	    substmt.close();
-		
-	    facetFields.addFields(theDocument, paths);
-	    indexWriter.addDocument(theDocument);
 	}
 	stmt.close();
-	logger.info("\tpublications indexed: " + count);
     }
 
     static void indexLitCOVID() throws IOException, SQLException {
@@ -917,6 +929,7 @@ public class FacetIndexer {
 		theDocument.add(new Field("trial source", "Unknown", Field.Store.YES, Field.Index.NOT_ANALYZED));
 		paths.add(new CategoryPath("Trial Source/Unknown",'/'));		
 	    }
+	    indexBioRxiv(doi, theDocument, paths, "pub uri");
 	    
 	    facetFields.addFields(theDocument, paths);
 	    indexWriter.addDocument(theDocument);
