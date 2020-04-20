@@ -77,6 +77,9 @@ public class FacetIndexer {
 	case "litcovid":
 	    indexLitCOVID();
 	    break;
+	case "medline":
+	    indexMEDLINE();
+	    break;
 	case "results":
 	    indexTrialResults();
 	    break;
@@ -216,17 +219,38 @@ public class FacetIndexer {
 	// Reused across documents, to add the necessary facet fields
 	FacetFields facetFields = new FacetFields(taxoWriter);
 
-	indexMEDLINE(indexWriter, facetFields);
+	logger.info("indexing LitCOVID articles...");
+	indexMEDLINE(indexWriter, facetFields, "LitCOVID", "covid_litcovid");
+
+	taxoWriter.close();
+	indexWriter.close();
+    }
+    
+    static void indexMEDLINE() throws IOException, SQLException {
+	Directory indexDir = FSDirectory.open(new File(pathPrefix + "medline"));
+	Directory taxoDir = FSDirectory.open(new File(pathPrefix + "medline_tax"));
+
+	IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, new BiomedicalAnalyzer());
+	config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+	IndexWriter indexWriter = new IndexWriter(indexDir, config);
+
+	// Writes facet ords to a separate directory from the main index
+	DirectoryTaxonomyWriter taxoWriter = new DirectoryTaxonomyWriter(taxoDir);
+
+	// Reused across documents, to add the necessary facet fields
+	FacetFields facetFields = new FacetFields(taxoWriter);
+
+	logger.info("indexing MEDLINE articles...");
+	indexMEDLINE(indexWriter, facetFields, "MEDLINE", "medline");
 
 	taxoWriter.close();
 	indexWriter.close();
     }
     
     @SuppressWarnings("deprecation")
-    static void indexMEDLINE(IndexWriter indexWriter, FacetFields facetFields) throws IOException, SQLException {
+    static void indexMEDLINE(IndexWriter indexWriter, FacetFields facetFields, String source, String schemaName) throws IOException, SQLException {
 	int count = 0;
-	logger.info("indexing MEDLINE articles...");
-	PreparedStatement stmt = wintermuteConn.prepareStatement("select pmid,article_title from covid_litcovid.article_title where seqnum = 1");
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select pmid,article_title from "+schemaName+".article_title where seqnum = 1");
 	ResultSet rs = stmt.executeQuery();
 
 	while (rs.next()) {
@@ -240,9 +264,9 @@ public class FacetIndexer {
 	    List<CategoryPath> paths = new ArrayList<CategoryPath>();
 
 	    paths.add(new CategoryPath("Entity/Article", '/'));
-	    paths.add(new CategoryPath("Source/LitCOVID", '/'));
+	    paths.add(new CategoryPath("Source/"+source, '/'));
 	    
-	    theDocument.add(new Field("source", "LitCOVID", Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("source", source, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    theDocument.add(new Field("uri", "https://www.ncbi.nlm.nih.gov/pubmed/" + pmid, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    theDocument.add(new Field("id", pmid + "", Field.Store.YES, Field.Index.NOT_ANALYZED));
 
@@ -253,7 +277,7 @@ public class FacetIndexer {
 		theDocument.add(new Field("content", title + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    }
 	    
-	    indexMEDLINE(pmid, theDocument);
+	    indexMEDLINE(pmid, theDocument, schemaName);
 		
 	    facetFields.addFields(theDocument, paths);
 	    indexWriter.addDocument(theDocument);
@@ -262,9 +286,10 @@ public class FacetIndexer {
 	logger.info("\tpublications indexed: " + count);
     }
     
+
     @SuppressWarnings("deprecation")
-    static void indexMEDLINE(int pmid, Document theDocument, List<CategoryPath> paths, String urlLabel) throws SQLException {
-	PreparedStatement stmt = wintermuteConn.prepareStatement("select article_title from covid_litcovid.article_title where pmid = ? and seqnum = 1");
+    static void indexMEDLINE(int pmid, Document theDocument, List<CategoryPath> paths, String source, String schemaName, String urlLabel) throws SQLException {
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select article_title from "+schemaName+".article_title where pmid = ? and seqnum = 1");
 	stmt.setInt(1, pmid);
 	ResultSet rs = stmt.executeQuery();
 
@@ -273,9 +298,9 @@ public class FacetIndexer {
 
 	    logger.trace("article: " + pmid + "\t" + title);
 
-	    paths.add(new CategoryPath("Source/LitCOVID", '/'));
+	    paths.add(new CategoryPath("Source/"+source, '/'));
 	    
-	    theDocument.add(new Field("source", "LitCOVID", Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("source", source, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    theDocument.add(new Field(urlLabel, "https://www.ncbi.nlm.nih.gov/pubmed/" + pmid, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    theDocument.add(new Field("pub id", pmid + "", Field.Store.YES, Field.Index.NOT_ANALYZED));
 
@@ -286,14 +311,14 @@ public class FacetIndexer {
 		theDocument.add(new Field("content", title + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    }
 	    
-	    indexMEDLINE(pmid, theDocument);
+	    indexMEDLINE(pmid, theDocument, schemaName);
 	}
 	stmt.close();
    }
 
     @SuppressWarnings("deprecation")
-    static void indexMEDLINE(int pmid, Document theDocument) throws SQLException {
-	PreparedStatement stmt = wintermuteConn.prepareStatement("select abstract from covid_litcovid.abstract where pmid = ?");
+    static void indexMEDLINE(int pmid, Document theDocument, String schemaName) throws SQLException {
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select abstract from "+schemaName+".abstract where pmid = ?");
 	stmt.setInt(1, pmid);
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
@@ -303,7 +328,7 @@ public class FacetIndexer {
 	}
 	stmt.close();
 
-	stmt = wintermuteConn.prepareStatement("select last_name,fore_name,initials,suffix,collective_name from covid_litcovid.author where pmid = ?");
+	stmt = wintermuteConn.prepareStatement("select last_name,fore_name,initials,suffix,collective_name from "+schemaName+".author where pmid = ?");
 	stmt.setInt(1, pmid);
 	rs = stmt.executeQuery();
 	while (rs.next()) {
@@ -326,7 +351,7 @@ public class FacetIndexer {
 	}
 	stmt.close();
 
-	stmt = wintermuteConn.prepareStatement("select affiliation from covid_litcovid.author_affiliation where pmid = ?");
+	stmt = wintermuteConn.prepareStatement("select affiliation from "+schemaName+".author_affiliation where pmid = ?");
 	stmt.setInt(1, pmid);
 	rs = stmt.executeQuery();
 	while (rs.next()) {
@@ -336,7 +361,7 @@ public class FacetIndexer {
 	}
 	stmt.close();
 
-	stmt = wintermuteConn.prepareStatement("select keyword from covid_litcovid.keyword where pmid = ?");
+	stmt = wintermuteConn.prepareStatement("select keyword from "+schemaName+".keyword where pmid = ?");
 	stmt.setInt(1, pmid);
 	rs = stmt.executeQuery();
 	while (rs.next()) {
@@ -346,7 +371,7 @@ public class FacetIndexer {
 	}
 	stmt.close();
 
-	stmt = wintermuteConn.prepareStatement("select descriptor_name from covid_litcovid.mesh_heading where pmid = ?");
+	stmt = wintermuteConn.prepareStatement("select descriptor_name from "+schemaName+".mesh_heading where pmid = ?");
 	stmt.setInt(1, pmid);
 	rs = stmt.executeQuery();
 	while (rs.next()) {
@@ -356,7 +381,7 @@ public class FacetIndexer {
 	}
 	stmt.close();
 
-	stmt = wintermuteConn.prepareStatement("select registry_number,name_of_substance from covid_litcovid.chemical where pmid = ?");
+	stmt = wintermuteConn.prepareStatement("select registry_number,name_of_substance from "+schemaName+".chemical where pmid = ?");
 	stmt.setInt(1, pmid);
 	rs = stmt.executeQuery();
 	while (rs.next()) {
@@ -368,7 +393,7 @@ public class FacetIndexer {
 	}
 	stmt.close();
 
-	stmt = wintermuteConn.prepareStatement("select gene_symbol from covid_litcovid.gene_symbol where pmid = ?");
+	stmt = wintermuteConn.prepareStatement("select gene_symbol from "+schemaName+".gene_symbol where pmid = ?");
 	stmt.setInt(1, pmid);
 	rs = stmt.executeQuery();
 	while (rs.next()) {
@@ -750,6 +775,7 @@ public class FacetIndexer {
 	// Reused across documents, to add the necessary facet fields
 	FacetFields facetFields = new FacetFields(taxoWriter);
 	
+	logger.info("indexing WHO ICTRP trials...");
 	indexICTRPTrials(indexWriter, facetFields);
 
 	taxoWriter.close();
@@ -780,7 +806,6 @@ public class FacetIndexer {
 
     @SuppressWarnings("deprecation")
     static void indexICTRPTrial(String ID, Document theDocument, List<CategoryPath> paths, String urlLabel) throws SQLException, IOException {
-	logger.info("indexing WHO ICTRP trials...");
 	PreparedStatement stmt = wintermuteConn.prepareStatement("select public_title,scientific_title,web_address,study_type,study_design,phase,countries,contact_firstname,contact_affiliation,inclusion_criteria,exclusion_criteria,condition,intervention,primary_outcome,recruitment_status from who_ictrp.who where trialid = ?");
 	stmt.setString(1, ID);
 	ResultSet rs = stmt.executeQuery();
@@ -962,7 +987,7 @@ public class FacetIndexer {
 		theDocument.add(new Field("trial source", "Unknown", Field.Store.YES, Field.Index.NOT_ANALYZED));
 		paths.add(new CategoryPath("Trial Source/Unknown",'/'));		
 	    }
-	    indexMEDLINE(Integer.parseInt(pmid), theDocument, paths, "pub uri");
+	    indexMEDLINE(Integer.parseInt(pmid), theDocument, paths, "LitCOVID", "covid_litcovid", "pub uri");
 	    
 	    facetFields.addFields(theDocument, paths);
 	    indexWriter.addDocument(theDocument);
