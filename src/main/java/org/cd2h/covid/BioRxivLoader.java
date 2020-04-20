@@ -89,7 +89,7 @@ public class BioRxivLoader {
 	logger.info("");
 	logger.info("Fetching PDF links...");
 	logger.info("");
-	PreparedStatement fetchStmt = conn.prepareStatement("select doi,link from covid_biorxiv.biorxiv_current where doi not in (select doi from covid_biorxiv.biorxiv_map)");
+	PreparedStatement fetchStmt = conn.prepareStatement("select doi,link from covid_biorxiv.biorxiv_current where doi not in (select doi from covid_biorxiv.biorxiv_map) and doi not in (select doi from covid_biorxiv.biorxiv_suppress)");
 	ResultSet rs = fetchStmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
