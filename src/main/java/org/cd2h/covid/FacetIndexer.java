@@ -1121,7 +1121,7 @@ public class FacetIndexer implements Runnable {
 //	    props.setProperty("ssl", "true");
 //	}
 	Connection conn = DriverManager.getConnection(prop_file.getProperty("jdbc.url"), props);
-	conn.setAutoCommit(false);
+//	conn.setAutoCommit(false);
 	return conn;
     }
 
