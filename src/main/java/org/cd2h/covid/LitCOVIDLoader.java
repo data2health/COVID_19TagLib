@@ -109,16 +109,33 @@ public class LitCOVIDLoader {
     @SuppressWarnings("unchecked")
     static Element parseDocument(int pmid) throws Exception {
 	logger.info("scanning " + pmid + "...");
+	boolean failed = true;
+	Document document = null;
+	do {
+	    try {
+		InputStream is = (new URL("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&id=" + pmid)).openStream();
+		SAXReader reader = new SAXReader(false);
+		document = reader.read(is);
+		failed = false;
+	    } catch (Exception e) {
+		logger.error("exception raised parsing " + pmid + ", retrying...");
+		Thread.sleep(5000);
+		failed = true;
+	    }
+	} while (failed);
 
-	InputStream is = (new URL("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&id="+pmid)).openStream();
-	SAXReader reader = new SAXReader(false);
-
-	// <!ELEMENT MedlineCitationSet (MedlineCitation*, DeleteCitation?)>
-
-	Document document = reader.read(is);
 	Element root = document.getRootElement();
-	logger.info("document root: " + root.asXML());
-	for (Element citation : (List<Element>) root.selectNodes("PubmedArticle/MedlineCitation")) {
+	logger.trace("document root: " + root.asXML());
+	for (Element citation : (List<Element>) root.selectNodes("PubmedArticle")) {
+	    logger.info("citation:" + citation.asXML());
+
+	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_litcovid.raw values (?,?::xml)");
+	    citeStmt.setInt(1, pmid);
+	    citeStmt.setString(2, citation.asXML());
+	    citeStmt.executeUpdate();
+	    citeStmt.close();
+	}
+	for (Element citation : (List<Element>) root.selectNodes("PubmedBookArticle")) {
 	    logger.info("citation:" + citation.asXML());
 
 	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_litcovid.raw values (?,?::xml)");
