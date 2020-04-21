@@ -34,8 +34,6 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 
 import edu.uiowa.lucene.biomedical.BiomedicalAnalyzer;
-import edu.uiowa.medline.DocumentQueue;
-import edu.uiowa.medline.DocumentRequest;
 import edu.uiowa.slis.GitHubTagLib.util.LocalProperties;
 import edu.uiowa.slis.GitHubTagLib.util.PropertyLoader;
 
@@ -82,7 +80,8 @@ public class FacetIndexer implements Runnable {
 	    indexLitCOVID();
 	    break;
 	case "medline":
-	    indexMEDLINE();
+//	    indexMEDLINE();
+	    mergeMEDLINE();
 	    break;
 	case "results":
 	    indexTrialResults();
@@ -93,9 +92,9 @@ public class FacetIndexer implements Runnable {
 	}
     }
     
-    static DocumentQueue theQueue = null;
     int threadID = 0;
     Connection threadConn = null;
+    ArticleRequest theRequest = null;
     
     public FacetIndexer(int threadID) throws ClassNotFoundException, SQLException {
 	//
@@ -103,6 +102,7 @@ public class FacetIndexer implements Runnable {
 	//
 	this.threadID = threadID;
 	this.threadConn = getConnection("lucene");
+	this.theRequest = new ArticleRequest();
 	
 	// we currently default in the run method to parallelizing MEDLINE indexing
     }
@@ -198,9 +198,13 @@ public class FacetIndexer implements Runnable {
 
 	    logger.trace("preprint: " + doi + "\t" + title);
 
-	    paths.add(new CategoryPath("Source/"+site, '/'));
+	    if (urlLabel.equals("pub uri"))
+		    paths.add(new CategoryPath("Publication Source/"+site, '/'));
+	    else
+		    paths.add(new CategoryPath("Source/"+site, '/'));
 	    
 	    theDocument.add(new Field("source", site, Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("pub source", site, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    theDocument.add(new Field(urlLabel, link, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    theDocument.add(new Field("id", doi, Field.Store.YES, Field.Index.NOT_ANALYZED));
 
@@ -208,6 +212,7 @@ public class FacetIndexer implements Runnable {
 		theDocument.add(new Field("label", site+" "+ doi + " ", Field.Store.YES, Field.Index.ANALYZED));
 	    } else {
 		theDocument.add(new Field("label", title + " ", Field.Store.YES, Field.Index.ANALYZED));		
+		theDocument.add(new Field("pub label", title + " ", Field.Store.YES, Field.Index.ANALYZED));		
 		theDocument.add(new Field("content", title + " ", Field.Store.NO, Field.Index.ANALYZED));
 	    }
 	    
@@ -252,22 +257,27 @@ public class FacetIndexer implements Runnable {
 	indexWriter.close();
     }
     
-    static void indexMEDLINE() throws IOException, SQLException, InterruptedException, ClassNotFoundException {
-	theQueue = new DocumentQueue();
-	int count = 0;
-	logger.info("indexing MEDLINE...");
-	PreparedStatement stmt = wintermuteConn.prepareStatement("select pmid,article_title from medline.article_title where seqnum = 1 order by pmid");
-	ResultSet rs = stmt.executeQuery();
-
-	while (rs.next()) {
-	    count++;
-	    int pmid = rs.getInt(1);
-	    String title = rs.getString(2);
-
-	    theQueue.queue(pmid, title);
+    static PreparedStatement qstmt = null;
+    static ResultSet qrs = null;
+    
+    static class ArticleRequest {
+	int pmid = 0;
+	String title = null;
+    }
+    
+    static boolean next(ArticleRequest theRequest) throws SQLException {
+	if (qrs.next()) {
+	    theRequest.pmid = qrs.getInt(1);
+	    theRequest.title = qrs.getString(2);
+	    return true;
 	}
-	stmt.close();
-	logger.info("\tpublications queued: " + count);
+	return false;
+    }
+    
+    static void indexMEDLINE() throws IOException, SQLException, InterruptedException, ClassNotFoundException {
+	logger.info("indexing MEDLINE...");
+	qstmt = wintermuteConn.prepareStatement("select pmid,article_title from medline.article_title where seqnum = 1 order by pmid");
+	qrs = qstmt.executeQuery();
 
 	int maxCrawlerThreads = Runtime.getRuntime().availableProcessors();
 	Thread[] scannerThreads = new Thread[maxCrawlerThreads];
@@ -279,14 +289,25 @@ public class FacetIndexer implements Runnable {
 	    theThread.setPriority(Math.max(theThread.getPriority() - 2, Thread.MIN_PRIORITY));
 	    theThread.start();
 	    scannerThreads[i] = theThread;
-	    fileNames[i] = "medline"+formatter.format(i);
+	    fileNames[i] = pathPrefix+"medline"+formatter.format(i);
 	}
 
 	for (int i = 0; i < maxCrawlerThreads; i++) {
 	    scannerThreads[i].join();
 	}
 	logger.info("indexing completed.");
-	mergeIndices(fileNames,"medline");
+	qstmt.close();
+	mergeIndices(fileNames, pathPrefix+"medline");
+    }
+    
+    static void mergeMEDLINE () throws CorruptIndexException, SQLException, IOException {
+	int maxCrawlerThreads = Runtime.getRuntime().availableProcessors();
+	String[] fileNames = new String[maxCrawlerThreads];
+	
+	for (int i = 0; i < maxCrawlerThreads; i++) {
+	    fileNames[i] = pathPrefix+"medline"+formatter.format(i);
+	}
+	mergeIndices(fileNames, pathPrefix+"medline");
     }
     
     void indexMEDLINEThread() throws IOException, SQLException {
@@ -305,15 +326,10 @@ public class FacetIndexer implements Runnable {
 
 	logger.info("["+formatter.format(threadID)+"] indexing MEDLINE articles...");
 	int count = 0;
-	while (!theQueue.isCompleted()) {
-	    DocumentRequest theRequest = theQueue.dequeue();
-	    if (theRequest == null) {
-		break;
-	    } else {
-		if ((++count % 1000) == 0)
-		    logger.info("["+formatter.format(threadID)+"] indexing: " + theRequest.getPMID() + " : " + theRequest.getTitle());
-		indexMEDLINE(threadConn, indexWriter, facetFields, "MEDLINE", "medline", theRequest.getPMID(), theRequest.getTitle());
-	    }
+	while (next(theRequest)) {
+	    if ((++count % 1000) == 0)
+		logger.info("[" + formatter.format(threadID) + "] indexing: " + theRequest.pmid + " : " + theRequest.title);
+	    indexMEDLINE(threadConn, indexWriter, facetFields, "MEDLINE", "medline", theRequest.pmid, theRequest.title);
 	}
 
 	taxoWriter.close();
@@ -376,9 +392,13 @@ public class FacetIndexer implements Runnable {
 
 	    logger.trace("article: " + pmid + "\t" + title);
 
-	    paths.add(new CategoryPath("Source/"+source, '/'));
+	    if (urlLabel.equals("pub uri"))
+		    paths.add(new CategoryPath("Publication Source/"+source, '/'));
+	    else
+		    paths.add(new CategoryPath("Source/"+source, '/'));
 	    
 	    theDocument.add(new Field("source", source, Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    theDocument.add(new Field("pub source", source, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    theDocument.add(new Field(urlLabel, "https://www.ncbi.nlm.nih.gov/pubmed/" + pmid, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    theDocument.add(new Field("pub id", pmid + "", Field.Store.YES, Field.Index.NOT_ANALYZED));
 
@@ -781,7 +801,7 @@ public class FacetIndexer implements Runnable {
 	    ResultSet subrs = substmt.executeQuery();
 	    while (subrs.next()) {
 		String inclusion_criteria = subrs.getString(1);
-		String exclusion_criteria = subrs.getString(1);
+		String exclusion_criteria = subrs.getString(2);
 		if (inclusion_criteria != null) {
 		    theDocument.add(new Field("content", inclusion_criteria + " ", Field.Store.NO, Field.Index.ANALYZED));
 		}
@@ -883,7 +903,7 @@ public class FacetIndexer implements Runnable {
 
     @SuppressWarnings("deprecation")
     static void indexICTRPTrial(String ID, Document theDocument, List<CategoryPath> paths, String urlLabel) throws SQLException, IOException {
-	PreparedStatement stmt = wintermuteConn.prepareStatement("select public_title,scientific_title,web_address,study_type,study_design,phase,countries,contact_firstname,contact_affiliation,inclusion_criteria,exclusion_criteria,condition,intervention,primary_outcome,recruitment_status from who_ictrp.who where trialid = ?");
+	PreparedStatement stmt = wintermuteConn.prepareStatement("select public_title,scientific_title,web_address,study_type,study_design,phase,countries,contact_firstname,contact_affiliation,inclusion_criteria,exclusion_criteria,condition,intervention,primary_outcome,recruitment_status,source_register from who_ictrp.who where trialid = ?");
 	stmt.setString(1, ID);
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
@@ -902,11 +922,12 @@ public class FacetIndexer implements Runnable {
 	    String intervention = rs.getString(13);
 	    String primary_outcome = rs.getString(14);
 	    String recruitment_status = rs.getString(15);
+	    String source_register = rs.getString(16);
 	    
 	    logger.debug("trial: " + ID + "\t" + public_title);
 
-	    theDocument.add(new Field("source", "WHO ICTRP", Field.Store.YES, Field.Index.NOT_ANALYZED));
-	    paths.add(new CategoryPath("Source/WHO ICTRP",'/'));
+	    theDocument.add(new Field("source", source_register, Field.Store.YES, Field.Index.NOT_ANALYZED));
+	    paths.add(new CategoryPath("Trial Source/"+source_register,'/'));
 
 	    theDocument.add(new Field(urlLabel, url, Field.Store.YES, Field.Index.NOT_ANALYZED));
 	    theDocument.add(new Field("content", ID + " ", Field.Store.NO, Field.Index.ANALYZED));
@@ -976,6 +997,20 @@ public class FacetIndexer implements Runnable {
 		}
 	    }
 
+	    PreparedStatement substmt = wintermuteConn.prepareStatement("select intervention_type,intervention_name from clinical_trials.intervention natural join clinical_trials.study where nct_id = ?");
+	    substmt.setString(1, ID);
+	    ResultSet subrs = substmt.executeQuery();
+	    while (subrs.next()) {
+		String intervention_type = subrs.getString(1);
+		String intervention_name = subrs.getString(2);
+		logger.info(ID + ": " + intervention_type + " : " + intervention_name);
+		try {
+		    paths.add(new CategoryPath("Intervention/"+intervention_type+"/"+intervention_name, '/'));
+		} catch (Exception e) {
+		    logger.error("error adding intervention facet", e);
+		}
+	    }
+	    substmt.close();
 	}
 	stmt.close();
     }
@@ -1024,7 +1059,6 @@ public class FacetIndexer implements Runnable {
 		indexChiCTRTrial(ID, theDocument, paths, "trial uri");
 	    } else if (whoPreprintEmailCache.containsKey(ID) || whoPreprintIDCache.containsKey(ID)) {
 		theDocument.add(new Field("trial source", "WHO ICTRP", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		paths.add(new CategoryPath("Trial Source/WHO ICTRP",'/'));
 		indexICTRPTrial(ID, theDocument, paths, "trial uri");
 	    } else {
 		theDocument.add(new Field("trial source", "Unknown", Field.Store.YES, Field.Index.NOT_ANALYZED));
@@ -1058,7 +1092,6 @@ public class FacetIndexer implements Runnable {
 		indexChiCTRTrial(ID, theDocument, paths, "trial uri");
 	    } else if (whoPubEmailCache.containsKey(ID) || whoPubIDCache.containsKey(ID)) {
 		theDocument.add(new Field("trial source", "WHO ICTRP", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		paths.add(new CategoryPath("Trial Source/WHO ICTRP",'/'));
 		indexICTRPTrial(ID, theDocument, paths, "trial uri");
 	    } else {
 		theDocument.add(new Field("trial source", "Unknown", Field.Store.YES, Field.Index.NOT_ANALYZED));
