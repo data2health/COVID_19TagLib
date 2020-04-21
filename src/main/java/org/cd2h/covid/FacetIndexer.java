@@ -269,7 +269,7 @@ public class FacetIndexer implements Runnable {
 	stmt.close();
 	logger.info("\tpublications queued: " + count);
 
-	int maxCrawlerThreads = Runtime.getRuntime().availableProcessors() / 2;
+	int maxCrawlerThreads = Runtime.getRuntime().availableProcessors();
 	Thread[] scannerThreads = new Thread[maxCrawlerThreads];
 	String[] fileNames = new String[maxCrawlerThreads];
 	
