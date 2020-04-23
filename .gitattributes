@@ -18,6 +18,7 @@ src/main/java/org/cd2h/covid/ZoteroLoader.java -text
 src/main/resources/META-INF/taglib.tld -text svneol=unset#application/xml
 src/non-packaged-resources/Model.clay -text svneol=unset#application/xml
 src/non-packaged-resources/chictr_views.sql -text
+src/non-packaged-resources/crossref_views.sql -text
 src/non-packaged-resources/views.sql -text
 src/test/java/org/cd2h/covid/README.txt -text
 src/test/resources/README.txt -text

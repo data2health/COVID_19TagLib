@@ -18,9 +18,15 @@
         <name>www-test.icts.uiowa.edu-releases</name>
         <url>https://www-test.icts.uiowa.edu/artifactory/libs-release-local</url>
     </repository>
+
 </distributionManagement>
   
   <dependencies>
+<repository>
+	<id>icm</id>
+	<name>ICM repository</name>
+	<url>http://maven.icm.edu.pl/artifactory/repo</url>
+</repository>
   	<dependency>
   		<groupId>javax.servlet</groupId>
   		<artifactId>jsp-api</artifactId>

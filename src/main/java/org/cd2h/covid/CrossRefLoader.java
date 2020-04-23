@@ -34,36 +34,61 @@ public class CrossRefLoader {
 	PropertyConfigurator.configure("/Users/eichmann/Documents/Components/log4j.info");
 	initialize();
 
-	scan_crossref();
+	scan_biorxiv();
+	scan_litcovid();
     }
 
-    static public void scan_crossref() throws SQLException, IOException, SAXException, TikaException {
+    static public void scan_biorxiv() throws SQLException, IOException, SAXException, TikaException {
 	logger.info("");
-	logger.info("Extracting text from PDF...");
+	logger.info("scanning bioRxiv...");
 	logger.info("");
 	PreparedStatement fetchStmt = conn.prepareStatement(
-		"select doi from covid_biorxiv.biorxiv_current where doi not in (select doi from covid_biorxiv.raw_crossref)");
+		"select distinct doi from covid_biorxiv.biorxiv_current where doi not in (select doi from covid_crossref.raw_crossref) and doi not in (select doi from covid_crossref.raw_suppress)");
 	ResultSet rs = fetchStmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
+	    fetchCrossRef(doi);
+	}
+    }
+    
+    static public void scan_litcovid() throws SQLException, IOException, SAXException, TikaException {
+	logger.info("");
+	logger.info("scanning LitCOVID...");
+	logger.info("");
+	PreparedStatement fetchStmt = conn.prepareStatement(
+		"select distinct e_location_id from covid_litcovid.e_location_id where e_id_type ='doi' and e_location_id not in (select doi from covid_crossref.raw_crossref) and e_location_id not in (select doi from covid_crossref.raw_suppress)");
+	ResultSet rs = fetchStmt.executeQuery();
+	while (rs.next()) {
+	    String doi = rs.getString(1);
+	    fetchCrossRef(doi);
+	}
+    }
+    
+    static void fetchCrossRef(String doi) {
 	    logger.info("DOI: " + doi);
+	try {
+	    URL theURL = new URL("https://api.crossref.org/v1/works/" + doi);
+	    BufferedReader reader = new BufferedReader(new InputStreamReader(theURL.openConnection().getInputStream()));
 
+	    JSONObject results = new JSONObject(new JSONTokener(reader));
+	    // JSONArray resultArray = results.getJSONArray("rels");
+	    logger.info("results: " + results.toString(3));
+	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_crossref.raw_crossref values (?,?::jsonb)");
+	    citeStmt.setString(1, doi);
+	    citeStmt.setString(2, results.toString(3));
+	    citeStmt.executeUpdate();
+	    citeStmt.close();
+	} catch (Exception e) {
+	    logger.error("Exception raised: " + e);
+	    PreparedStatement citeStmt;
 	    try {
-		URL theURL = new URL("https://api.crossref.org/v1/works/" + doi);
-		BufferedReader reader = new BufferedReader(new InputStreamReader(theURL.openConnection().getInputStream()));
-
-		JSONObject results = new JSONObject(new JSONTokener(reader));
-		// JSONArray resultArray = results.getJSONArray("rels");
-		logger.info("results: " + results.toString(3));
-		PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.raw_crossref values (?,?::jsonb)");
+		citeStmt = conn.prepareStatement("insert into covid_crossref.raw_suppress values (?)");
 		citeStmt.setString(1, doi);
-		citeStmt.setString(2, results.toString(3));
 		citeStmt.executeUpdate();
 		citeStmt.close();
-	    } catch (Exception e) {
-		logger.error("Exception raised: " + e);
+	    } catch (SQLException e1) {
+		logger.error("Exception raised: " + e1);
 	    }
-
 	}
     }
 
