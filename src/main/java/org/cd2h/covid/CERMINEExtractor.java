@@ -20,9 +20,13 @@ import org.jdom.Element;
 
 import edu.uiowa.slis.GitHubTagLib.util.LocalProperties;
 import edu.uiowa.slis.GitHubTagLib.util.PropertyLoader;
+import pl.edu.icm.cermine.ComponentConfiguration;
 import pl.edu.icm.cermine.ContentExtractor;
+import pl.edu.icm.cermine.configuration.ExtractionConfigProperty;
+import pl.edu.icm.cermine.configuration.ExtractionConfigRegister;
 import pl.edu.icm.cermine.exception.AnalysisException;
 import pl.edu.icm.cermine.exception.TransformationException;
+import pl.edu.icm.cermine.structure.ITextCharacterExtractor;
 import pl.edu.icm.cermine.structure.model.BxChunk;
 import pl.edu.icm.cermine.structure.model.BxDocument;
 import pl.edu.icm.cermine.structure.model.BxImage;
@@ -43,11 +47,11 @@ public class CERMINEExtractor {
 	System.setProperty("java.awt.headless", "true");
 	PropertyConfigurator.configure("/Users/eichmann/Documents/Components/log4j.info");
 	
-	test4();
+	test4("2020.04.21.054221v1.full.pdf");
     }
     
     static void test1() throws AnalysisException, IOException {
-	ContentExtractor extractor = new ContentExtractor();
+        ContentExtractor extractor = getContentExtractor();
 	InputStream inputStream = new FileInputStream(filePrefix+"2020.04.21.042911v1.full.pdf");
 	extractor.setPDF(inputStream);
 	Element result = extractor.getContentAsNLM();
@@ -85,7 +89,7 @@ public class CERMINEExtractor {
         }
     }
 
-    static void test3() throws AnalysisException, IOException, TransformationException {
+    static void test3(String fileName) throws AnalysisException, IOException, TransformationException {
 	double headerLimit = 15.00;
 	double counterLimit = 67.00;
 	
@@ -94,8 +98,8 @@ public class CERMINEExtractor {
 //        Reader r = new InputStreamReader(is, "UTF-8");
 //        BxDocument bxDoc = new BxDocument().setPages(reader.read(r));
 
-        ContentExtractor extractor = new ContentExtractor();
-	InputStream inputStream = new FileInputStream("/Users/eichmann/downloads/test/2020.04.21.054221v1.full.pdf");
+        ContentExtractor extractor = getContentExtractor();
+	InputStream inputStream = new FileInputStream("/Users/eichmann/downloads/test/"+fileName);
 	extractor.setPDF(inputStream);
 	BxDocument bxDoc = extractor.getBxDocument();
 
@@ -107,15 +111,15 @@ public class CERMINEExtractor {
             for (int i = 0; i < page.childrenCount(); i++) {
         	BxZone zone = page.getChild(i);
                 logger.info("\tzone: [" + String.format("%6.2f %6.2f %4.2f %6.2f", zone.getX(),zone.getY(),zone.getHeight(),zone.getWidth()) + "] " + zone.getId() + " : " + zone.getLabel());
-//                for (int j = 0; j < zone.childrenCount(); j++) {
-//                    BxLine line = zone.getChild(j);
-//                    logger.info("\t\tline: [" + String.format("%6.2f %6.2f %4.2f %6.2f", line.getX(),line.getY(),line.getHeight(),line.getWidth()) + "] " + line.toText() + "\t" + line.getMostPopularFontName());
-//                }
+                for (int j = 0; j < zone.childrenCount(); j++) {
+                    BxLine line = zone.getChild(j);
+                    logger.info("\t\tline: [" + String.format("%6.2f %6.2f %4.2f %6.2f", line.getX(),line.getY(),line.getHeight(),line.getWidth()) + "] " + line.toText() + "\t" + line.getMostPopularFontName());
+                }
             }
         }
     }
 
-    static void test4() throws AnalysisException, IOException, TransformationException {
+    static void test4(String fileName) throws AnalysisException, IOException, TransformationException {
 	double headerLimit = 15.00;
 	double counterLimit = 67.00;
 	
@@ -124,8 +128,8 @@ public class CERMINEExtractor {
 //        Reader r = new InputStreamReader(is, "UTF-8");
 //        BxDocument bxDoc = new BxDocument().setPages(reader.read(r));
 
-        ContentExtractor extractor = new ContentExtractor();
-	InputStream inputStream = new FileInputStream("/Users/eichmann/downloads/test/2020.04.21.054221v1.full.pdf");
+        ContentExtractor extractor = getContentExtractor();
+ 	InputStream inputStream = new FileInputStream("/Users/eichmann/downloads/test/"+fileName);
 	extractor.setPDF(inputStream);
 
         for (BxImage image : (List<BxImage>)extractor.getImages("")) {
@@ -133,8 +137,12 @@ public class CERMINEExtractor {
         }
 	BxDocument bxDoc = extractor.getBxDocument();
 	logger.info("# pages: " + bxDoc.childrenCount());
+	documentStats(bxDoc);
         for (BxPage page : bxDoc.asPages()) {
             logger.info("page: [" + String.format("%6.2f %6.2f %4.2f %6.2f", page.getX(),page.getY(),page.getHeight(),page.getWidth()) + "] " + page.getId());
+            for (BxImage image : page.getImages()) {
+                logger.info("\timage: [" + String.format("%6.2f %6.2f", image.getX(),image.getY()) + "] " + image.getFilename() + " : " + image.getPath());
+            }
             for (int i = 0; i < page.childrenCount(); i++) {
         	BxZone zone = page.getChild(i);
                 logger.info("\tzone: [" + String.format("%6.2f %6.2f %4.2f %6.2f", zone.getX(),zone.getY(),zone.getHeight(),zone.getWidth()) + "] " + zone.getId() + " : " + zone.getLabel());
@@ -153,6 +161,59 @@ public class CERMINEExtractor {
 	prop_file = PropertyLoader.loadProperties("zotero");
 
 	conn = getConnection();
+    }
+    
+    public static ContentExtractor getContentExtractor() throws AnalysisException {
+	// ITextCharacterExtractor.java logic to skip images
+//        if (!ExtractionConfigRegister.get().getBooleanProperty(ExtractionConfigProperty.IMAGES_EXTRACTION)) {
+//            return;
+//        }
+
+	logger.info("property: " + ExtractionConfigProperty.IMAGES_EXTRACTION + " : " + ExtractionConfigRegister.get().getBooleanProperty(ExtractionConfigProperty.IMAGES_EXTRACTION));
+	ComponentConfiguration config = new ComponentConfiguration();
+	ITextCharacterExtractor charExtractor = new ITextCharacterExtractor();
+	charExtractor.setPagesLimits(1000, 1000);
+	config.setCharacterExtractor(charExtractor);
+        ContentExtractor extractor = new ContentExtractor();
+        extractor.setConf(config);
+        
+        return extractor;
+    }
+    
+    public static void documentStats(BxDocument bxDoc) {
+	int[] horzizontalFrequencies = new int[1000];
+	int[] widthFrequencies = new int[1000];
+	
+        for (BxPage page : bxDoc.asPages()) {
+            for (int i = 0; i < page.childrenCount(); i++) {
+        	BxZone zone = page.getChild(i);
+                for (int j = 0; j < zone.childrenCount(); j++) {
+                    BxLine line = zone.getChild(j);
+                    horzizontalFrequencies[(int)line.getX()]++;
+                }
+            }
+        }
+        for (int i = 0; i < 1000; i++) {
+            if (horzizontalFrequencies[i] == 0)
+        	continue;
+            logger.info("horz[" + i + "] : " + horzizontalFrequencies[i]);
+        }
+        for (BxPage page : bxDoc.asPages()) {
+            for (int i = 0; i < page.childrenCount(); i++) {
+        	BxZone zone = page.getChild(i);
+                for (int j = 0; j < zone.childrenCount(); j++) {
+                    BxLine line = zone.getChild(j);
+                    if (((int)line.getX()) > 100  || ((int)line.getWidth()) > 25)
+                	continue;
+                    widthFrequencies[(int)line.getWidth()]++;
+                }
+            }
+        }
+        for (int i = 0; i < 1000; i++) {
+            if (widthFrequencies[i] == 0)
+        	continue;
+            logger.info("width[" + i + "] : " + widthFrequencies[i]);
+        }
     }
 
     public static Connection getConnection() throws SQLException, ClassNotFoundException {
