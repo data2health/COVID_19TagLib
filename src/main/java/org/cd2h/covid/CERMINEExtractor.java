@@ -42,6 +42,9 @@ public class CERMINEExtractor {
     protected static LocalProperties prop_file = null;
     static Connection conn = null;
     static String filePrefix = "/Volumes/Pegasus0/COVID/";
+    
+    static int widthCutoff = 0;
+    static int xCutoff = 0;
 
     public static void main(String[] args) throws Exception {
 	System.setProperty("java.awt.headless", "true");
@@ -145,6 +148,8 @@ public class CERMINEExtractor {
             }
             for (int i = 0; i < page.childrenCount(); i++) {
         	BxZone zone = page.getChild(i);
+                if (zone.getY() < 15.00 || (((int)zone.getX()) < xCutoff && ((int)zone.getWidth()) < widthCutoff))
+                    continue;
                 logger.info("\tzone: [" + String.format("%6.2f %6.2f %4.2f %6.2f", zone.getX(),zone.getY(),zone.getHeight(),zone.getWidth()) + "] " + zone.getId() + " : " + zone.getLabel());
                 for (int j = 0; j < zone.childrenCount(); j++) {
                     BxLine line = zone.getChild(j);
@@ -183,12 +188,44 @@ public class CERMINEExtractor {
     public static void documentStats(BxDocument bxDoc) {
 	int[] horzizontalFrequencies = new int[1000];
 	int[] widthFrequencies = new int[1000];
+	int lineCount = 0;
+	int widthCum = 0;
+	int heightCum = 0;
+	
+	int cutoffIndex = -1;
 	
         for (BxPage page : bxDoc.asPages()) {
             for (int i = 0; i < page.childrenCount(); i++) {
         	BxZone zone = page.getChild(i);
                 for (int j = 0; j < zone.childrenCount(); j++) {
                     BxLine line = zone.getChild(j);
+                    if (line.getY() < 15.00)
+                	continue;
+                    lineCount++;
+                    widthFrequencies[(int)line.getWidth()]++;
+                }
+            }
+        }
+        logger.info("line count: " + lineCount);
+        for (int i = 0; i < 1000; i++) {
+            if (widthFrequencies[i] < 10)
+        	continue;
+            widthCum += widthFrequencies[i];
+            if (widthCum < lineCount / 2)
+        	widthCutoff = i + 5;
+            logger.info("width[" + i + "] : " + widthFrequencies[i] + " : " + widthCum);
+        }
+        logger.info("widthCutoff: " + widthCutoff);
+
+        for (BxPage page : bxDoc.asPages()) {
+            for (int i = 0; i < page.childrenCount(); i++) {
+        	BxZone zone = page.getChild(i);
+                for (int j = 0; j < zone.childrenCount(); j++) {
+                    BxLine line = zone.getChild(j);
+                    if (line.getY() < 15.00)
+                	continue;
+                    if (((int)line.getWidth()) > widthCutoff)
+                	continue;
                     horzizontalFrequencies[(int)line.getX()]++;
                 }
             }
@@ -196,24 +233,13 @@ public class CERMINEExtractor {
         for (int i = 0; i < 1000; i++) {
             if (horzizontalFrequencies[i] == 0)
         	continue;
-            logger.info("horz[" + i + "] : " + horzizontalFrequencies[i]);
-        }
-        for (BxPage page : bxDoc.asPages()) {
-            for (int i = 0; i < page.childrenCount(); i++) {
-        	BxZone zone = page.getChild(i);
-                for (int j = 0; j < zone.childrenCount(); j++) {
-                    BxLine line = zone.getChild(j);
-                    if (((int)line.getX()) > 100  || ((int)line.getWidth()) > 25)
-                	continue;
-                    widthFrequencies[(int)line.getWidth()]++;
-                }
-            }
-        }
-        for (int i = 0; i < 1000; i++) {
-            if (widthFrequencies[i] == 0)
+            heightCum += horzizontalFrequencies[i];
+            if (heightCum > lineCount / 2)
         	continue;
-            logger.info("width[" + i + "] : " + widthFrequencies[i]);
+            xCutoff = i;
+            logger.info("horz[" + i + "] : " + horzizontalFrequencies[i] + " : " + heightCum);
         }
+        logger.info("xCutoff: " + xCutoff);
     }
 
     public static Connection getConnection() throws SQLException, ClassNotFoundException {
