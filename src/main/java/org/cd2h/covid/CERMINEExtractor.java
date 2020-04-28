@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -43,14 +44,15 @@ public class CERMINEExtractor {
     static Connection conn = null;
     static String filePrefix = "/Volumes/Pegasus0/COVID/";
     
+    static boolean hasLineNumbers = false;
     static int widthCutoff = 0;
     static int xCutoff = 0;
 
     public static void main(String[] args) throws Exception {
 	System.setProperty("java.awt.headless", "true");
-	PropertyConfigurator.configure("/Users/eichmann/Documents/Components/log4j.info");
+	PropertyConfigurator.configure(args[0]);
 	
-	test4("2020.04.21.054221v1.full.pdf");
+	test4(args[1]);
     }
     
     static void test1() throws AnalysisException, IOException {
@@ -148,7 +150,7 @@ public class CERMINEExtractor {
             }
             for (int i = 0; i < page.childrenCount(); i++) {
         	BxZone zone = page.getChild(i);
-                if (zone.getY() < 15.00 || (((int)zone.getX()) < xCutoff && ((int)zone.getWidth()) < widthCutoff))
+                if (zone.getY() < 15.00 || (hasLineNumbers && ((int)zone.getX()) < xCutoff && ((int)zone.getWidth()) < widthCutoff))
                     continue;
                 logger.info("\tzone: [" + String.format("%6.2f %6.2f %4.2f %6.2f", zone.getX(),zone.getY(),zone.getHeight(),zone.getWidth()) + "] " + zone.getId() + " : " + zone.getLabel());
                 for (int j = 0; j < zone.childrenCount(); j++) {
@@ -185,7 +187,66 @@ public class CERMINEExtractor {
         return extractor;
     }
     
+    public static boolean patternCheck(int width, BxDocument bxDoc) {
+        for (BxPage page : bxDoc.asPages()) {
+            for (int i = 0; i < page.childrenCount(); i++) {
+        	BxZone zone = page.getChild(i);
+                for (int j = 0; j < zone.childrenCount(); j++) {
+                    BxLine line = zone.getChild(j);
+                    if ((int)line.getWidth() != width)
+                	continue;
+                    logger.info("\tline: " + line.toText());
+                    if (!line.toText().trim().matches("[0-9][0-9]*"))
+                	return false;
+                }
+            }
+        }
+	return true;
+    }
+    
     public static void documentStats(BxDocument bxDoc) {
+	int[] horzizontalFrequencies = new int[1000];
+	int[] widthFrequencies = new int[1000];
+	int lineCount = 0;
+	int widthCum = 0;
+	int heightCum = 0;
+
+        for (BxPage page : bxDoc.asPages()) {
+            for (int i = 0; i < page.childrenCount(); i++) {
+        	BxZone zone = page.getChild(i);
+                for (int j = 0; j < zone.childrenCount(); j++) {
+                    BxLine line = zone.getChild(j);
+                    lineCount++;
+                    if (!line.toText().trim().matches("[0-9][0-9]*"))
+                	continue;
+                    widthFrequencies[(int)line.getWidth()]++;
+                    horzizontalFrequencies[(int)line.getX()]++;
+               }
+            }
+        }
+        logger.info("line count: " + lineCount);
+        for (int i = 0; i < 1000; i++) {
+            if (widthFrequencies[i] < 10)
+        	continue;
+            widthCum += widthFrequencies[i];
+            if (widthCum < lineCount / 2)
+        	widthCutoff = i + 5;
+            logger.info("width[" + i + "] : " + widthFrequencies[i] + " : " + widthCum);
+        }
+        logger.info("widthCutoff: " + widthCutoff);
+        for (int i = 0; i < 1000; i++) {
+            if (horzizontalFrequencies[i] < 10)
+        	continue;
+            heightCum += horzizontalFrequencies[i];
+            if (heightCum > lineCount / 2)
+        	continue;
+            xCutoff = i;
+            logger.info("horz[" + i + "] : " + horzizontalFrequencies[i] + " : " + heightCum);
+        }
+        logger.info("xCutoff: " + xCutoff);
+    }
+    
+    public static void documentStats2(BxDocument bxDoc) {
 	int[] horzizontalFrequencies = new int[1000];
 	int[] widthFrequencies = new int[1000];
 	int lineCount = 0;
@@ -210,6 +271,9 @@ public class CERMINEExtractor {
         for (int i = 0; i < 1000; i++) {
             if (widthFrequencies[i] < 10)
         	continue;
+            if (patternCheck(i,bxDoc)) {
+        	logger.info("numeric zone: " + i);
+            }
             widthCum += widthFrequencies[i];
             if (widthCum < lineCount / 2)
         	widthCutoff = i + 5;
@@ -240,6 +304,8 @@ public class CERMINEExtractor {
             logger.info("horz[" + i + "] : " + horzizontalFrequencies[i] + " : " + heightCum);
         }
         logger.info("xCutoff: " + xCutoff);
+        hasLineNumbers = widthCutoff < 66;
+        logger.info("hasLineNumbers: " + hasLineNumbers);
     }
 
     public static Connection getConnection() throws SQLException, ClassNotFoundException {
