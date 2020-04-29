@@ -14,6 +14,7 @@ src/main/java/org/cd2h/covid/ChiCTRLoader.java -text
 src/main/java/org/cd2h/covid/CrossRefLoader.java -text
 src/main/java/org/cd2h/covid/EudraCTLoader.java -text
 src/main/java/org/cd2h/covid/FacetIndexer.java -text
+src/main/java/org/cd2h/covid/LineComparator.java -text
 src/main/java/org/cd2h/covid/LitCOVIDLoader.java -text
 src/main/java/org/cd2h/covid/ZoteroLoader.java -text
 src/main/resources/META-INF/taglib.tld -text svneol=unset#application/xml

@@ -11,8 +11,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
@@ -144,23 +147,34 @@ public class CERMINEExtractor {
 	logger.info("# pages: " + bxDoc.childrenCount());
 	documentStats(bxDoc);
         for (BxPage page : bxDoc.asPages()) {
+            Vector<BxLine> lines = new Vector<BxLine>();
             logger.info("page: [" + String.format("%6.2f %6.2f %4.2f %6.2f", page.getX(),page.getY(),page.getHeight(),page.getWidth()) + "] " + page.getId());
             for (BxImage image : page.getImages()) {
                 logger.info("\timage: [" + String.format("%6.2f %6.2f", image.getX(),image.getY()) + "] " + image.getFilename() + " : " + image.getPath());
             }
             for (int i = 0; i < page.childrenCount(); i++) {
         	BxZone zone = page.getChild(i);
-                if (zone.getY() < 15.00 || (hasLineNumbers && ((int)zone.getX()) < xCutoff && ((int)zone.getWidth()) < widthCutoff))
+                if (zone.getY() < 15.00 || (hasLineNumbers && ((int)zone.getX()) <= xCutoff && ((int)zone.getWidth()) <= widthCutoff))
                     continue;
                 logger.info("\tzone: [" + String.format("%6.2f %6.2f %4.2f %6.2f", zone.getX(),zone.getY(),zone.getHeight(),zone.getWidth()) + "] " + zone.getId() + " : " + zone.getLabel());
                 for (int j = 0; j < zone.childrenCount(); j++) {
                     BxLine line = zone.getChild(j);
+                    lines.add(line);
                     logger.info("\t\tline: [" + String.format("%6.2f %6.2f %4.2f %6.2f", line.getX(),line.getY(),line.getHeight(),line.getWidth()) + "] " + line.toText() + "\t" + line.getMostPopularFontName());
                 }
             }
+            sortLines(lines);
         }
 	for (BxImage image : bxDoc.asImages()) {
 	    logger.info("\timage: [" + String.format("%6.2f %6.2f", image.getX(), image.getY()) + "] " + image.getFilename() + " : " + image.getPath());
+	}
+    }
+    
+    static void sortLines(Vector<BxLine> lines) {
+	Comparator comparator = new LineComparator();
+	Collections.sort(lines, comparator);
+	for (BxLine line : lines) {
+            logger.info("\t\tsorted line: [" + String.format("%6.2f %6.2f %4.2f %6.2f", line.getX(),line.getY(),line.getHeight(),line.getWidth()) + "] " + line.toText() + "\t" + line.getMostPopularFontName());
 	}
     }
 
@@ -209,7 +223,7 @@ public class CERMINEExtractor {
 	int[] widthFrequencies = new int[1000];
 	int lineCount = 0;
 	int widthCum = 0;
-	int heightCum = 0;
+	int horzCum = 0;
 
         for (BxPage page : bxDoc.asPages()) {
             for (int i = 0; i < page.childrenCount(); i++) {
@@ -217,8 +231,9 @@ public class CERMINEExtractor {
                 for (int j = 0; j < zone.childrenCount(); j++) {
                     BxLine line = zone.getChild(j);
                     lineCount++;
-                    if (!line.toText().trim().matches("[0-9][0-9]*"))
+                    if (line.getX() > 100.00 || !line.toText().trim().matches("[0-9][0-9]*"))
                 	continue;
+                    logger.trace("\tline: " + line.toText());
                     widthFrequencies[(int)line.getWidth()]++;
                     horzizontalFrequencies[(int)line.getX()]++;
                }
@@ -226,24 +241,22 @@ public class CERMINEExtractor {
         }
         logger.info("line count: " + lineCount);
         for (int i = 0; i < 1000; i++) {
-            if (widthFrequencies[i] < 10)
+            if (widthFrequencies[i] < 9)
         	continue;
             widthCum += widthFrequencies[i];
-            if (widthCum < lineCount / 2)
-        	widthCutoff = i + 5;
+            widthCutoff = i;
             logger.info("width[" + i + "] : " + widthFrequencies[i] + " : " + widthCum);
         }
         logger.info("widthCutoff: " + widthCutoff);
         for (int i = 0; i < 1000; i++) {
-            if (horzizontalFrequencies[i] < 10)
+            if (horzizontalFrequencies[i] < 9)
         	continue;
-            heightCum += horzizontalFrequencies[i];
-            if (heightCum > lineCount / 2)
-        	continue;
+            horzCum += horzizontalFrequencies[i];
             xCutoff = i;
-            logger.info("horz[" + i + "] : " + horzizontalFrequencies[i] + " : " + heightCum);
+            logger.info("horz[" + i + "] : " + horzizontalFrequencies[i] + " : " + horzCum);
         }
         logger.info("xCutoff: " + xCutoff);
+        hasLineNumbers = widthCutoff > 0 && xCutoff > 0;
     }
     
     public static void documentStats2(BxDocument bxDoc) {
