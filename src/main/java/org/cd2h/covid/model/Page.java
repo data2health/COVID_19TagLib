@@ -10,12 +10,14 @@ public class Page {
     static Logger logger = Logger.getLogger(Page.class);
     BxPage internalPage = null;
     int pageNumber = 0;
+    String mostPopularFont = null;
     Vector<Line> lines = new Vector<Line>();
     int[] lineSpacing = null;
     
     public Page(BxPage page) {
 	this.internalPage = page;
 	pageNumber = Integer.parseInt(page.getId());
+	mostPopularFont = page.getMostPopularFontName();
     }
     
     public void addLines(Vector<Line> lines) {
@@ -24,6 +26,8 @@ public class Page {
     
     public void addLine(Line line) {
 	lines.add(line);
+	if (lines.size() > 1)
+	    line.spacing = (int)line.y - (int)lines.elementAt(lines.size()-2).y;
     }
     
     public void addLineSpacing(int[] lineSpacing) {
@@ -31,7 +35,7 @@ public class Page {
     }
     
     public void dump() {
-	logger.info("\tpage: " + pageNumber);
+	logger.info("\tpage: " + pageNumber + ", font: " + mostPopularFont);
 	for (Line line : lines) {
 	    line.dump();
 	}

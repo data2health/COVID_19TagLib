@@ -3,12 +3,14 @@ package org.cd2h.covid.model;
 import java.util.Vector;
 
 import org.apache.log4j.Logger;
+import org.cd2h.covid.detectors.SectionDetector;
 
 public class Document {
     static Logger logger = Logger.getLogger(Document.class);
     String doi = null;
     String fileName = null;
     Vector<Page> pages = new Vector<Page>();
+    Vector<Section> sections = new Vector<Section>();
     
     public Document(String doi, String fileName) {
 	this.doi = doi;
@@ -35,10 +37,31 @@ public class Document {
 	pages.add(page);
     }
     
-    public void dump() {
-	logger.info("Document: " + doi + " : " + fileName);
+    public void section() {
+	SectionDetector detector = new SectionDetector();
+	Section current = new Section("Front Matter");
+	sections.add(current);
+	
 	for (Page page : pages) {
-	    page.dump();
+	    for (Line line : page.lines) {
+		if (detector.newSection(line)) {
+		    current = new Section(line);
+		    sections.add(current);
+		} else
+		    current.addLine(line);
+	    }
+	}
+    }
+    
+    public void dump() {
+	logger.info("Document: " + doi + " : " + fileName + " : " + pages.size() + " pages");
+	if (logger.isDebugEnabled()) {
+	    for (Page page : pages) {
+		page.dump();
+	    }
+	}
+	for (Section section : sections) {
+	    section.dump();
 	}
     }
 }

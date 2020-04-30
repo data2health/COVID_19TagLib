@@ -1,5 +1,6 @@
 package org.cd2h.covid;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,16 +62,33 @@ public class CERMINEExtractor {
 	prop_file = PropertyLoader.loadProperties("zotero");
 	conn = getConnection();
 	
+	if (args.length == 1) {
+	    // scan the download directory
+	    for (String file : (new File(filePrefix)).list()) {
+		if (!file.endsWith(".pdf"))
+		    continue;
+		logger.info("scanning " + file);
+		process(file);
+	    }
+	} else {
+//	    filePrefix = "/Users/eichmann/downloads/test/";
+	    process(args[1]);
+	}
+    }
+    
+    static void process(String fileName) throws SQLException, AnalysisException, IOException, TransformationException {
+	
 	Document doc = null;
 	
 	PreparedStatement stmt = conn.prepareStatement("select doi from covid_biorxiv.biorxiv_map where url ~ ?");
-	stmt.setString(1, args[1]);
+	stmt.setString(1, fileName);
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
-	    doc = new Document(rs.getString(1), args[1]);
+	    doc = new Document(rs.getString(1), fileName);
 	}
 	
 	acquireBxDocument(doc);
+	doc.section();
 	doc.dump();
     }
     
@@ -86,7 +104,7 @@ public class CERMINEExtractor {
 	double headerLimit = 15.00;
 	double counterLimit = 67.00;
 	
-        InputStream is = new FileInputStream("/Users/eichmann/downloads/test/2020.04.21.054221v1.full.cermstr");
+        InputStream is = new FileInputStream(filePrefix + "2020.04.21.054221v1.full.cermstr");
         TrueVizToBxDocumentReader reader = new TrueVizToBxDocumentReader();
         Reader r = new InputStreamReader(is, "UTF-8");
         BxDocument bxDoc = new BxDocument().setPages(reader.read(r));
@@ -117,7 +135,7 @@ public class CERMINEExtractor {
 //        BxDocument bxDoc = new BxDocument().setPages(reader.read(r));
 
         ContentExtractor extractor = getContentExtractor();
-	InputStream inputStream = new FileInputStream("/Users/eichmann/downloads/test/"+fileName);
+	InputStream inputStream = new FileInputStream(filePrefix + fileName);
 	extractor.setPDF(inputStream);
 	BxDocument bxDoc = extractor.getBxDocument();
 
@@ -144,38 +162,38 @@ public class CERMINEExtractor {
 //        BxDocument bxDoc = new BxDocument().setPages(reader.read(r));
 
         ContentExtractor extractor = getContentExtractor();
- 	InputStream inputStream = new FileInputStream("/Users/eichmann/downloads/test/"+doc.getFileName());
+ 	InputStream inputStream = new FileInputStream(filePrefix + doc.getFileName());
 	extractor.setPDF(inputStream);
 
         for (BxImage image : (List<BxImage>)extractor.getImages("")) {
-            logger.info("image: [" + String.format("%6.2f %6.2f", image.getX(),image.getY()) + "] " + image.getFilename() + " : " + image.toString());
+            logger.debug("image: [" + String.format("%6.2f %6.2f", image.getX(),image.getY()) + "] " + image.getFilename() + " : " + image.toString());
         }
 	BxDocument bxDoc = extractor.getBxDocument();
-	logger.info("# pages: " + bxDoc.childrenCount());
+	logger.debug("# pages: " + bxDoc.childrenCount());
 	documentStats(bxDoc);
         for (BxPage bxpage : bxDoc.asPages()) {
             Page page = new Page(bxpage);
             doc.addPage(page);
             Vector<BxLine> lines = new Vector<BxLine>();
-            logger.info("page: [" + String.format("%6.2f %6.2f %4.2f %6.2f", bxpage.getX(),bxpage.getY(),bxpage.getHeight(),bxpage.getWidth()) + "] " + bxpage.getId() + " : " + bxpage.getMostPopularFontName());
+            logger.debug("page: [" + String.format("%6.2f %6.2f %4.2f %6.2f", bxpage.getX(),bxpage.getY(),bxpage.getHeight(),bxpage.getWidth()) + "] " + bxpage.getId() + " : " + bxpage.getMostPopularFontName());
             for (BxImage image : bxpage.getImages()) {
-                logger.info("\timage: [" + String.format("%6.2f %6.2f", image.getX(),image.getY()) + "] " + image.getFilename() + " : " + image.getPath());
+                logger.debug("\timage: [" + String.format("%6.2f %6.2f", image.getX(),image.getY()) + "] " + image.getFilename() + " : " + image.getPath());
             }
             for (int i = 0; i < bxpage.childrenCount(); i++) {
         	BxZone zone = bxpage.getChild(i);
                 if (zone.getY() < 15.00 || (hasLineNumbers && ((int)zone.getX()) <= xCutoff && ((int)zone.getWidth()) <= widthCutoff) || (hasPageNumbers && (int)zone.getY() >= yCutoff))
                     continue;
-                logger.info("\tzone: [" + String.format("%6.2f %6.2f %4.2f %6.2f", zone.getX(),zone.getY(),zone.getHeight(),zone.getWidth()) + "] " + zone.getId() + " : " + zone.getLabel());
+                logger.debug("\tzone: [" + String.format("%6.2f %6.2f %4.2f %6.2f", zone.getX(),zone.getY(),zone.getHeight(),zone.getWidth()) + "] " + zone.getId() + " : " + zone.getLabel());
                 for (int j = 0; j < zone.childrenCount(); j++) {
                     BxLine line = zone.getChild(j);
                     lines.add(line);
-                    logger.info("\t\tline: [" + String.format("%6.2f %6.2f %4.2f %6.2f", line.getX(),line.getY(),line.getHeight(),line.getWidth()) + "] " + line.toText() + "\t" + line.getMostPopularFontName());
+                    logger.debug("\t\tline: [" + String.format("%6.2f %6.2f %4.2f %6.2f", line.getX(),line.getY(),line.getHeight(),line.getWidth()) + "] " + line.toText() + "\t" + line.getMostPopularFontName());
                 }
             }
             sortLines(page, lines);
         }
 	for (BxImage image : bxDoc.asImages()) {
-	    logger.info("\timage: [" + String.format("%6.2f %6.2f", image.getX(), image.getY()) + "] " + image.getFilename() + " : " + image.getPath());
+	    logger.debug("\timage: [" + String.format("%6.2f %6.2f", image.getX(), image.getY()) + "] " + image.getFilename() + " : " + image.getPath());
 	}
     }
     
@@ -184,20 +202,20 @@ public class CERMINEExtractor {
 	boolean updated = false;
 	Comparator<BxLine> comparator = new LineComparator();
 	Collections.sort(lines, comparator);
-	logger.info("");
+	logger.debug("");
 	int prevY = 0;
 	for (BxLine line : lines) {
 	    int currY = Math.max(0, (int)line.getY() - prevY);
-            logger.info("\tsorted line: [" + String.format("%6.2f %6.2f %4.2f %6.2f", line.getX(),line.getY(),line.getHeight(),line.getWidth()) + "] " + currY + " : " + line.toText() + "\t" + line.getMostPopularFontName());
+            logger.debug("\tsorted line: [" + String.format("%6.2f %6.2f %4.2f %6.2f", line.getX(),line.getY(),line.getHeight(),line.getWidth()) + "] " + currY + " : " + line.toText() + "\t" + line.getMostPopularFontName());
             if (prevY > 0)
         	lineSpacings[currY]++;
             prevY = (int)line.getY();
 	}
-	logger.info("");
+	logger.debug("");
 	for (int i = 0; i < lines.size() - 1; i++) {
 	    boolean continuation = false;
 	    while (i < lines.size() - 1 && Math.abs(lines.elementAt(i).getY() - lines.elementAt(i + 1).getY()) < 0.1) {
-		logger.info("continuation match line: [" + String.format("%6.2f %6.2f %4.2f %6.2f", lines.elementAt(i + 1).getX(), lines.elementAt(i + 1).getY(), lines.elementAt(i + 1).getHeight(), lines.elementAt(i + 1).getWidth()) + "] " + lines.elementAt(i + 1).toText());
+		logger.debug("continuation match line: [" + String.format("%6.2f %6.2f %4.2f %6.2f", lines.elementAt(i + 1).getX(), lines.elementAt(i + 1).getY(), lines.elementAt(i + 1).getHeight(), lines.elementAt(i + 1).getWidth()) + "] " + lines.elementAt(i + 1).toText());
 		for (int j = 0; j < lines.elementAt(i + 1).childrenCount(); j++) {
 		    lines.elementAt(i).addWord(lines.elementAt(i + 1).getChild(j));
 		}
@@ -206,25 +224,25 @@ public class CERMINEExtractor {
 		updated = true;
 	    }
             if (continuation)
-        	logger.info("\tupdated line: [" + String.format("%6.2f %6.2f %4.2f %6.2f", lines.elementAt(i).getX(),lines.elementAt(i).getY(),lines.elementAt(i).getHeight(),lines.elementAt(i).getWidth()) + "] " + lines.elementAt(i).toText());
+        	logger.debug("\tupdated line: [" + String.format("%6.2f %6.2f %4.2f %6.2f", lines.elementAt(i).getX(),lines.elementAt(i).getY(),lines.elementAt(i).getHeight(),lines.elementAt(i).getWidth()) + "] " + lines.elementAt(i).toText());
 	}
-	logger.info("");
+	logger.debug("");
 	if (updated) {
 	    lineSpacings = new int[1000];
 	    prevY = 0;
 	    for (BxLine line : lines) {
 		int currY = (int)line.getY() - prevY;
-		logger.info("\tsorted line: [" + String.format("%6.2f %6.2f %4.2f %6.2f", line.getX(), line.getY(), line.getHeight(), line.getWidth()) + "] " + currY + " : " + line.toText() + "\t" + line.getMostPopularFontName());
+		logger.debug("\tsorted line: [" + String.format("%6.2f %6.2f %4.2f %6.2f", line.getX(), line.getY(), line.getHeight(), line.getWidth()) + "] " + currY + " : " + line.toText() + "\t" + line.getMostPopularFontName());
 		if (prevY > 0)
 		    lineSpacings[currY]++;
 		prevY = (int)line.getY();
 	    }
-	    logger.info("");
+	    logger.debug("");
 	}
         for (int i = 0; i < 1000; i++) {
             if (lineSpacings[i] < 1)
         	continue;
-            logger.info("lineSpacings[" + i + "] : " + lineSpacings[i]);
+            logger.debug("lineSpacings[" + i + "] : " + lineSpacings[i]);
         }
         for (BxLine line : lines) {
             page.addLine(new Line(line));            
@@ -244,7 +262,7 @@ public class CERMINEExtractor {
 //            return;
 //        }
 
-	logger.info("property: " + ExtractionConfigProperty.IMAGES_EXTRACTION + " : " + ExtractionConfigRegister.get().getBooleanProperty(ExtractionConfigProperty.IMAGES_EXTRACTION));
+	logger.debug("property: " + ExtractionConfigProperty.IMAGES_EXTRACTION + " : " + ExtractionConfigRegister.get().getBooleanProperty(ExtractionConfigProperty.IMAGES_EXTRACTION));
 	ComponentConfiguration config = new ComponentConfiguration();
 	ITextCharacterExtractor charExtractor = new ITextCharacterExtractor();
 	charExtractor.setPagesLimits(1000, 1000);
@@ -279,14 +297,14 @@ public class CERMINEExtractor {
 	int widthCum = 0;
 	int horzCum = 0;
 	
-	BxPage secondPage = bxDoc.getChild(1);
+	BxPage secondPage = bxDoc.childrenCount() > 1 ? bxDoc.getChild(1) : bxDoc.getChild(0);
 	BxZone secondZone = secondPage.getChild(secondPage.childrenCount()-1);
 	String zoneText = secondZone.toText();
-	logger.info("page zone candidate: " + zoneText);
+	logger.debug("page zone candidate: " + zoneText);
 	hasPageNumbers = zoneText.length() < 50 && zoneText.endsWith("2");
 	if (hasPageNumbers)
 	    yCutoff = (int)secondZone.getY() - 1;
-	logger.info("hasPageNumbers: " + hasPageNumbers);
+	logger.debug("hasPageNumbers: " + hasPageNumbers);
 
         for (BxPage page : bxDoc.asPages()) {
             for (int i = 0; i < page.childrenCount(); i++) {
@@ -302,23 +320,23 @@ public class CERMINEExtractor {
                }
             }
         }
-        logger.info("line count: " + lineCount);
+        logger.debug("line count: " + lineCount);
         for (int i = 0; i < 1000; i++) {
             if (widthFrequencies[i] < 9)
         	continue;
             widthCum += widthFrequencies[i];
             widthCutoff = i;
-            logger.info("width[" + i + "] : " + widthFrequencies[i] + " : " + widthCum);
+            logger.debug("width[" + i + "] : " + widthFrequencies[i] + " : " + widthCum);
         }
-        logger.info("widthCutoff: " + widthCutoff);
+        logger.debug("widthCutoff: " + widthCutoff);
         for (int i = 0; i < 1000; i++) {
             if (horzizontalFrequencies[i] < 9)
         	continue;
             horzCum += horzizontalFrequencies[i];
             xCutoff = i;
-            logger.info("horz[" + i + "] : " + horzizontalFrequencies[i] + " : " + horzCum);
+            logger.debug("horz[" + i + "] : " + horzizontalFrequencies[i] + " : " + horzCum);
         }
-        logger.info("xCutoff: " + xCutoff);
+        logger.debug("xCutoff: " + xCutoff);
         hasLineNumbers = widthCutoff > 0 && xCutoff > 0;
     }
     
