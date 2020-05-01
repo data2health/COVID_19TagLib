@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import org.apache.log4j.Logger;
 import org.cd2h.covid.detectors.SectionDetector;
+import org.cd2h.covid.model.Section.Category;
 
 public class Document {
     static Logger logger = Logger.getLogger(Document.class);
@@ -11,6 +12,9 @@ public class Document {
     String fileName = null;
     Vector<Page> pages = new Vector<Page>();
     Vector<Section> sections = new Vector<Section>();
+    
+    Section frontMatter = null;
+    Section references = null;
     
     public Document(String doi, String fileName) {
 	this.doi = doi;
@@ -39,16 +43,38 @@ public class Document {
     
     public void section() {
 	SectionDetector detector = new SectionDetector();
-	Section current = new Section("Front Matter");
+	Section current = new Section(Category.FRONT, "Front Matter");
 	sections.add(current);
+	frontMatter = current;
 	
 	for (Page page : pages) {
 	    for (Line line : page.lines) {
-		if (detector.newSection(line)) {
-		    current = new Section(line);
+		Category result = detector.newSection(line);
+		if (result != null) {
+		    current = new Section(result, line);
 		    sections.add(current);
+		    if (result == Category.REFERENCES)
+			references = current;
 		} else
 		    current.addLine(line);
+	    }
+	}
+	
+	// now for each of the categories, further refine the structure
+	for (Section section : sections) {
+	    switch (section.category) {
+	    case FRONT:
+		break;
+	    case ABSTRACT:
+		break;
+	    case BODY:
+		break;
+	    case REFERENCES:
+		break;
+	    case MISC:
+		break;
+	    case SUPPLEMENTAL:
+		break;
 	    }
 	}
     }
