@@ -47,7 +47,7 @@ public class CERMINEExtractor {
     static Logger logger = Logger.getLogger(CERMINEExtractor.class);
     static DecimalFormat formatter = new DecimalFormat("0000.00");
     protected static LocalProperties prop_file = null;
-    static Connection conn = null;
+    public static Connection conn = null;
     static String filePrefix = "/Volumes/Pegasus0/COVID/";
     
     static boolean hasLineNumbers = false;

@@ -43,7 +43,7 @@ public class Document {
     
     public void section() {
 	SectionDetector detector = new SectionDetector();
-	Section current = new Section(Category.FRONT, "Front Matter");
+	Section current = new Section(this, Category.FRONT, "Front Matter");
 	sections.add(current);
 	frontMatter = current;
 	
@@ -51,7 +51,7 @@ public class Document {
 	    for (Line line : page.lines) {
 		Category result = detector.newSection(line);
 		if (result != null) {
-		    current = new Section(result, line);
+		    current = new Section(this, result, line);
 		    sections.add(current);
 		    if (result == Category.REFERENCES)
 			references = current;
@@ -60,6 +60,8 @@ public class Document {
 	    }
 	}
 	
+	if (references != null)
+	    references.segmentReferences();
 	// now for each of the categories, further refine the structure
 	for (Section section : sections) {
 	    switch (section.category) {

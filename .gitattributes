@@ -21,6 +21,7 @@ src/main/java/org/cd2h/covid/detectors/SectionDetector.java -text
 src/main/java/org/cd2h/covid/model/Document.java -text
 src/main/java/org/cd2h/covid/model/Line.java -text
 src/main/java/org/cd2h/covid/model/Page.java -text
+src/main/java/org/cd2h/covid/model/Reference.java -text
 src/main/java/org/cd2h/covid/model/Section.java -text
 src/main/resources/META-INF/taglib.tld -text svneol=unset#application/xml
 src/non-packaged-resources/Model.clay -text svneol=unset#application/xml
