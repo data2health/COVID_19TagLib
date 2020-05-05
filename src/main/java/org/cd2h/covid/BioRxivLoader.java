@@ -103,38 +103,38 @@ public class BioRxivLoader {
 		logger.trace("element: " + element);
 		String href = element.attr("href");
 		logger.trace("\thref: " + href);
-		
+
 		String old_href = null;
 		PreparedStatement urlStmt = conn.prepareStatement("select url from covid_biorxiv.biorxiv_map where doi = ?");
 		urlStmt.setString(1, doi);
-		ResultSet urlRS =  urlStmt.executeQuery();
+		ResultSet urlRS = urlStmt.executeQuery();
 		while (urlRS.next()) {
-		old_href = urlRS.getString(1);
+		    old_href = urlRS.getString(1);
 		}
 		urlStmt.close();
-		
+
 		if (old_href == null) {
-		// new entry
-		PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.biorxiv_map values (?,?)");
-		citeStmt.setString(1, doi);
-		citeStmt.setString(2, href);
-		citeStmt.executeUpdate();
-		citeStmt.close();
-		URL fetchURL = new URL(new URL(link.replace("http", "https")), href);
-		logger.info("\tfetching... " + fetchURL);
-		Files.copy(fetchURL.openStream(), Paths.get(filePrefix+fetchURL.getFile().substring(fetchURL.getFile().lastIndexOf('/')+1)), StandardCopyOption.REPLACE_EXISTING);
+		    // new entry
+		    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.biorxiv_map values (?,?)");
+		    citeStmt.setString(1, doi);
+		    citeStmt.setString(2, href);
+		    citeStmt.executeUpdate();
+		    citeStmt.close();
+		    URL fetchURL = new URL(new URL(link.replace("http", "https")), href);
+		    logger.info("\tfetching... " + fetchURL);
+		    Files.copy(fetchURL.openStream(), Paths.get(filePrefix + fetchURL.getFile().substring(fetchURL.getFile().lastIndexOf('/') + 1)), StandardCopyOption.REPLACE_EXISTING);
 		} else if (!href.equals(old_href)) {
-		// updated entry
-		PreparedStatement citeStmt = conn.prepareStatement("update covid_biorxiv.biorxiv_map set url = ? where doi = ?");
-		citeStmt.setString(1, href);
-		citeStmt.setString(2, doi);
-		citeStmt.executeUpdate();
-		citeStmt.close();
-		URL fetchURL = new URL(new URL(link.replace("http", "https")), href);
-		logger.info("\tfetching... " + fetchURL);
-		Files.copy(fetchURL.openStream(), Paths.get(filePrefix+fetchURL.getFile().substring(fetchURL.getFile().lastIndexOf('/')+1)), StandardCopyOption.REPLACE_EXISTING);
+		    // updated entry
+		    PreparedStatement citeStmt = conn.prepareStatement("update covid_biorxiv.biorxiv_map set url = ? where doi = ?");
+		    citeStmt.setString(1, href);
+		    citeStmt.setString(2, doi);
+		    citeStmt.executeUpdate();
+		    citeStmt.close();
+		    URL fetchURL = new URL(new URL(link.replace("http", "https")), href);
+		    logger.info("\tfetching... " + fetchURL);
+		    Files.copy(fetchURL.openStream(), Paths.get(filePrefix + fetchURL.getFile().substring(fetchURL.getFile().lastIndexOf('/') + 1)), StandardCopyOption.REPLACE_EXISTING);
 		} else {
-		logger.info("\tskipping...");
+		    logger.info("\tskipping...");
 		}
 	    } catch (Exception e) {
 		logger.error("Exception raised: " + e);
