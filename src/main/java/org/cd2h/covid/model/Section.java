@@ -13,6 +13,12 @@ public class Section {
     static Logger logger = Logger.getLogger(Section.class);
     public static enum Category {FRONT, ABSTRACT, BODY, REFERENCES, MISC, SUPPLEMENTAL};
     
+    /*
+     * Unmatched patterns
+     * 	(1) ...
+     *   1) ...
+     *   1 ...
+     */
     static Pattern numberedReferencePattern = Pattern.compile("^([0-9]+)\\. +(.*)");
     static Pattern bracketNumberedReferencePattern = Pattern.compile("^\\[([0-9]+)\\]\\.? *(.*)");
     static Pattern nameYearReferencePattern = Pattern.compile("^(.*)\\(([0-9]{4})\\) *(.*)");
@@ -85,6 +91,8 @@ public class Section {
 	    if (trailingYearCount > lines.size() / 4) { // totally heuristic guess at cutoff
 		logger.info("*** trailing year citations");
 		scanTrailingYearReferences(trailingYearReferencePattern);
+	    } else {
+		storeStats(lines.size(), 0);
 	    }
 	}
     }
@@ -95,14 +103,14 @@ public class Section {
 	int seqnum = 0;
 	int count = 0;
 	for (Line line : lines) {
-	    logger.debug("\t\t\tline: " + line.rawText);
+	    logger.info("\t\t\tline: " + line.rawText);
 	    Matcher matcher = pattern.matcher(line.rawText);
 	    if (matcher.matches()) {
 		logger.debug("\t\t\treference start: " + line.rawText);
+		if (count > 0)
+		    storeReference(seqnum,count,current);
 		current = new Reference(Integer.parseInt(matcher.group(1)),matcher.group(2));
 		references.add(current);
-		if (count > 0)
-		    storeStat(seqnum,count);
 		seqnum++;
 		count = 1;
 	    } else {
@@ -111,7 +119,7 @@ public class Section {
 		count++;
 	    }
 	}
-	storeStat(seqnum,count);
+	storeReference(seqnum,count,current);
 	storeStats(lines.size(), references.size());
     }
     
@@ -125,10 +133,10 @@ public class Section {
 	    Matcher matcher = pattern.matcher(line.rawText);
 	    if (matcher.matches()) {
 		logger.debug("\t\t\treference start: " + line.rawText);
+		if (count > 0)
+		    storeReference(seqnum,count,current);
 		current = new Reference(matcher.group(1),Integer.parseInt(matcher.group(2)),matcher.group(3));
 		references.add(current);
-		if (count > 0)
-		    storeStat(seqnum,count);
 		seqnum++;
 		count = 1;
 	    } else {
@@ -137,7 +145,7 @@ public class Section {
 		count++;
 	    }
 	}
-	storeStat(seqnum,count);
+	storeReference(seqnum,count,current);
 	storeStats(lines.size(), references.size());
     }
     
@@ -151,12 +159,15 @@ public class Section {
 	    Matcher matcher = pattern.matcher(line.rawText);
 	    if (matcher.matches()) {
 		logger.info("\t\t\treference end: " + line.rawText);
-		current.addText(matcher.group(1));
+		if (current == null) //single line reference
+		    current = new Reference(matcher.group(1));
+		else
+		    current.addText(matcher.group(1));
 		current.setYear(Integer.parseInt(matcher.group(2)));
-		current = null;
-		storeStat(seqnum,count);
+		storeReference(seqnum,count,current);
 		seqnum++;
 		count = 0;
+		current = null;
 	    } else if (current == null) {
 		logger.info("\t\t\treference start: " + line.rawText);
 		current = new Reference(line.rawText);
@@ -172,12 +183,15 @@ public class Section {
 	storeStats(lines.size(), references.size());
     }
     
-    public void storeStat(int seqnum, int lines) {
+    public void storeReference(int seqnum, int lines, Reference reference) {
 	try {
-	    PreparedStatement stmt = CERMINEExtractor.conn.prepareStatement("insert into covid_biorxiv.reference_stat values(?,?,?)");
+	    PreparedStatement stmt = CERMINEExtractor.conn.prepareStatement("insert into covid_biorxiv.reference(doi,seqnum,count,name,year,reference) values(?,?,?,?,?,?)");
 	    stmt.setString(1, parent.doi);
 	    stmt.setInt(2, seqnum);
 	    stmt.setInt(3, lines);
+	    stmt.setString(4, reference.name);
+	    stmt.setInt(5, reference.year);
+	    stmt.setString(6, reference.reference);
 	    stmt.execute();
 	    stmt.close();
 	} catch (SQLException e) {

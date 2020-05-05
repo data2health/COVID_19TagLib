@@ -67,7 +67,6 @@ public class CERMINEExtractor {
 	    for (String file : (new File(filePrefix)).list()) {
 		if (!file.endsWith(".pdf"))
 		    continue;
-		logger.info("scanning " + file);
 		process(file);
 	    }
 	} else {
@@ -80,16 +79,17 @@ public class CERMINEExtractor {
 	
 	Document doc = null;
 	
-	PreparedStatement stmt = conn.prepareStatement("select doi from covid_biorxiv.biorxiv_map where url ~ ?");
+	PreparedStatement stmt = conn.prepareStatement("select doi from covid_biorxiv.biorxiv_map where url ~ ? and doi not in (select doi from covid_biorxiv.reference_stats)");
 	stmt.setString(1, fileName);
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
+	    logger.info("scanning " + fileName);
 	    doc = new Document(rs.getString(1), fileName);
+		
+	    acquireBxDocument(doc);
+	    doc.section();
+	    doc.dump();
 	}
-	
-	acquireBxDocument(doc);
-	doc.section();
-	doc.dump();
     }
     
     static void test1() throws AnalysisException, IOException {
@@ -233,7 +233,7 @@ public class CERMINEExtractor {
 	    for (BxLine line : lines) {
 		int currY = (int)line.getY() - prevY;
 		logger.debug("\tsorted line: [" + String.format("%6.2f %6.2f %4.2f %6.2f", line.getX(), line.getY(), line.getHeight(), line.getWidth()) + "] " + currY + " : " + line.toText() + "\t" + line.getMostPopularFontName());
-		if (prevY > 0)
+		if (prevY > 0 && currY >= 0)
 		    lineSpacings[currY]++;
 		prevY = (int)line.getY();
 	    }

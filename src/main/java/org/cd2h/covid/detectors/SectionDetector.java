@@ -73,6 +73,8 @@ public class SectionDetector {
 	    result = Category.MISC;
 	else if (label.matches("([0-9].?)? *references?( and notes)? *([:].*)?"))
 	    result = Category.REFERENCES;
+	else if (label.matches("([0-9].?)? *bibliography"))
+	    result = Category.REFERENCES;
 	else if (label.matches("([0-9].?)? *contributions?"))
 	    result = Category.MISC;
 	else if (label.matches("([0-9].?)? *foot ?notes?"))
