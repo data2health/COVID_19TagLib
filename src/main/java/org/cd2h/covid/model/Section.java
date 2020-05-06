@@ -109,13 +109,13 @@ public class Section {
 		logger.debug("\t\t\treference start: " + line.rawText);
 		if (count > 0)
 		    storeReference(seqnum,count,current);
-		current = new Reference(Integer.parseInt(matcher.group(1)),matcher.group(2));
+		current = new Reference(Integer.parseInt(matcher.group(1)), line, matcher.group(2));
 		references.add(current);
 		seqnum++;
 		count = 1;
 	    } else {
 		logger.debug("\t\t\treference continuation: " + line.rawText);
-		current.addText(line.rawText);
+		current.addText(line);
 		count++;
 	    }
 	}
@@ -135,13 +135,13 @@ public class Section {
 		logger.debug("\t\t\treference start: " + line.rawText);
 		if (count > 0)
 		    storeReference(seqnum,count,current);
-		current = new Reference(matcher.group(1),Integer.parseInt(matcher.group(2)),matcher.group(3));
+		current = new Reference(matcher.group(1),Integer.parseInt(matcher.group(2)),line,matcher.group(3));
 		references.add(current);
 		seqnum++;
 		count = 1;
 	    } else {
 		logger.debug("\t\t\treference continuation: " + line.rawText);
-		current.addText(line.rawText);
+		current.addText(line);
 		count++;
 	    }
 	}
@@ -160,9 +160,9 @@ public class Section {
 	    if (matcher.matches()) {
 		logger.info("\t\t\treference end: " + line.rawText);
 		if (current == null) //single line reference
-		    current = new Reference(matcher.group(1));
+		    current = new Reference(line, matcher.group(1));
 		else
-		    current.addText(matcher.group(1));
+		    current.addText(line, matcher.group(1));
 		current.setYear(Integer.parseInt(matcher.group(2)));
 		storeReference(seqnum,count,current);
 		seqnum++;
@@ -170,12 +170,12 @@ public class Section {
 		current = null;
 	    } else if (current == null) {
 		logger.info("\t\t\treference start: " + line.rawText);
-		current = new Reference(line.rawText);
+		current = new Reference(line);
 		references.add(current);
 		count++;
 	    } else {
 		logger.info("\t\t\treference continuation: " + line.rawText);
-		current.addText(line.rawText);
+		current.addText(line);
 		count++;
 	    }
 	}
