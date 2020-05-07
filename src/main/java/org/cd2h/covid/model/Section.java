@@ -2,6 +2,7 @@ package org.cd2h.covid.model;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,6 +12,7 @@ import org.cd2h.covid.CERMINEExtractor;
 
 public class Section {
     static Logger logger = Logger.getLogger(Section.class);
+    static DecimalFormat formatter = new DecimalFormat("0000.00");
     public static enum Category {FRONT, ABSTRACT, BODY, REFERENCES, MISC, SUPPLEMENTAL};
     
     /*
@@ -107,17 +109,25 @@ public class Section {
 	    Matcher matcher = pattern.matcher(line.rawText);
 	    if (matcher.matches()) {
 		logger.debug("\t\t\treference start: " + line.rawText);
-		if (count > 0)
-		    storeReference(seqnum,count,current);
+		if (count > 0) {
+		    if (current.lines.size() > 3) {
+			logger.info("*** line count > 3 : " + current.lines.size());
+		    }
+		    storeReference(seqnum, count, current);
+		}
 		current = new Reference(Integer.parseInt(matcher.group(1)), line, matcher.group(2));
 		references.add(current);
 		seqnum++;
 		count = 1;
 	    } else {
 		logger.debug("\t\t\treference continuation: " + line.rawText);
+		logger.info("\t\t\tdelta: " + formatter.format((line.getY()-current.lines.lastElement().getY())));
 		current.addText(line);
 		count++;
 	    }
+	}
+	if (current.lines.size() > 3) {
+	    logger.info("*** line count > 3 : " + current.lines.size());
 	}
 	storeReference(seqnum,count,current);
 	storeStats(lines.size(), references.size());
