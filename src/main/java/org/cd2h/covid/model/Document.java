@@ -1,10 +1,14 @@
 package org.cd2h.covid.model;
 
 import java.util.Vector;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.cd2h.covid.detectors.SectionDetector;
 import org.cd2h.covid.model.Section.Category;
+
+import pl.edu.icm.cermine.structure.model.BxChunk;
+import pl.edu.icm.cermine.structure.model.BxWord;
 
 public class Document {
     static Logger logger = Logger.getLogger(Document.class);
@@ -66,6 +70,7 @@ public class Document {
 	for (Section section : sections) {
 	    switch (section.category) {
 	    case FRONT:
+		segmentFrontMatter(section);
 		break;
 	    case ABSTRACT:
 		break;
@@ -78,6 +83,101 @@ public class Document {
 	    case SUPPLEMENTAL:
 		break;
 	    }
+	}
+    }
+    
+    Pattern affPattern = Pattern.compile("^[1-9*].*");
+    enum Mode {TITLE, AUTHOR, AFFILIATION, OTHER};
+    void segmentFrontMatter(Section section) {
+	Mode mode = Mode.TITLE;
+	String title = section.lines.firstElement().rawText;
+	Vector<Line> authors = new Vector<Line>();
+	Vector<Line> affiliations = new Vector<Line>();
+	Vector<Line> others = new Vector<Line>();
+	
+	Line prev = section.lines.firstElement();
+	for (int i  = 1; i < section.lines.size(); i++) {
+	    Line line = section.lines.elementAt(i);
+	    line.dump();
+//	    for (int j = 0; j < line.internalLine.getFirstChild().childrenCount(); j++) {
+//		BxChunk chunk = line.internalLine.getFirstChild().getChild(j);
+//		logger.info("chunk: " + chunk.toText()  + " : " + chunk.getFontName()  + " : " + chunk.getHeight());
+//	    }
+	    switch (mode) {
+	    case TITLE:
+		if (line.mostPopularFont.equals(prev.mostPopularFont) && line.spacing < line.height * 2 && Math.abs(line.getHeight() - prev.getHeight()) < 1.0) {
+		    title += " " + line.rawText;
+		} else {
+		    mode = Mode.AUTHOR;
+		    authors.add(line);
+		}
+		break;
+	    case AUTHOR:
+		logger.info("auth line height " + line.getHeight() +  "\tnext chunk y: " + line.internalLine.getFirstChild().getFirstChild().getHeight());
+		if (Math.abs(prev.internalLine.getFirstChild().getFirstChild().getHeight() - line.internalLine.getFirstChild().getFirstChild().getHeight()) < 2.0) {
+		    authors.add(line);
+		} else {
+		    mode = Mode.AFFILIATION;
+		    affiliations.add(line);
+		}
+		break;
+	    case AFFILIATION:
+		logger.info("aff line y " + line.getY() +  "\tnext chunk y: " + line.internalLine.getFirstChild().getFirstChild().getFirstChild().SIZE);
+		if (line.spacing  > 0 && line.spacing < line.height * 3) {
+		    affiliations.add(line);
+		} else {
+		    mode = Mode.OTHER;
+		    others.add(line);
+		}
+		break;
+	    case OTHER:
+		others.add(line);
+		break;
+	    }
+	    prev = line;
+	}
+	
+	logger.info("title: " + title);
+	logger.info("authors:");
+	for (Line line : authors) {
+	    line.dump();
+	}
+	logger.info("affiliations:");
+	for (Line line : affiliations) {
+	    line.dump();
+	}
+	logger.info("others:");
+	for (Line line : others) {
+	    line.dump();
+	}
+	
+	logger.info("scanning affiliations:");
+	Vector<Affiliation> affs = new Vector<Affiliation>();
+	Affiliation affiliation = null;
+	for (Line line : affiliations) {
+	    line.dump();
+	    for (int i = 0; i < line.internalLine.childrenCount(); i++) {
+		BxWord word = line.internalLine.getChild(i);
+		logger.info("\tword: " + word.toText());
+		for (int j = 0; j < word.childrenCount(); j++) {
+		    BxChunk chunk = word.getChild(j);
+		    if (affs.size() == 0 || Math.abs(line.getHeight() - chunk.getHeight()) > 1.5) {
+			logger.info("\t\tprefix: " + chunk.toText() + " : " + chunk.getHeight());
+			if (j == 0) {
+			    affiliation = new Affiliation(chunk.toText());
+			    affs.add(affiliation);
+			} else
+			    affiliation.addLinkChar(chunk.toText());
+		    } else {
+			logger.info("\t\tchunk: " + chunk.toText() + " : " + chunk.getHeight());
+			affiliation.addAffiliationChar(chunk.toText());
+		    }
+		}
+		affiliation.addAffiliationChar(" " );
+	    }
+	}
+	for (Affiliation aff : affs) {
+	    logger.info("affiliation: " + aff.link + " : " + aff.affiliation);
 	}
     }
     

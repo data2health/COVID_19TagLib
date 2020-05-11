@@ -23,6 +23,7 @@ public class Section {
      */
     static Pattern numberedReferencePattern = Pattern.compile("^([0-9]+)\\. +(.*)");
     static Pattern bracketNumberedReferencePattern = Pattern.compile("^\\[([0-9]+)\\]\\.? *(.*)");
+    static Pattern parenNumberedReferencePattern = Pattern.compile("^\\(?([0-9]+)\\)\\.? *(.*)");
     static Pattern nameYearReferencePattern = Pattern.compile("^(.*)\\(([0-9]{4})\\) *(.*)");
     static Pattern trailingYearReferencePattern = Pattern.compile("^(.*)\\(([0-9]{4})\\)\\.$");
     
@@ -57,19 +58,24 @@ public class Section {
     }
     
     public void segmentReferences() {
+	if (lines.isEmpty())
+	    return;
 	if (numberedReferencePattern.matcher(lines.firstElement().rawText).matches()) {
 	    logger.info("*** numbered citations");
 	    scanNumberedReferences(numberedReferencePattern);
 	} else if (bracketNumberedReferencePattern.matcher(lines.firstElement().rawText).matches()) {
 	    logger.info("*** bracketed numbered citations");
 	    scanNumberedReferences(bracketNumberedReferencePattern);
+	} else if (parenNumberedReferencePattern.matcher(lines.firstElement().rawText).matches()) {
+	    logger.info("*** paren numbered citations");
+	    scanNumberedReferences(parenNumberedReferencePattern);
 	} else if (nameYearReferencePattern.matcher(lines.firstElement().rawText).matches()) {
 	    logger.info("*** name/year citations");
 	    scanNameYearReferences(nameYearReferencePattern);
 	} else {
 	    logger.info("*** unknown citation scheme");
-	    int[] leftMargin = new int[1000];
-	    int[] spacing = new int[1000];
+	    int[] leftMargin = new int[2000];
+	    int[] spacing = new int[2000];
 	    int trailingYearCount = 0;
 	    
 	    for (Line line : lines) {
@@ -102,68 +108,45 @@ public class Section {
     void scanNumberedReferences(Pattern pattern) {
 	references = new Vector<Reference> ();
 	Reference current = null;
-	int seqnum = 0;
-	int count = 0;
 	for (Line line : lines) {
-	    logger.info("\t\t\tline: " + line.rawText);
+	    logger.debug("\t\t\tline: " + line.rawText);
 	    Matcher matcher = pattern.matcher(line.rawText);
 	    if (matcher.matches()) {
 		logger.debug("\t\t\treference start: " + line.rawText);
-		if (count > 0) {
-		    if (current.lines.size() > 3) {
-			logger.info("*** line count > 3 : " + current.lines.size());
-		    }
-		    storeReference(seqnum, count, current);
-		}
 		current = new Reference(Integer.parseInt(matcher.group(1)), line, matcher.group(2));
 		references.add(current);
-		seqnum++;
-		count = 1;
 	    } else {
 		logger.debug("\t\t\treference continuation: " + line.rawText);
-		logger.info("\t\t\tdelta: " + formatter.format((line.getY()-current.lines.lastElement().getY())));
+		logger.debug("\t\t\tdelta: " + formatter.format((line.getY()-current.lines.lastElement().getY())));
 		current.addText(line);
-		count++;
 	    }
 	}
-	if (current.lines.size() > 3) {
-	    logger.info("*** line count > 3 : " + current.lines.size());
-	}
-	storeReference(seqnum,count,current);
+	checkReferences(references);
 	storeStats(lines.size(), references.size());
     }
     
     void scanNameYearReferences(Pattern pattern) {
 	references = new Vector<Reference> ();	
 	Reference current = null;
-	int seqnum = 0;
-	int count = 0;
 	for (Line line : lines) {
 	    logger.debug("\t\t\tline: " + line.rawText);
 	    Matcher matcher = pattern.matcher(line.rawText);
 	    if (matcher.matches()) {
 		logger.debug("\t\t\treference start: " + line.rawText);
-		if (count > 0)
-		    storeReference(seqnum,count,current);
 		current = new Reference(matcher.group(1),Integer.parseInt(matcher.group(2)),line,matcher.group(3));
 		references.add(current);
-		seqnum++;
-		count = 1;
 	    } else {
 		logger.debug("\t\t\treference continuation: " + line.rawText);
 		current.addText(line);
-		count++;
 	    }
 	}
-	storeReference(seqnum,count,current);
+	checkReferences(references);
 	storeStats(lines.size(), references.size());
     }
     
     void scanTrailingYearReferences(Pattern pattern) {
 	references = new Vector<Reference>();
 	Reference current = null;
-	int seqnum = 1;
-	int count = 0;
 	for (Line line : lines) {
 	    logger.info("\t\t\tline: " + line.rawText);
 	    Matcher matcher = pattern.matcher(line.rawText);
@@ -174,31 +157,53 @@ public class Section {
 		else
 		    current.addText(line, matcher.group(1));
 		current.setYear(Integer.parseInt(matcher.group(2)));
-		storeReference(seqnum,count,current);
-		seqnum++;
-		count = 0;
 		current = null;
 	    } else if (current == null) {
 		logger.info("\t\t\treference start: " + line.rawText);
 		current = new Reference(line);
 		references.add(current);
-		count++;
 	    } else {
 		logger.info("\t\t\treference continuation: " + line.rawText);
 		current.addText(line);
-		count++;
 	    }
 	}
 	
+	checkReferences(references);
 	storeStats(lines.size(), references.size());
     }
     
-    public void storeReference(int seqnum, int lines, Reference reference) {
+    void checkReferences(Vector<Reference> references) {
+	if (references.size() > 0 && references.lastElement().lines.size() > 3) {
+	    Reference ref = references.lastElement();
+	    logger.info("candidate runaway: ");
+	    ref.dump();
+	    for (int i = 1; i < ref.lines.size(); i++) {
+		double delta = ref.lines.elementAt(i).getY()-ref.lines.elementAt(i-1).getY();
+		logger.info(i+"\tdelta: " + formatter.format(delta));
+		if (delta < 0.0 || delta > (ref.lines.elementAt(i-1).getHeight())*2) {
+		    Section newSection = new Section(parent,Category.MISC,(String)null);
+		    while (i < ref.lines.size()) {
+			newSection.addLine(ref.lines.remove(i));
+		    }
+		    int index = parent.sections.indexOf(this);
+		    logger.info("adding section after index: " + index);
+		    parent.sections.add(index+1, newSection);
+		    ref.regenerate();
+		}
+	    }
+	}
+	for (int i = 0; i < references.size(); i++) {
+	    Reference ref = references.elementAt(i);
+	    storeReference(i+1,ref);
+	}
+    }
+    
+    public void storeReference(int seqnum, Reference reference) {
 	try {
 	    PreparedStatement stmt = CERMINEExtractor.conn.prepareStatement("insert into covid_biorxiv.reference(doi,seqnum,count,name,year,reference) values(?,?,?,?,?,?)");
 	    stmt.setString(1, parent.doi);
 	    stmt.setInt(2, seqnum);
-	    stmt.setInt(3, lines);
+	    stmt.setInt(3, reference.lines.size());
 	    stmt.setString(4, reference.name);
 	    stmt.setInt(5, reference.year);
 	    stmt.setString(6, reference.reference);

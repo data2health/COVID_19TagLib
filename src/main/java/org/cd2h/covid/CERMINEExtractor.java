@@ -42,6 +42,7 @@ import pl.edu.icm.cermine.structure.model.BxPage;
 import pl.edu.icm.cermine.structure.model.BxWord;
 import pl.edu.icm.cermine.structure.model.BxZone;
 import pl.edu.icm.cermine.structure.transformers.TrueVizToBxDocumentReader;
+import pl.edu.icm.cermine.tools.timeout.TimeoutException;
 
 public class CERMINEExtractor {
     static Logger logger = Logger.getLogger(CERMINEExtractor.class);
@@ -165,9 +166,15 @@ public class CERMINEExtractor {
  	InputStream inputStream = new FileInputStream(filePrefix + doc.getFileName());
 	extractor.setPDF(inputStream);
 
-        for (BxImage image : (List<BxImage>)extractor.getImages("")) {
-            logger.debug("image: [" + String.format("%6.2f %6.2f", image.getX(),image.getY()) + "] " + image.getFilename() + " : " + image.toString());
-        }
+        try {
+	    for (BxImage image : (List<BxImage>)extractor.getImages("")) {
+	        logger.debug("image: [" + String.format("%6.2f %6.2f", image.getX(),image.getY()) + "] " + image.getFilename() + " : " + image.toString());
+	    }
+	} catch (Exception e) {
+	    logger.error("Error acquiring image info: ", e);
+	    return;
+	}
+        
 	BxDocument bxDoc = extractor.getBxDocument();
 	logger.debug("# pages: " + bxDoc.childrenCount());
 	documentStats(bxDoc);

@@ -45,6 +45,13 @@ public class Reference {
 	reference += " " + reference;
     }
     
+    public void regenerate() {
+	reference = "";
+	for (Line line : lines) {
+	    reference += (reference.length() == 0 ? "" : " ") + line.rawText;
+	}
+    }
+    
     public void setYear(int year) {
 	this.year = year;
     }
