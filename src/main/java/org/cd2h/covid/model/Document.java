@@ -155,21 +155,21 @@ public class Document {
 	Vector<Affiliation> affs = new Vector<Affiliation>();
 	Affiliation affiliation = null;
 	for (Line line : affiliations) {
-	    line.dump();
+//	    line.dump();
 	    for (int i = 0; i < line.internalLine.childrenCount(); i++) {
 		BxWord word = line.internalLine.getChild(i);
-		logger.info("\tword: " + word.toText());
+		logger.debug("\tword: " + word.toText());
 		for (int j = 0; j < word.childrenCount(); j++) {
 		    BxChunk chunk = word.getChild(j);
 		    if (affs.size() == 0 || Math.abs(line.getHeight() - chunk.getHeight()) > 1.5) {
-			logger.info("\t\tprefix: " + chunk.toText() + " : " + chunk.getHeight());
-			if (j == 0) {
+			logger.debug("\t\tprefix: " + chunk.toText() + " : " + chunk.getHeight());
+			if (j == 0 || chunk.toText().matches("[*†]")) {
 			    affiliation = new Affiliation(chunk.toText());
 			    affs.add(affiliation);
 			} else
 			    affiliation.addLinkChar(chunk.toText());
 		    } else {
-			logger.info("\t\tchunk: " + chunk.toText() + " : " + chunk.getHeight());
+			logger.debug("\t\tchunk: " + chunk.toText() + " : " + chunk.getHeight());
 			affiliation.addAffiliationChar(chunk.toText());
 		    }
 		}
@@ -178,6 +178,53 @@ public class Document {
 	}
 	for (Affiliation aff : affs) {
 	    logger.info("affiliation: " + aff.link + " : " + aff.affiliation);
+	}
+
+	logger.info("scanning authors:");
+	Vector<Author> auths = new Vector<Author>();
+	Author author = null;
+	for (Line line : authors) {
+	    line.dump();
+	    for (int i = 0; i < line.internalLine.childrenCount(); i++) {
+		BxWord word = line.internalLine.getChild(i);
+		logger.info("\tword: " + word.toText());
+		if (word.toText().equals("and")) {
+		    author = null;
+		    continue;
+		}
+		for (int j = 0; j < word.childrenCount(); j++) {
+		    BxChunk chunk = word.getChild(j);
+		    if (auths.size() > 0 && Math.abs(line.getHeight() - chunk.getHeight()) > 2.5) {
+			logger.info("\t\tprefix: " + chunk.toText() + " : " + chunk.getHeight());
+			if (j == 0) {
+			    author = new Author(chunk.toText());
+			    auths.add(author);
+			} else {
+			    if (author == null) {
+				author = new Author(chunk.toText());
+				auths.add(author);
+			    } else
+				author.addAffiliationChar(chunk.toText());
+			}
+		    } else {
+			logger.info("\t\tchunk: " + chunk.toText() + " : " + chunk.getHeight());
+			if (author == null) {
+			    author = new Author(chunk.toText());
+			    auths.add(author);
+			} else if (chunk.toText().equals(",")) {
+			    author = null;
+			} else if (chunk.toText().matches("[*†]")) {
+			    author.addAffiliationChar(chunk.toText());
+			} else
+			    author.addNameChar(chunk.toText());
+		    }
+		}
+		if (author != null)
+		    author.addNameChar(" " );
+	    }
+	}
+	for (Author auth : auths) {
+	    logger.info("author: " + auth.name + " (" + auth.affiliations + ")");
 	}
     }
     
