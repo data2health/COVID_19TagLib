@@ -125,6 +125,8 @@ public class Document {
 		logger.info("aff line y " + line.getY() +  "\tnext chunk y: " + line.internalLine.getFirstChild().getFirstChild().getFirstChild().SIZE);
 		if (line.spacing  > 0 && line.spacing < line.height * 3) {
 		    affiliations.add(line);
+		} else if (line.internalLine.childrenCount() == 1 && i < section.lines.size() - 1 && line.getY() > section.lines.elementAt(i+1).internalLine.getHeight() - section.lines.elementAt(i+1).internalLine.getY()) {
+		    affiliations.add(line);
 		} else {
 		    mode = Mode.OTHER;
 		    others.add(line);
@@ -231,7 +233,7 @@ public class Document {
 	
 	logger.info("authors:");
 	for (Author auth : auths) {
-	    logger.info("author: " + auth.name + " (" + auth.affiliations + ")");
+	    logger.info("author: " + auth.name + " (" + auth.affiliationString + ")");
 	}
     }
     
