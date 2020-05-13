@@ -188,7 +188,7 @@ public class Document {
 	    for (int i = 0; i < line.internalLine.childrenCount(); i++) {
 		BxWord word = line.internalLine.getChild(i);
 		logger.info("\tword: " + word.toText());
-		if (word.toText().equals("and")) {
+		if (word.toText().equals("and") || word.toText().equals("Authors:") || word.toText().equals("Affiliations:")) {
 		    author = null;
 		    continue;
 		}
@@ -223,6 +223,13 @@ public class Document {
 		    author.addNameChar(" " );
 	    }
 	}
+	
+	logger.info("matching affiliations: ");
+	for (Author auth : auths) {
+	    auth.matchAffiliations(affs);
+	}
+	
+	logger.info("authors:");
 	for (Author auth : auths) {
 	    logger.info("author: " + auth.name + " (" + auth.affiliations + ")");
 	}
