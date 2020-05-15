@@ -1,5 +1,6 @@
 package org.cd2h.covid.model;
 
+import java.sql.Connection;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -12,6 +13,7 @@ import pl.edu.icm.cermine.structure.model.BxWord;
 
 public class Document {
     static Logger logger = Logger.getLogger(Document.class);
+    Connection conn = null;
     String doi = null;
     String fileName = null;
     Vector<Page> pages = new Vector<Page>();
@@ -23,6 +25,10 @@ public class Document {
     public Document(String doi, String fileName) {
 	this.doi = doi;
 	this.fileName = fileName;
+    }
+    
+    public void setConnection(Connection conn) {
+	this.conn = conn;
     }
     
     public String getDoi() {
@@ -118,7 +124,7 @@ public class Document {
 		break;
 	    case AUTHOR:
 		logger.info("auth line height " + line.getHeight() +  "\tnext chunk y: " + line.internalLine.getFirstChild().getFirstChild().getHeight());
-		if (Math.abs(prev.internalLine.getFirstChild().getFirstChild().getHeight() - line.internalLine.getFirstChild().getFirstChild().getHeight()) < 2.0) {
+		if (Math.abs(prev.internalLine.getFirstChild().getFirstChild().getHeight() - line.internalLine.getFirstChild().getFirstChild().getHeight()) < 1.8) {
 		    authors.add(line);
 		} else {
 		    mode = Mode.AFFILIATION;

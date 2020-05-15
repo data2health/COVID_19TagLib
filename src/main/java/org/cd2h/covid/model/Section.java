@@ -200,7 +200,7 @@ public class Section {
     
     public void storeReference(int seqnum, Reference reference) {
 	try {
-	    PreparedStatement stmt = CERMINEExtractor.conn.prepareStatement("insert into covid_biorxiv.reference(doi,seqnum,count,name,year,reference) values(?,?,?,?,?,?)");
+	    PreparedStatement stmt = parent.conn.prepareStatement("insert into covid_biorxiv.reference(doi,seqnum,count,name,year,reference) values(?,?,?,?,?,?)");
 	    stmt.setString(1, parent.doi);
 	    stmt.setInt(2, seqnum);
 	    stmt.setInt(3, reference.lines.size());
@@ -218,7 +218,7 @@ public class Section {
     
     public void storeStats(int lines, int refs) {
 	try {
-	    PreparedStatement stmt = CERMINEExtractor.conn.prepareStatement("insert into covid_biorxiv.reference_stats values(?,?,?)");
+	    PreparedStatement stmt = parent.conn.prepareStatement("insert into covid_biorxiv.reference_stats values(?,?,?)");
 	    stmt.setString(1, parent.doi);
 	    stmt.setInt(2, lines);
 	    stmt.setInt(3, refs);

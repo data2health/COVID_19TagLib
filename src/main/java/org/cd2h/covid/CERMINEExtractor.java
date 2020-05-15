@@ -42,52 +42,117 @@ import pl.edu.icm.cermine.structure.model.BxPage;
 import pl.edu.icm.cermine.structure.model.BxWord;
 import pl.edu.icm.cermine.structure.model.BxZone;
 import pl.edu.icm.cermine.structure.transformers.TrueVizToBxDocumentReader;
-import pl.edu.icm.cermine.tools.timeout.TimeoutException;
 
-public class CERMINEExtractor {
+public class CERMINEExtractor implements Runnable {
     static Logger logger = Logger.getLogger(CERMINEExtractor.class);
     static DecimalFormat formatter = new DecimalFormat("0000.00");
     protected static LocalProperties prop_file = null;
-    public static Connection conn = null;
+    public static Connection staticConn = null;
     static String filePrefix = "/Volumes/Pegasus0/COVID/";
     
-    static boolean hasLineNumbers = false;
-    static boolean hasPageNumbers = false;
-    static int widthCutoff = 0;
-    static int xCutoff = 0;
-    static int yCutoff = Integer.MAX_VALUE;
+    boolean hasLineNumbers = false;
+    boolean hasPageNumbers = false;
+    int widthCutoff = 0;
+    int xCutoff = 0;
+    int yCutoff = Integer.MAX_VALUE;
+
+    static DocumentQueue documentQueue = new DocumentQueue();
 
     public static void main(String[] args) throws Exception {
 	System.setProperty("java.awt.headless", "true");
 	PropertyConfigurator.configure(args[0]);
 	prop_file = PropertyLoader.loadProperties("zotero");
-	conn = getConnection();
+	staticConn = getConnection();
 	
 	if (args.length == 1) {
+	    CERMINEExtractor extractor = new CERMINEExtractor(0);
 	    // scan the download directory
 	    for (String file : (new File(filePrefix)).list()) {
 		if (!file.endsWith(".pdf"))
 		    continue;
-		process(file);
+		extractor.process(file);
 	    }
+	} else if (args.length > 1 && args[1].equals("-parallel")) {
+	    scan();
+	    int maxCrawlerThreads = Runtime.getRuntime().availableProcessors();
+	    Thread[] scannerThreads = new Thread[maxCrawlerThreads];
+
+	    for (int i = 0; i < maxCrawlerThreads; i++) {
+		logger.info("starting thread " + i);
+		Thread theThread = new Thread(new CERMINEExtractor(i));
+		theThread.setPriority(Math.max(theThread.getPriority() - 2, Thread.MIN_PRIORITY));
+		theThread.start();
+		scannerThreads[i] = theThread;
+	    }
+
+	    for (int i = 0; i < maxCrawlerThreads; i++) {
+		scannerThreads[i].join();
+	    }
+	    logger.info("extraction completed.");
 	} else {
-//	    filePrefix = "/Users/eichmann/downloads/test/";
-	    process(args[1]);
+	    CERMINEExtractor extractor = new CERMINEExtractor(0);
+	    extractor.process(args[1]);
 	}
     }
     
-    static void process(String fileName) throws SQLException, AnalysisException, IOException, TransformationException {
+    static void scan() throws SQLException {
+	logger.info("scanning directory...");
+	for (String file : (new File(filePrefix)).list()) {
+	    if (!file.endsWith(".pdf"))
+		continue;
+
+	    PreparedStatement stmt = staticConn.prepareStatement(
+		    "select doi from covid_biorxiv.biorxiv_map where url ~ ? and doi not in (select doi from covid_biorxiv.reference_stats)");
+	    stmt.setString(1, file);
+	    ResultSet rs = stmt.executeQuery();
+	    while (rs.next()) {
+		logger.debug("queuing " + file);
+		documentQueue.queue(new Document(rs.getString(1), file));
+	    }
+	    stmt.close();
+	}
+	logger.info("\t" + documentQueue.size() + " files queued.");
+    }
+    
+    int threadID = 0;
+    Connection conn = null;
+    
+    public CERMINEExtractor(int threadID) throws ClassNotFoundException, SQLException {
+	this.threadID = threadID;
+	conn = getConnection();
+    }
+    
+    @Override
+    public void run() {
+	while (!documentQueue.isCompleted()) {
+	    Document document = documentQueue.dequeue();
+	    if (document == null)
+		return;
+	    document.setConnection(conn);
+	    logger.info("[" + threadID + "] processing " + document.getDoi());
+	    try {
+		acquireBxDocument(document);
+	    } catch (Exception e) {
+		logger.info("[" + threadID + "] exception raised processing " + document.getDoi() + " : ", e);
+	    }
+	    document.section();
+	    document.dump();
+	}
+    }
+
+    static void process(String fileName) throws SQLException, AnalysisException, IOException, TransformationException, ClassNotFoundException {
 	
 	Document doc = null;
 	
-	PreparedStatement stmt = conn.prepareStatement("select doi from covid_biorxiv.biorxiv_map where url ~ ? and doi not in (select doi from covid_biorxiv.reference_stats) order by doi");
+	PreparedStatement stmt = staticConn.prepareStatement("select doi from covid_biorxiv.biorxiv_map where url ~ ? and doi not in (select doi from covid_biorxiv.reference_stats)");
 	stmt.setString(1, fileName);
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
 	    logger.info("scanning " + fileName);
 	    doc = new Document(rs.getString(1), fileName);
-		
-	    acquireBxDocument(doc);
+	    doc.setConnection(staticConn);
+	    CERMINEExtractor extractor = new CERMINEExtractor(0);
+	    extractor.acquireBxDocument(doc);
 	    doc.section();
 	    doc.dump();
 	}
@@ -156,7 +221,7 @@ public class CERMINEExtractor {
         }
     }
 
-    static void acquireBxDocument(Document doc) throws AnalysisException, IOException, TransformationException {
+    void acquireBxDocument(Document doc) throws AnalysisException, IOException, TransformationException {
 //        InputStream is = new FileInputStream("/Users/eichmann/downloads/test/2020.04.21.054221v1.full.cermstr");
 //        TrueVizToBxDocumentReader reader = new TrueVizToBxDocumentReader();
 //        Reader r = new InputStreamReader(is, "UTF-8");
@@ -204,7 +269,7 @@ public class CERMINEExtractor {
 	}
     }
     
-    static void sortLines(Page page, Vector<BxLine> lines) {
+    void sortLines(Page page, Vector<BxLine> lines) {
 	int[] lineSpacings = new int[1000];
 	boolean updated = false;
 	Comparator<BxLine> comparator = new LineComparator();
@@ -260,7 +325,7 @@ public class CERMINEExtractor {
     static public void initialize() throws ClassNotFoundException, SQLException {
 	prop_file = PropertyLoader.loadProperties("zotero");
 
-	conn = getConnection();
+	staticConn = getConnection();
     }
     
     public static ContentExtractor getContentExtractor() throws AnalysisException {
@@ -297,7 +362,7 @@ public class CERMINEExtractor {
 	return true;
     }
     
-    public static void documentStats(BxDocument bxDoc) {
+    public void documentStats(BxDocument bxDoc) {
 	int[] horzizontalFrequencies = new int[1000];
 	int[] widthFrequencies = new int[1000];
 	int lineCount = 0;
@@ -347,7 +412,7 @@ public class CERMINEExtractor {
         hasLineNumbers = widthCutoff > 0 && xCutoff > 0;
     }
     
-    public static void documentStats2(BxDocument bxDoc) {
+    public void documentStats2(BxDocument bxDoc) {
 	int[] horzizontalFrequencies = new int[1000];
 	int[] widthFrequencies = new int[1000];
 	int lineCount = 0;
@@ -419,7 +484,7 @@ public class CERMINEExtractor {
     public static void simpleStmt(String queryString) {
 	try {
 	    logger.info("executing " + queryString + "...");
-	    PreparedStatement beginStmt = conn.prepareStatement(queryString);
+	    PreparedStatement beginStmt = staticConn.prepareStatement(queryString);
 	    beginStmt.executeUpdate();
 	    beginStmt.close();
 	} catch (Exception e) {
@@ -427,4 +492,5 @@ public class CERMINEExtractor {
 	    e.printStackTrace();
 	}
     }
+
 }

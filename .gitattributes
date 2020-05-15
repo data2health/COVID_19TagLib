@@ -13,6 +13,7 @@ src/main/java/org/cd2h/covid/BioRxivLoader.java -text
 src/main/java/org/cd2h/covid/CERMINEExtractor.java -text
 src/main/java/org/cd2h/covid/ChiCTRLoader.java -text
 src/main/java/org/cd2h/covid/CrossRefLoader.java -text
+src/main/java/org/cd2h/covid/DocumentQueue.java -text
 src/main/java/org/cd2h/covid/EudraCTLoader.java -text
 src/main/java/org/cd2h/covid/FacetIndexer.java -text
 src/main/java/org/cd2h/covid/LineComparator.java -text
@@ -28,6 +29,7 @@ src/main/java/org/cd2h/covid/model/Reference.java -text
 src/main/java/org/cd2h/covid/model/Section.java -text
 src/main/resources/META-INF/taglib.tld -text svneol=unset#application/xml
 src/non-packaged-resources/Model.clay -text svneol=unset#application/xml
+src/non-packaged-resources/biorxiv.sql -text
 src/non-packaged-resources/chictr_views.sql -text
 src/non-packaged-resources/crossref_views.sql -text
 src/non-packaged-resources/views.sql -text
