@@ -80,7 +80,7 @@ public class CERMINEExtractor {
 	
 	Document doc = null;
 	
-	PreparedStatement stmt = conn.prepareStatement("select doi from covid_biorxiv.biorxiv_map where url ~ ? and doi not in (select doi from covid_biorxiv.reference_stats)");
+	PreparedStatement stmt = conn.prepareStatement("select doi from covid_biorxiv.biorxiv_map where url ~ ? and doi not in (select doi from covid_biorxiv.reference_stats) order by doi");
 	stmt.setString(1, fileName);
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {

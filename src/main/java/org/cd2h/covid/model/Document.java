@@ -96,6 +96,7 @@ public class Document {
 	Vector<Line> others = new Vector<Line>();
 	
 	Line prev = section.lines.firstElement();
+	prev.dump();
 	for (int i  = 1; i < section.lines.size(); i++) {
 	    Line line = section.lines.elementAt(i);
 	    line.dump();
@@ -105,7 +106,10 @@ public class Document {
 //	    }
 	    switch (mode) {
 	    case TITLE:
-		if (line.mostPopularFont.equals(prev.mostPopularFont) && line.spacing < line.height * 2 && Math.abs(line.getHeight() - prev.getHeight()) < 1.0) {
+		if (line.mostPopularFont.equals(prev.mostPopularFont)
+//			&& line.spacing < line.height * 2
+			&& line.getHeight() == prev.getHeight()
+			) {
 		    title += " " + line.rawText;
 		} else {
 		    mode = Mode.AUTHOR;
@@ -156,6 +160,12 @@ public class Document {
 	logger.info("scanning affiliations:");
 	Vector<Affiliation> affs = new Vector<Affiliation>();
 	Affiliation affiliation = null;
+	double affTotal = 0.0;
+	for (Line line : affiliations) {
+	    affTotal += line.height;
+	}
+	double affAve = affTotal / affiliations.size();
+	logger.info("line height average: " + affAve);
 	for (Line line : affiliations) {
 //	    line.dump();
 	    for (int i = 0; i < line.internalLine.childrenCount(); i++) {
@@ -163,15 +173,15 @@ public class Document {
 		logger.debug("\tword: " + word.toText());
 		for (int j = 0; j < word.childrenCount(); j++) {
 		    BxChunk chunk = word.getChild(j);
-		    if (affs.size() == 0 || Math.abs(line.getHeight() - chunk.getHeight()) > 1.5) {
-			logger.debug("\t\tprefix: " + chunk.toText() + " : " + chunk.getHeight());
+		    if (affs.size() == 0 || chunk.getHeight() / affAve < 0.75) {
+			logger.info("\t\tprefix: " + chunk.toText() + " : " + chunk.getHeight());
 			if (j == 0 || chunk.toText().matches("[*†]")) {
 			    affiliation = new Affiliation(chunk.toText());
 			    affs.add(affiliation);
 			} else
 			    affiliation.addLinkChar(chunk.toText());
 		    } else {
-			logger.debug("\t\tchunk: " + chunk.toText() + " : " + chunk.getHeight());
+			logger.info("\t\tchunk: " + chunk.toText() + " : " + chunk.getHeight());
 			affiliation.addAffiliationChar(chunk.toText());
 		    }
 		}
@@ -197,7 +207,7 @@ public class Document {
 		for (int j = 0; j < word.childrenCount(); j++) {
 		    BxChunk chunk = word.getChild(j);
 		    if (auths.size() > 0 && Math.abs(line.getHeight() - chunk.getHeight()) > 2.5) {
-			logger.info("\t\tprefix: " + chunk.toText() + " : " + chunk.getHeight());
+			logger.debug("\t\tprefix: " + chunk.toText() + " : " + chunk.getHeight());
 			if (j == 0) {
 			    author = new Author(chunk.toText());
 			    auths.add(author);
@@ -209,7 +219,7 @@ public class Document {
 				author.addAffiliationChar(chunk.toText());
 			}
 		    } else {
-			logger.info("\t\tchunk: " + chunk.toText() + " : " + chunk.getHeight());
+			logger.debug("\t\tchunk: " + chunk.toText() + " : " + chunk.getHeight());
 			if (author == null) {
 			    author = new Author(chunk.toText());
 			    auths.add(author);
