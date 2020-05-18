@@ -132,11 +132,11 @@ public class CERMINEExtractor implements Runnable {
 	    logger.info("[" + threadID + "] processing " + document.getDoi());
 	    try {
 		acquireBxDocument(document);
+		document.section();
+		document.dump();
 	    } catch (Exception e) {
 		logger.info("[" + threadID + "] exception raised processing " + document.getDoi() + " : ", e);
 	    }
-	    document.section();
-	    document.dump();
 	}
     }
 
@@ -221,12 +221,17 @@ public class CERMINEExtractor implements Runnable {
         }
     }
 
-    void acquireBxDocument(Document doc) throws AnalysisException, IOException, TransformationException {
+    void acquireBxDocument(Document doc) throws AnalysisException, IOException, TransformationException, SQLException {
 //        InputStream is = new FileInputStream("/Users/eichmann/downloads/test/2020.04.21.054221v1.full.cermstr");
 //        TrueVizToBxDocumentReader reader = new TrueVizToBxDocumentReader();
 //        Reader r = new InputStreamReader(is, "UTF-8");
 //        BxDocument bxDoc = new BxDocument().setPages(reader.read(r));
 
+	PreparedStatement stmt = conn.prepareStatement("insert into covid_biorxiv.document (doi) values (?)");
+	stmt.setString(1, doc.getDoi());
+	stmt.executeUpdate();
+	stmt.close();
+	
         ContentExtractor extractor = getContentExtractor();
  	InputStream inputStream = new FileInputStream(filePrefix + doc.getFileName());
 	extractor.setPDF(inputStream);

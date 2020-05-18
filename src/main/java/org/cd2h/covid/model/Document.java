@@ -1,6 +1,8 @@
 package org.cd2h.covid.model;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -51,7 +53,7 @@ public class Document {
 	pages.add(page);
     }
     
-    public void section() {
+    public void section() throws SQLException {
 	SectionDetector detector = new SectionDetector();
 	Section current = new Section(this, Category.FRONT, "Front Matter");
 	sections.add(current);
@@ -94,16 +96,15 @@ public class Document {
     
     Pattern affPattern = Pattern.compile("^[1-9*].*");
     enum Mode {TITLE, AUTHOR, AFFILIATION, OTHER};
-    void segmentFrontMatter(Section section) {
+    void segmentFrontMatter(Section section) throws SQLException {
 	Mode mode = Mode.TITLE;
-	String title = section.lines.firstElement().rawText;
+	String title = "";
 	Vector<Line> authors = new Vector<Line>();
 	Vector<Line> affiliations = new Vector<Line>();
 	Vector<Line> others = new Vector<Line>();
 	
-	Line prev = section.lines.firstElement();
-	prev.dump();
-	for (int i  = 1; i < section.lines.size(); i++) {
+	Line prev = null;
+	for (int i  = 0; i < section.lines.size(); i++) {
 	    Line line = section.lines.elementAt(i);
 	    line.dump();
 //	    for (int j = 0; j < line.internalLine.getFirstChild().childrenCount(); j++) {
@@ -112,11 +113,21 @@ public class Document {
 //	    }
 	    switch (mode) {
 	    case TITLE:
-		if (line.mostPopularFont.equals(prev.mostPopularFont)
+		if (prev == null || (line.mostPopularFont.equals(prev.mostPopularFont)
 //			&& line.spacing < line.height * 2
 			&& line.getHeight() == prev.getHeight()
-			) {
-		    title += " " + line.rawText;
+		)) {
+		    if (line.rawText.startsWith("Title") && line.rawText.indexOf(' ') > 0)
+			title = line.rawText.substring(line.rawText.indexOf(' ') + 1);
+		    else if (line.rawText.startsWith("Title")
+			    || line.rawText.startsWith("Note:")
+			    || line.rawText.equals("Page")
+			    || line.rawText.equals("Article")
+			    || line.rawText.equals("Original Article")
+			    || line.rawText.equals("1"))
+			title = "";
+		    else
+			title += " " + line.rawText;
 		} else {
 		    mode = Mode.AUTHOR;
 		    authors.add(line);
@@ -124,7 +135,13 @@ public class Document {
 		break;
 	    case AUTHOR:
 		logger.info("auth line height " + line.getHeight() +  "\tnext chunk y: " + line.internalLine.getFirstChild().getFirstChild().getHeight());
-		if (Math.abs(prev.internalLine.getFirstChild().getFirstChild().getHeight() - line.internalLine.getFirstChild().getFirstChild().getHeight()) < 1.8) {
+		logger.info(line.rawText);
+		if (line.rawText.matches("^1[.]?.*")) {
+		    mode = Mode.AFFILIATION;
+		    affiliations.add(line);
+		} else if (line.rawText.matches("Affiliations[:]?")) {
+		    mode = Mode.AFFILIATION;
+		} else if (Math.abs(prev.internalLine.getFirstChild().getFirstChild().getHeight() - line.internalLine.getFirstChild().getFirstChild().getHeight()) < 1.8) {
 		    authors.add(line);
 		} else {
 		    mode = Mode.AFFILIATION;
@@ -150,6 +167,13 @@ public class Document {
 	}
 	
 	logger.info("title: " + title);
+
+	PreparedStatement stmt = conn.prepareStatement("update covid_biorxiv.document set title = ? where doi = ?");
+	stmt.setString(1, title.trim());
+	stmt.setString(2, doi);
+	stmt.executeUpdate();
+	stmt.close();
+	
 	logger.info("authors:");
 	for (Line line : authors) {
 	    line.dump();
@@ -196,6 +220,12 @@ public class Document {
 	}
 	for (Affiliation aff : affs) {
 	    logger.info("affiliation: " + aff.link + " : " + aff.affiliation);
+	    PreparedStatement affStmt = conn.prepareStatement("insert into covid_biorxiv.institution values (?,?,?)");
+	    affStmt.setString(1, doi);
+	    affStmt.setString(2, aff.link.trim());
+	    affStmt.setString(3, aff.affiliation.trim());
+	    affStmt.executeUpdate();
+	    affStmt.close();
 	}
 
 	logger.info("scanning authors:");
@@ -206,7 +236,7 @@ public class Document {
 	    for (int i = 0; i < line.internalLine.childrenCount(); i++) {
 		BxWord word = line.internalLine.getChild(i);
 		logger.info("\tword: " + word.toText());
-		if (word.toText().equals("and") || word.toText().equals("Authors:") || word.toText().equals("Affiliations:")) {
+		if (word.toText().equals("and") || word.toText().startsWith("Author") || word.toText().startsWith("Affiliation")) {
 		    author = null;
 		    continue;
 		}
@@ -229,7 +259,7 @@ public class Document {
 			if (author == null) {
 			    author = new Author(chunk.toText());
 			    auths.add(author);
-			} else if (chunk.toText().equals(",")) {
+			} else if (chunk.toText().equals(",") || chunk.toText().equals(";")) {
 			    author = null;
 			} else if (chunk.toText().matches("[*†]")) {
 			    author.addAffiliationChar(chunk.toText());
@@ -247,9 +277,28 @@ public class Document {
 	    auth.matchAffiliations(affs);
 	}
 	
+	int seqnum = 0;
 	logger.info("authors:");
 	for (Author auth : auths) {
 	    logger.info("author: " + auth.name + " (" + auth.affiliationString + ")");
+	    
+	    PreparedStatement authStmt = conn.prepareStatement("insert into covid_biorxiv.author values (?,?,?,?)");
+	    authStmt.setString(1, doi);
+	    authStmt.setInt(2, ++seqnum);
+	    authStmt.setString(3, auth.name.trim());
+	    authStmt.setString(4, auth.affiliationString);
+	    authStmt.executeUpdate();
+	    authStmt.close();
+	    
+	    for (Affiliation aff : auth.affiliations) {
+		PreparedStatement affStmt = conn.prepareStatement("insert into covid_biorxiv.affiliation values (?,?,?)");
+		affStmt.setString(1, doi);
+		affStmt.setInt(2, seqnum);
+		affStmt.setString(3, aff.link.trim());
+		affStmt.executeUpdate();
+		affStmt.close();
+
+	    }
 	}
     }
     
