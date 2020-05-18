@@ -124,6 +124,7 @@ public class Document {
 			    || line.rawText.equals("Page")
 			    || line.rawText.equals("Article")
 			    || line.rawText.equals("Original Article")
+			    || line.rawText.equals("Original article")
 			    || line.rawText.equals("1"))
 			title = "";
 		    else

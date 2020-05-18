@@ -48,3 +48,11 @@ create table reference (
     	REFERENCES document (doi) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+create table reference_stats (
+	doi text,
+	lines int,
+	refs int,
+	PRIMARY KEY (doi),
+	CONSTRAINT FK_reference_stats_1 FOREIGN KEY (doi)
+    	REFERENCES document (doi) ON DELETE CASCADE ON UPDATE CASCADE
+);

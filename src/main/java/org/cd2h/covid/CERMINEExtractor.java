@@ -64,6 +64,8 @@ public class CERMINEExtractor implements Runnable {
 	prop_file = PropertyLoader.loadProperties("zotero");
 	staticConn = getConnection();
 	
+	simpleStmt("truncate covid_biorxiv.document cascade;");
+	
 	if (args.length == 1) {
 	    CERMINEExtractor extractor = new CERMINEExtractor(0);
 	    // scan the download directory
