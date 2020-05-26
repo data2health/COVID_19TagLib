@@ -76,7 +76,7 @@ public class CERMINEExtractor implements Runnable {
 	    }
 	} else if (args.length > 1 && args[1].equals("-parallel")) {
 	    scan();
-	    int maxCrawlerThreads = Runtime.getRuntime().availableProcessors();
+	    int maxCrawlerThreads = Runtime.getRuntime().availableProcessors()/2;
 	    Thread[] scannerThreads = new Thread[maxCrawlerThreads];
 
 	    for (int i = 0; i < maxCrawlerThreads; i++) {

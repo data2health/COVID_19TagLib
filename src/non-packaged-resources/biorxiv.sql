@@ -4,14 +4,35 @@ create table document (
 	PRIMARY KEY (doi)
 );
 
-create table author (
+create table section (
 	doi text,
 	seqnum int,
-	name text,
-	affiliations text,
+	cateogry text,
+	label text,
 	PRIMARY KEY (doi,seqnum),
-	CONSTRAINT FK_author_1 FOREIGN KEY (doi)
+	CONSTRAINT FK_section_1 FOREIGN KEY (doi)
     	REFERENCES document (doi) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+create table sentence (
+    doi text,
+    seqnum int,
+    sentnum int,
+    full_text text,
+    trimmed_text text,
+    PRIMARY KEY (doi,seqnum,sentnum),
+    CONSTRAINT FK_setence_1 FOREIGN KEY (doi,seqnum)
+        REFERENCES section (doi,seqnum) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+create table author (
+    doi text,
+    seqnum int,
+    name text,
+    affiliations text,
+    PRIMARY KEY (doi,seqnum),
+    CONSTRAINT FK_author_1 FOREIGN KEY (doi)
+        REFERENCES document (doi) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 create table institution (

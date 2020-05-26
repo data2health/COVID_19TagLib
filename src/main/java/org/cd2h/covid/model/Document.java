@@ -22,6 +22,7 @@ public class Document {
     Vector<Section> sections = new Vector<Section>();
     
     Section frontMatter = null;
+    Section abstr = null;
     Section references = null;
     
     public Document(String doi, String fileName) {
@@ -65,6 +66,8 @@ public class Document {
 		if (result != null) {
 		    current = new Section(this, result, line);
 		    sections.add(current);
+		    if (result == Category.ABSTRACT)
+			abstr = current;
 		    if (result == Category.REFERENCES)
 			references = current;
 		} else
@@ -81,8 +84,10 @@ public class Document {
 		segmentFrontMatter(section);
 		break;
 	    case ABSTRACT:
+		section.segment();
 		break;
 	    case BODY:
+		section.segment();
 		break;
 	    case REFERENCES:
 		break;
@@ -106,11 +111,8 @@ public class Document {
 	Line prev = null;
 	for (int i  = 0; i < section.lines.size(); i++) {
 	    Line line = section.lines.elementAt(i);
-	    line.dump();
-//	    for (int j = 0; j < line.internalLine.getFirstChild().childrenCount(); j++) {
-//		BxChunk chunk = line.internalLine.getFirstChild().getChild(j);
-//		logger.info("chunk: " + chunk.toText()  + " : " + chunk.getFontName()  + " : " + chunk.getHeight());
-//	    }
+	    if (logger.isDebugEnabled())
+		line.dump();
 	    switch (mode) {
 	    case TITLE:
 		if (prev == null || (line.mostPopularFont.equals(prev.mostPopularFont)
@@ -135,14 +137,15 @@ public class Document {
 		}
 		break;
 	    case AUTHOR:
-		logger.info("auth line height " + line.getHeight() +  "\tnext chunk y: " + line.internalLine.getFirstChild().getFirstChild().getHeight());
-		logger.info(line.rawText);
+		logger.debug("auth line height " + line.getHeight() +  "\tnext chunk y: " + line.internalLine.getFirstChild().getFirstChild().getHeight());
+		logger.debug(line.rawText);
 		if (line.rawText.matches("^1[.]?.*")) {
 		    mode = Mode.AFFILIATION;
 		    affiliations.add(line);
 		} else if (line.rawText.matches("Affiliations[:]?")) {
 		    mode = Mode.AFFILIATION;
-		} else if (Math.abs(prev.internalLine.getFirstChild().getFirstChild().getHeight() - line.internalLine.getFirstChild().getFirstChild().getHeight()) < 1.8) {
+		} else if (Math.abs(prev.internalLine.getFirstChild().getFirstChild().getHeight() - line.internalLine.getFirstChild().getFirstChild().getHeight()) < 1.8
+				&& (line.getSpacing() < line.getHeight() * 2.5 || authorPatternMatch(line))) {
 		    authors.add(line);
 		} else {
 		    mode = Mode.AFFILIATION;
@@ -150,7 +153,7 @@ public class Document {
 		}
 		break;
 	    case AFFILIATION:
-		logger.info("aff line y " + line.getY() +  "\tnext chunk y: " + line.internalLine.getFirstChild().getFirstChild().getFirstChild().SIZE);
+		logger.debug("aff line y " + line.getY() +  "\tnext chunk y: " + line.internalLine.getFirstChild().getFirstChild().getFirstChild().SIZE);
 		if (line.spacing  > 0 && line.spacing < line.height * 3) {
 		    affiliations.add(line);
 		} else if (line.internalLine.childrenCount() == 1 && i < section.lines.size() - 1 && line.getY() > section.lines.elementAt(i+1).internalLine.getHeight() - section.lines.elementAt(i+1).internalLine.getY()) {
@@ -196,7 +199,7 @@ public class Document {
 	    affTotal += line.height;
 	}
 	double affAve = affTotal / affiliations.size();
-	logger.info("line height average: " + affAve);
+	logger.debug("line height average: " + affAve);
 	for (Line line : affiliations) {
 //	    line.dump();
 	    for (int i = 0; i < line.internalLine.childrenCount(); i++) {
@@ -205,14 +208,14 @@ public class Document {
 		for (int j = 0; j < word.childrenCount(); j++) {
 		    BxChunk chunk = word.getChild(j);
 		    if (affs.size() == 0 || chunk.getHeight() / affAve < 0.75) {
-			logger.info("\t\tprefix: " + chunk.toText() + " : " + chunk.getHeight());
+			logger.debug("\t\tprefix: " + chunk.toText() + " : " + chunk.getHeight());
 			if (j == 0 || chunk.toText().matches("[*†]")) {
 			    affiliation = new Affiliation(chunk.toText());
 			    affs.add(affiliation);
 			} else
 			    affiliation.addLinkChar(chunk.toText());
 		    } else {
-			logger.info("\t\tchunk: " + chunk.toText() + " : " + chunk.getHeight());
+			logger.debug("\t\tchunk: " + chunk.toText() + " : " + chunk.getHeight());
 			affiliation.addAffiliationChar(chunk.toText());
 		    }
 		}
@@ -221,22 +224,27 @@ public class Document {
 	}
 	for (Affiliation aff : affs) {
 	    logger.info("affiliation: " + aff.link + " : " + aff.affiliation);
-	    PreparedStatement affStmt = conn.prepareStatement("insert into covid_biorxiv.institution values (?,?,?)");
-	    affStmt.setString(1, doi);
-	    affStmt.setString(2, aff.link.trim());
-	    affStmt.setString(3, aff.affiliation.trim());
-	    affStmt.executeUpdate();
-	    affStmt.close();
+	    try {
+		PreparedStatement affStmt = conn.prepareStatement("insert into covid_biorxiv.institution values (?,?,?)");
+		affStmt.setString(1, doi);
+		affStmt.setString(2, aff.link.trim());
+		affStmt.setString(3, aff.affiliation.trim());
+		affStmt.executeUpdate();
+		affStmt.close();
+	    } catch (Exception e) {
+		logger.error("exception storing institution: ", e);
+	    }
 	}
 
 	logger.info("scanning authors:");
 	Vector<Author> auths = new Vector<Author>();
 	Author author = null;
 	for (Line line : authors) {
-	    line.dump();
+	    if (logger.isDebugEnabled())
+		line.dump();
 	    for (int i = 0; i < line.internalLine.childrenCount(); i++) {
 		BxWord word = line.internalLine.getChild(i);
-		logger.info("\tword: " + word.toText());
+		logger.debug("\tword: " + word.toText());
 		if (word.toText().equals("and") || word.toText().startsWith("Author") || word.toText().startsWith("Affiliation")) {
 		    author = null;
 		    continue;
@@ -279,9 +287,9 @@ public class Document {
 	}
 	
 	int seqnum = 0;
-	logger.info("authors:");
+	logger.debug("authors:");
 	for (Author auth : auths) {
-	    logger.info("author: " + auth.name + " (" + auth.affiliationString + ")");
+	    logger.debug("author: " + auth.name + " (" + auth.affiliationString + ")");
 	    
 	    PreparedStatement authStmt = conn.prepareStatement("insert into covid_biorxiv.author values (?,?,?,?)");
 	    authStmt.setString(1, doi);
@@ -292,26 +300,43 @@ public class Document {
 	    authStmt.close();
 	    
 	    for (Affiliation aff : auth.affiliations) {
-		PreparedStatement affStmt = conn.prepareStatement("insert into covid_biorxiv.affiliation values (?,?,?)");
-		affStmt.setString(1, doi);
-		affStmt.setInt(2, seqnum);
-		affStmt.setString(3, aff.link.trim());
-		affStmt.executeUpdate();
-		affStmt.close();
-
+		try {
+		    PreparedStatement affStmt = conn.prepareStatement("insert into covid_biorxiv.affiliation values (?,?,?)");
+		    affStmt.setString(1, doi);
+		    affStmt.setInt(2, seqnum);
+		    affStmt.setString(3, aff.link.trim());
+		    affStmt.executeUpdate();
+		    affStmt.close();
+		} catch (SQLException e) {
+		    logger.error("exception storing affiliation: ", e);
+		}
 	    }
 	}
     }
     
-    public void dump() {
+    boolean authorPatternMatch(Line line) {
+	int count = 0;
+	for (Character character : line.rawText.toCharArray()) {
+	    if (character == ',')
+		count++;
+	}
+	if (count == 0)
+	    return false;
+	else
+	    return line.internalLine.childrenCount() / count < 4;
+    }
+    
+    public void dump() throws SQLException {
 	logger.info("Document: " + doi + " : " + fileName + " : " + pages.size() + " pages");
 	if (logger.isDebugEnabled()) {
 	    for (Page page : pages) {
 		page.dump();
 	    }
 	}
+	int count = 1;
 	for (Section section : sections) {
 	    section.dump();
+	    section.store(doi, count++);
 	}
     }
 }

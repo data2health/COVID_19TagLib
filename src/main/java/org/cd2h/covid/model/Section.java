@@ -9,6 +9,9 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.cd2h.covid.CERMINEExtractor;
+import org.cd2h.covid.model.Reference.Style;
+
+import pl.edu.icm.cermine.structure.model.BxWord;
 
 public class Section {
     static Logger logger = Logger.getLogger(Section.class);
@@ -34,7 +37,9 @@ public class Section {
     int labelHeight = 0;
     String labelFont = null;
     Vector<Line> lines = new Vector<Line>();
+    public Style reference_style = Style.UNKNOWN;
     Vector<Reference> references = new Vector<Reference>();
+    Vector<Sentence> sentences = new Vector<Sentence>();
     
     public Section(Document parent, Category category, String label) {
 	this.parent = parent;
@@ -57,20 +62,64 @@ public class Section {
 	    line.spacing = (int)line.y - (int)lines.elementAt(lines.size()-2).y;
     }
     
+    public void segment() {
+	Sentence current = null;
+	Line prevLine = null;
+	BxWord prev = null;
+	logger.info("segmenting section:");
+	for (Line line : lines) {
+	    line.dump();
+	    for (int i = 0; i < line.internalLine.childrenCount(); i++) {
+		BxWord word = line.internalLine.getChild(i);
+		if (current == null) {
+		    current = new Sentence(word);
+		    sentences.add(current);
+		} else {
+		    if ((terminalPunctuation(prev) && capitalized(word))
+			|| (prevLine != null && i == 0 && capitalized(word) && !prev.getMostPopularFontName().equals(word.getMostPopularFontName()))
+			|| (prevLine != null && i == 0 && prevLine.getSpacing() > 0 && prevLine.getSpacing() + 10 < line.getSpacing())) {
+			current = new Sentence(word);
+			sentences.add(current);
+		    } else
+			current.addWord(word);
+		}
+		prev = word;
+	    }
+	    prevLine = line;
+	}
+	for (Sentence sentence : sentences) {
+	    sentence.citationScan(parent.references == null ? Style.UNKNOWN :  parent.references.reference_style);
+	}
+    }
+    
+    boolean terminalPunctuation(BxWord word) {
+	String wordString = word.toText();
+	return wordString.endsWith(".") || wordString.endsWith("!") || wordString.endsWith("?");
+    }
+    
+    boolean capitalized(BxWord word) {
+	String wordString = word.toText();
+	return Character.isUpperCase(wordString.charAt(0));
+    }
+    
     public void segmentReferences() {
 	if (lines.isEmpty())
 	    return;
 	if (numberedReferencePattern.matcher(lines.firstElement().rawText).matches()) {
 	    logger.info("*** numbered citations");
+	    reference_style = Style.NUMBERED;
 	    scanNumberedReferences(numberedReferencePattern);
 	} else if (bracketNumberedReferencePattern.matcher(lines.firstElement().rawText).matches()) {
 	    logger.info("*** bracketed numbered citations");
+	    reference_style = Style.BRACKETED;
 	    scanNumberedReferences(bracketNumberedReferencePattern);
 	} else if (parenNumberedReferencePattern.matcher(lines.firstElement().rawText).matches()) {
 	    logger.info("*** paren numbered citations");
+	    reference_style = Style.PARENTHESIZED;
 	    scanNumberedReferences(parenNumberedReferencePattern);
 	} else if (nameYearReferencePattern.matcher(lines.firstElement().rawText).matches()) {
 	    logger.info("*** name/year citations");
+	    reference_style = Style.NAME_YEAR;
 	    scanNameYearReferences(nameYearReferencePattern);
 	} else {
 	    logger.info("*** unknown citation scheme");
@@ -87,17 +136,17 @@ public class Section {
 	    for (int i = 0; i < leftMargin.length; i++) {
 		if (leftMargin[i] == 0)
 		    continue;
-		logger.info("leftMargin[" + i + "] : " + leftMargin[i]);
+		logger.debug("leftMargin[" + i + "] : " + leftMargin[i]);
 	    }
 	    for (int i = 0; i < spacing.length; i++) {
 		if (spacing[i] == 0)
 		    continue;
-		logger.info("spacing[" + i + "] : " + spacing[i]);
+		logger.debug("spacing[" + i + "] : " + spacing[i]);
 	    }
-	    logger.info("trailing year count: " + trailingYearCount);
+	    logger.debug("trailing year count: " + trailingYearCount);
 	    
 	    if (trailingYearCount > lines.size() / 4) { // totally heuristic guess at cutoff
-		logger.info("*** trailing year citations");
+		logger.debug("*** trailing year citations");
 		scanTrailingYearReferences(trailingYearReferencePattern);
 	    } else {
 		storeStats(lines.size(), 0);
@@ -148,10 +197,10 @@ public class Section {
 	references = new Vector<Reference>();
 	Reference current = null;
 	for (Line line : lines) {
-	    logger.info("\t\t\tline: " + line.rawText);
+	    logger.debug("\t\t\tline: " + line.rawText);
 	    Matcher matcher = pattern.matcher(line.rawText);
 	    if (matcher.matches()) {
-		logger.info("\t\t\treference end: " + line.rawText);
+		logger.debug("\t\t\treference end: " + line.rawText);
 		if (current == null) //single line reference
 		    current = new Reference(line, matcher.group(1));
 		else
@@ -159,11 +208,11 @@ public class Section {
 		current.setYear(Integer.parseInt(matcher.group(2)));
 		current = null;
 	    } else if (current == null) {
-		logger.info("\t\t\treference start: " + line.rawText);
+		logger.debug("\t\t\treference start: " + line.rawText);
 		current = new Reference(line);
 		references.add(current);
 	    } else {
-		logger.info("\t\t\treference continuation: " + line.rawText);
+		logger.debug("\t\t\treference continuation: " + line.rawText);
 		current.addText(line);
 	    }
 	}
@@ -175,18 +224,18 @@ public class Section {
     void checkReferences(Vector<Reference> references) {
 	if (references.size() > 0 && references.lastElement().lines.size() > 3) {
 	    Reference ref = references.lastElement();
-	    logger.info("candidate runaway: ");
+	    logger.debug("candidate runaway: ");
 	    ref.dump();
 	    for (int i = 1; i < ref.lines.size(); i++) {
 		double delta = ref.lines.elementAt(i).getY()-ref.lines.elementAt(i-1).getY();
-		logger.info(i+"\tdelta: " + formatter.format(delta));
+		logger.debug(i+"\tdelta: " + formatter.format(delta));
 		if (delta < 0.0 || delta > (ref.lines.elementAt(i-1).getHeight())*2) {
 		    Section newSection = new Section(parent,Category.MISC,(String)null);
 		    while (i < ref.lines.size()) {
 			newSection.addLine(ref.lines.remove(i));
 		    }
 		    int index = parent.sections.indexOf(this);
-		    logger.info("adding section after index: " + index);
+		    logger.debug("adding section after index: " + index);
 		    parent.sections.add(index+1, newSection);
 		    ref.regenerate();
 		}
@@ -238,9 +287,26 @@ public class Section {
 		reference.dump();
 	    }
 	} else {
-	    for (Line line : lines) {
-		line.dump();
+//	    for (Line line : lines) {
+//		line.dump();
+//	    }
+	    for (Sentence sentence : sentences) {
+		logger.info("\t\tsentence: " + sentence);
 	    }
+	}
+    }
+    
+    public void store(String doi, int seqnum) throws SQLException {
+	PreparedStatement stmt = parent.conn.prepareStatement("insert into covid_biorxiv.section values(?,?,?,?)");
+	stmt.setString(1, doi);
+	stmt.setInt(2, seqnum);
+	stmt.setString(3, category.toString());
+	stmt.setString(4, label);
+	stmt.execute();
+	stmt.close();
+	
+	for (int i = 0; i < sentences.size(); i++) {
+	    sentences.elementAt(i).store(parent.conn, doi, seqnum, i);
 	}
     }
 }

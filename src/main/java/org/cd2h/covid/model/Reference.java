@@ -6,6 +6,8 @@ import org.apache.log4j.Logger;
 
 public class Reference {
     static Logger logger = Logger.getLogger(Reference.class);
+    static enum Style {UNKNOWN, NUMBERED, BRACKETED, PARENTHESIZED, NAME_YEAR};
+    
     int seqNum = 0;
     String name = null;
     int year = 0;
@@ -61,8 +63,10 @@ public class Reference {
 	    logger.info("\t\treference: " + seqNum + " : " + reference);
 	else
 	    logger.info("\t\treference: " + name + " : " + year + " : " + reference);
-	for(Line line : lines) {
-	    line.dump();
+	if (logger.isDebugEnabled()) {
+	    for(Line line : lines) {
+		line.dump();
+	    }
 	}
     }
 
