@@ -18,7 +18,7 @@ public class Sentence {
     static Pattern numberedPrefixCitationPattern = Pattern.compile("^([^\\[(]+)?\\[(([0-9]+([-–][0-9]+)?)),");
     static Pattern numberedSuffixCitationPattern = Pattern.compile("^(([0-9]+([-–][0-9]+)?)*)[\\])]([..,:;?!])?");
     static Pattern nameYearPrefixCitationPattern = Pattern.compile("^\\(([a-zA-Z]+),?");
-    static Pattern nameYearSuffixCitationPattern = Pattern.compile("^([0-9]+)\\)([..,:;?!])?");
+    static Pattern nameYearSuffixCitationPattern = Pattern.compile("^([^)]+)\\)([..,:;?!])?(.*)");
 
     Vector<BxWord> words = new Vector<BxWord>();
     StringBuffer trimmedString = new StringBuffer();
