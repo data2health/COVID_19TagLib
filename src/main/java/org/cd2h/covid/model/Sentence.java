@@ -79,6 +79,11 @@ public class Sentence {
 		    while (!suffixMatcher.matches()) {
 			logger.info("\t\tcontinuation: " + word.toText());
 			citation += "," + word.toText();
+			if (i + 1 == words.size()) {
+			    trimmedString.append((trimmedString.length() == 0 ? "" : " ") + citation);
+			    logger.info("\ttrimmed: " + trimmedString.toString());
+			    return;
+			}
 			word = words.elementAt(++i);
 			suffixMatcher = numberedSuffixCitationPattern.matcher(word.toText());
 			continuation = true;
@@ -115,6 +120,11 @@ public class Sentence {
 			continuation = false;
 		    } else
 			continuation = true;
+		    if (i+1 == words.size()) {
+			trimmedString.append((trimmedString.length() == 0 ? "" : " ") + citation);
+			logger.info("\ttrimmed: " + trimmedString.toString());
+			return;
+		    }
 		    word = words.elementAt(++i);
 		    suffixMatcher = nameYearSuffixCitationPattern.matcher(word.toText());
 		}
