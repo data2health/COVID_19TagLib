@@ -88,7 +88,7 @@ public class Section {
 	    prevLine = line;
 	}
 	for (Sentence sentence : sentences) {
-	    sentence.citationScan(parent.references == null ? Style.UNKNOWN :  parent.references.reference_style);
+	    sentence.citationScan(references, parent.references == null ? Style.UNKNOWN :  parent.references.reference_style);
 	}
     }
     

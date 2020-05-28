@@ -31,22 +31,22 @@ public class Sentence {
 	words.add(word);
     }
     
-    public void citationScan(Style style) {
+    public void citationScan(Vector<Reference> references, Style style) {
 	switch (style) {
 	case NUMBERED:
 	case BRACKETED:
 	case PARENTHESIZED:
-	    numberedScan();
+	    numberedScan(references);
 	    break;
 	case NAME_YEAR:
-	    nameYearScan();
+	    nameYearScan(references);
 	    break;
 	case UNKNOWN:
 	    break;
 	}
     }
     
-    void numberedScan() {
+    void numberedScan(Vector<Reference> references) {
 	logger.info("numbered citation scan: " + toString(words));
 	for (int i = 0; i < words.size(); i++) {
 	    BxWord word = words.elementAt(i);
@@ -102,7 +102,7 @@ public class Sentence {
 	logger.info("\ttrimmed: " + trimmedString.toString());
     }
     
-    void nameYearScan() {
+    void nameYearScan(Vector<Reference> references) {
 	logger.info("name-year citation scan: " + toString(words));
 	for (int i = 0; i < words.size(); i++) {
 	    BxWord word = words.elementAt(i);
@@ -136,6 +136,10 @@ public class Sentence {
 		String suffix = suffixMatcher.group(2);
 		logger.info("\t\tcitation: " + citation);
 		logger.info("\t\tsuffix: " + suffix);
+		if (!nameYearCitationMatcher(references, citation)) {
+		    logger.info("\t\tnon-match: " + citation);
+		    trimmedString.append((trimmedString.length() == 0 ? "" : " ") + "(" + citation + ")");		    
+		}
 		if (suffix != null)
 		    trimmedString.append(suffix);
 	    } else {
@@ -143,6 +147,21 @@ public class Sentence {
 	    }
 	}
 	logger.info("\ttrimmed: " + trimmedString.toString());
+    }
+    
+    static Pattern nameYearExtractonPattern = Pattern.compile("^([a-zA-Z]+)[^;]*, +([0-9]+([a-z])?)(; +(.*))?$");
+
+    boolean nameYearCitationMatcher(Vector<Reference> references, String citation) {
+	Matcher matcher = nameYearExtractonPattern.matcher(citation);
+	if (matcher.matches()) {
+	    String first  = matcher.group(1);
+	    String year = matcher.group(2);
+	    String suffix = matcher.group(5);
+	    logger.info("\t\tmatch: " + first + "\t" + year);
+	    logger.info("\t\tsuffix: " + suffix);
+	    return true;
+	} else
+	    return false;
     }
     
     public String toString() {
