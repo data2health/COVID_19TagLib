@@ -13,6 +13,7 @@ public class Reference {
     int year = 0;
     String reference = null;
     Vector<Line> lines = new Vector<Line>();
+    Vector<Citation> citations = new Vector<Citation>();
     
     public Reference(Line line) {
 	lines.add(line);
@@ -47,6 +48,10 @@ public class Reference {
 	reference += " " + reference;
     }
     
+    public void addCitation(Citation citation) {
+	citations.add(citation);
+    }
+    
     public void regenerate() {
 	reference = "";
 	for (Line line : lines) {
@@ -58,15 +63,22 @@ public class Reference {
 	this.year = year;
     }
     
-    public void dump() {
+    public String toString() {
 	if (seqNum > 0)
-	    logger.info("\t\treference: " + seqNum + " : " + reference);
+	    return seqNum + " : " + reference;
 	else
-	    logger.info("\t\treference: " + name + " : " + year + " : " + reference);
+	    return name + " : " + year + " : " + reference;
+    }
+    
+    public void dump() {
+	logger.info("\t\treference: " + toString());
 	if (logger.isDebugEnabled()) {
 	    for(Line line : lines) {
 		line.dump();
 	    }
+	}
+	for (Citation citation : citations) {
+	    logger.info("\t\t\tciting sentence: " + citation.referencingSentence.toString());
 	}
     }
 

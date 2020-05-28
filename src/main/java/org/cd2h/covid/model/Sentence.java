@@ -22,6 +22,7 @@ public class Sentence {
 
     Vector<BxWord> words = new Vector<BxWord>();
     StringBuffer trimmedString = new StringBuffer();
+    Vector<Citation> citations = new Vector<Citation>();
     
     public Sentence(BxWord word) {
 	words.add(word);
@@ -59,6 +60,10 @@ public class Sentence {
 		logger.info("\t\tprefix: " + prefix);
 		logger.info("\t\tcitation: " + citation);
 		logger.info("\t\tsuffix: " + suffix);
+		if (!numberedCitationMatcher(references, citation)) {
+		    logger.info("\t\tnon-match: " + citation);
+		    trimmedString.append((trimmedString.length() == 0 ? "" : " ") + "(" + citation + ")");
+		}
 		if (prefix != null)
 		    trimmedString.append((trimmedString.length() == 0 ? "" : " ") + prefix);
 		if (suffix != null)
@@ -92,6 +97,10 @@ public class Sentence {
 		    String suffix = suffixMatcher.group(4);
 		    logger.info("\t\tcitation: " + citation);
 		    logger.info("\t\tsuffix: " + suffix);
+		    if (!numberedCitationMatcher(references, citation)) {
+			logger.info("\t\tnon-match: " + citation);
+			trimmedString.append((trimmedString.length() == 0 ? "" : " ") + "(" + citation + ")");
+		    }
 		    if (suffix != null)
 			trimmedString.append(suffix);
 		} else {
@@ -100,6 +109,44 @@ public class Sentence {
 	    }
 	}
 	logger.info("\ttrimmed: " + trimmedString.toString());
+    }
+    
+    static Pattern numberedExtractionPattern = Pattern.compile("^([0-9]+)([-–]([0-9]+))?([,;](.*))?$");
+
+    boolean numberedCitationMatcher(Vector<Reference> references, String citationString) {
+	boolean matched = false;
+	String buffer = citationString;
+	while (buffer != null) {
+	    Matcher matcher = numberedExtractionPattern.matcher(buffer);
+	    if (matcher.matches()) {
+		String start = matcher.group(1);
+		String stop = matcher.group(3);
+		String suffix = matcher.group(5);
+		logger.info("\t\tmatch: " + start + "\tstop: " + stop);
+		logger.info("\t\tsuffix: " + suffix);
+		matched = true;
+		for (int i = Integer.parseInt(start); i <= (stop == null ? Integer.parseInt(start) : Integer.parseInt(stop)); i++) {
+		    Reference reference = numberedReferenceScan(references, i);
+		    logger.info("\t\treference: " + reference);
+		    Citation citation = new Citation(this, reference, citationString);
+		    citations.add(citation);
+		    if (reference != null)
+			reference.addCitation(citation);
+		}
+		buffer = suffix;
+	    } else
+		break;
+	}
+	return matched;
+    }
+    
+    Reference numberedReferenceScan(Vector<Reference> references, int seqnum) {
+	for (Reference reference : references) {
+	    logger.debug("\t\t\tcandidate: " + reference);
+	    if (reference.seqNum == seqnum)
+		return reference;
+	}
+	return null;
     }
     
     void nameYearScan(Vector<Reference> references) {
@@ -149,19 +196,40 @@ public class Sentence {
 	logger.info("\ttrimmed: " + trimmedString.toString());
     }
     
-    static Pattern nameYearExtractonPattern = Pattern.compile("^([a-zA-Z]+)[^;]*, +([0-9]+([a-z])?)(; +(.*))?$");
+    static Pattern nameYearExtractionPattern = Pattern.compile("^([a-zA-Z]+)[^;]* +([0-9]+([a-z])?)(; +(.*))?$");
 
-    boolean nameYearCitationMatcher(Vector<Reference> references, String citation) {
-	Matcher matcher = nameYearExtractonPattern.matcher(citation);
-	if (matcher.matches()) {
-	    String first  = matcher.group(1);
-	    String year = matcher.group(2);
-	    String suffix = matcher.group(5);
-	    logger.info("\t\tmatch: " + first + "\t" + year);
-	    logger.info("\t\tsuffix: " + suffix);
-	    return true;
-	} else
-	    return false;
+    boolean nameYearCitationMatcher(Vector<Reference> references, String citationString) {
+	boolean matched = false;
+	String buffer = citationString;
+	while (buffer != null) {
+	    Matcher matcher = nameYearExtractionPattern.matcher(buffer);
+	    if (matcher.matches()) {
+		String first = matcher.group(1);
+		String year = matcher.group(2);
+		String suffix = matcher.group(5);
+		logger.info("\t\tmatch: " + first + "\t" + year);
+		logger.info("\t\tsuffix: " + suffix);
+		matched = true;
+		Reference reference = nameYearReferenceScan(references, first, year);
+		logger.info("\t\treference: " + reference);
+		Citation citation = new Citation(this, reference, citationString);
+		citations.add(citation);
+		if (reference != null)
+		    reference.addCitation(citation);
+		buffer = suffix;
+	    } else
+		break;
+	}
+	return matched;
+    }
+    
+    Reference nameYearReferenceScan(Vector<Reference> references, String name, String year) {
+	for (Reference reference : references) {
+	    logger.debug("\t\t\tcandidate: " + reference);
+	    if (reference.name.startsWith(name) && reference.year == Integer.parseInt(year))
+		return reference;
+	}
+	return null;
     }
     
     public String toString() {

@@ -22,6 +22,7 @@ src/main/java/org/cd2h/covid/ZoteroLoader.java -text
 src/main/java/org/cd2h/covid/detectors/SectionDetector.java -text
 src/main/java/org/cd2h/covid/model/Affiliation.java -text
 src/main/java/org/cd2h/covid/model/Author.java -text
+src/main/java/org/cd2h/covid/model/Citation.java -text
 src/main/java/org/cd2h/covid/model/Document.java -text
 src/main/java/org/cd2h/covid/model/Line.java -text
 src/main/java/org/cd2h/covid/model/Page.java -text
