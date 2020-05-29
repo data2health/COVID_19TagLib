@@ -247,6 +247,9 @@ public class Section {
 	}
     }
     
+    static Pattern doiExpr1 = Pattern.compile(".*\\((10.\\d{3,9}/[-._;()/:<>a-zA-Z0-9]+)\\)");
+    static Pattern doiExpr2 = Pattern.compile(".*(10.\\d{3,9}/[-._;()/:<>a-zA-Z0-9]+)");
+    
     public void storeReference(int seqnum, Reference reference) {
 	try {
 	    PreparedStatement stmt = parent.conn.prepareStatement("insert into covid_biorxiv.reference(doi,seqnum,count,name,year,reference) values(?,?,?,?,?,?)");
