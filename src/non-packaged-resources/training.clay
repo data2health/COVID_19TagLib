@@ -3,10 +3,190 @@
 <database-model alias="" author="" begin-script="" end-script="" name="myModel3" remarks="" sql-dialect-id="jp.azzurri.clay.dialect.Postgre_7_3_Dialect" uid="34dcf4d9:12c7933ea8c:-7fe2" version="1.0">
 <database-model-description/>
 <schema-list>
-<schema alias="" name="RENAME_ME" remarks="" uid="34dcf4d9:12c7933ea8c:-7fdf">
+<schema alias="" name="n3c_training" remarks="" uid="34dcf4d9:12c7933ea8c:-7fdf">
 <schema-description/>
 <domain-list/>
-<table-list/>
+<table-list>
+<table alias="" name="course" remarks="" uid="6ba6cc25:17261ebcfa9:-7f85">
+<table-description/>
+<table-figure-bounds height="-1" width="-1" x="254" y="252"/>
+<column-list>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="true" name="id" remarks="" uid="6ba6cc25:17261ebcfa9:-7f81">
+<column-description/>
+<data-type jdbc-type="4" name="SERIAL" selected-variant-pattern="SERIAL">
+<variant type-name-pattern="SERIAL"/>
+</data-type>
+</column>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="false" name="offerer" remarks="" uid="6ba6cc25:17261ebcfa9:-7f80">
+<column-description/>
+<data-type jdbc-type="-1" literal-prefix="'" literal-suffix="'" name="TEXT" selected-variant-pattern="TEXT">
+<variant type-name-pattern="TEXT"/>
+</data-type>
+</column>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="false" name="title" remarks="" uid="6ba6cc25:17261ebcfa9:-7f7f">
+<column-description/>
+<data-type jdbc-type="-1" literal-prefix="'" literal-suffix="'" name="TEXT" selected-variant-pattern="TEXT">
+<variant type-name-pattern="TEXT"/>
+</data-type>
+</column>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="false" name="description" remarks="" uid="6ba6cc25:17261ebcfa9:-7f7e">
+<column-description/>
+<data-type jdbc-type="-1" literal-prefix="'" literal-suffix="'" name="TEXT" selected-variant-pattern="TEXT">
+<variant type-name-pattern="TEXT"/>
+</data-type>
+</column>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="false" name="enrollment_limit" remarks="" uid="6ba6cc25:17261ebcfa9:-7f7d">
+<column-description/>
+<data-type jdbc-type="4" name="INT" selected-variant-pattern="INT">
+<variant type-name-pattern="INT"/>
+</data-type>
+</column>
+<column alias="" auto-increment="false" column-size="10" decimal-digits="0" default-value="" mandatory="false" name="duration" remarks="" uid="6ba6cc25:17261ebcfa9:-7f7c">
+<column-description/>
+<data-type jdbc-type="1111" literal-prefix="'" literal-suffix="'" name="INTERVAL" selected-variant-pattern="INTERVAL(%p)">
+<variant precision-max="9" precision-min="1" precision-variable="%p" type-name-pattern="INTERVAL(%p)"/>
+</data-type>
+</column>
+</column-list>
+<primary-key alias="" name="PK_COURSE" remarks="" uid="6ba6cc25:17261ebcfa9:-7f84">
+<primary-key-description/>
+<primary-key-column name="id"/>
+</primary-key>
+<unique-key-list/>
+<foreign-key-list/>
+<index-list/>
+</table>
+<table alias="" name="offering" remarks="" uid="6ba6cc25:17261ebcfa9:-7f7a">
+<table-description/>
+<table-figure-bounds height="-1" width="-1" x="538" y="394"/>
+<column-list>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="true" name="id" remarks="" uid="6ba6cc25:17261ebcfa9:-7f3e">
+<column-description/>
+<data-type jdbc-type="4" name="INTEGER" selected-variant-pattern="INTEGER">
+<variant type-name-pattern="INTEGER"/>
+</data-type>
+</column>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="true" name="seqnum" remarks="" uid="6ba6cc25:17261ebcfa9:-7f30">
+<column-description/>
+<data-type jdbc-type="4" name="SERIAL" selected-variant-pattern="SERIAL">
+<variant type-name-pattern="SERIAL"/>
+</data-type>
+</column>
+<column alias="" auto-increment="false" column-size="10" decimal-digits="0" default-value="" mandatory="false" name="delivery_time" remarks="" uid="6ba6cc25:17261ebcfa9:-7f2f">
+<column-description/>
+<data-type jdbc-type="93" name="TIMESTAMP" selected-variant-pattern="TIMESTAMP(%p) WITH TIME ZONE">
+<variant type-name-pattern="TIMESTAMP"/>
+<variant precision-max="9" precision-min="1" precision-variable="%p" type-name-pattern="TIMESTAMP(%p)"/>
+<variant type-name-pattern="TIMESTAMP WITH TIME ZONE"/>
+<variant precision-max="9" precision-min="1" precision-variable="%p" type-name-pattern="TIMESTAMP(%p) WITH TIME ZONE"/>
+<variant precision-max="9" precision-min="1" precision-variable="%p" type-name-pattern="TIMESTAMP(%p) WITHOUT TIME ZONE"/>
+</data-type>
+</column>
+</column-list>
+<primary-key alias="" name="PK_OFFERING" remarks="" uid="6ba6cc25:17261ebcfa9:-7f79">
+<primary-key-description/>
+<primary-key-column name="id"/>
+<primary-key-column name="seqnum"/>
+</primary-key>
+<unique-key-list/>
+<foreign-key-list>
+<foreign-key alias="" name="FK_offering_1" on-delete="CASCADE" on-update="CASCADE" referenced-key="PK_COURSE" referenced-table="course" referenced-table-schema="n3c_training" remarks="" source-entity-role="" source-multiplicity="0..*" source-relationship-type="" target-entity-role="" target-multiplicity="1" target-relationship-type="" uid="6ba6cc25:17261ebcfa9:-7f3f">
+<foreign-key-description/>
+<foreign-key-figure>
+<fk-fig-bendpoint-list/>
+</foreign-key-figure>
+<foreign-key-column column-name="id" referenced-key-column-name="id"/>
+</foreign-key>
+</foreign-key-list>
+<index-list/>
+</table>
+<table alias="" name="person" remarks="" uid="6ba6cc25:17261ebcfa9:-7f2e">
+<table-description/>
+<table-figure-bounds height="-1" width="-1" x="310" y="527"/>
+<column-list>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="true" name="email" remarks="" uid="6ba6cc25:17261ebcfa9:-7f28">
+<column-description/>
+<data-type jdbc-type="-1" literal-prefix="'" literal-suffix="'" name="TEXT" selected-variant-pattern="TEXT">
+<variant type-name-pattern="TEXT"/>
+</data-type>
+</column>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="false" name="first_name" remarks="" uid="6ba6cc25:17261ebcfa9:-7f27">
+<column-description/>
+<data-type jdbc-type="-1" literal-prefix="'" literal-suffix="'" name="TEXT" selected-variant-pattern="TEXT">
+<variant type-name-pattern="TEXT"/>
+</data-type>
+</column>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="false" name="last_name" remarks="" uid="6ba6cc25:17261ebcfa9:-7f26">
+<column-description/>
+<data-type jdbc-type="-1" literal-prefix="'" literal-suffix="'" name="TEXT" selected-variant-pattern="TEXT">
+<variant type-name-pattern="TEXT"/>
+</data-type>
+</column>
+</column-list>
+<primary-key alias="" name="PK_PERSON" remarks="" uid="6ba6cc25:17261ebcfa9:-7f2d">
+<primary-key-description/>
+<primary-key-column name="email"/>
+</primary-key>
+<unique-key-list/>
+<foreign-key-list/>
+<index-list/>
+</table>
+<table alias="" name="registration" remarks="" uid="6ba6cc25:17261ebcfa9:-7f25">
+<table-description/>
+<table-figure-bounds height="-1" width="-1" x="607" y="524"/>
+<column-list>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="true" name="email" remarks="" uid="6ba6cc25:17261ebcfa9:-7f17">
+<column-description/>
+<data-type jdbc-type="-1" literal-prefix="'" literal-suffix="'" name="TEXT" selected-variant-pattern="TEXT">
+<variant type-name-pattern="TEXT"/>
+</data-type>
+</column>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="true" name="id" remarks="" uid="6ba6cc25:17261ebcfa9:-7ef9">
+<column-description/>
+<data-type jdbc-type="4" name="INTEGER" selected-variant-pattern="INTEGER">
+<variant type-name-pattern="INTEGER"/>
+</data-type>
+</column>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="true" name="seqnum" remarks="" uid="6ba6cc25:17261ebcfa9:-7ef8">
+<column-description/>
+<data-type jdbc-type="4" name="INTEGER" selected-variant-pattern="INTEGER">
+<variant type-name-pattern="INTEGER"/>
+</data-type>
+</column>
+<column alias="" auto-increment="false" column-size="0" decimal-digits="0" default-value="" mandatory="false" name="attended" remarks="" uid="6ba6cc25:17261ebcfa9:-7ef0">
+<column-description/>
+<data-type jdbc-type="16" name="BOOLEAN" selected-variant-pattern="BOOLEAN">
+<variant type-name-pattern="BOOLEAN"/>
+</data-type>
+</column>
+</column-list>
+<primary-key alias="" name="PK_REGISTRATION" remarks="" uid="6ba6cc25:17261ebcfa9:-7f24">
+<primary-key-description/>
+<primary-key-column name="email"/>
+<primary-key-column name="id"/>
+<primary-key-column name="seqnum"/>
+</primary-key>
+<unique-key-list/>
+<foreign-key-list>
+<foreign-key alias="" name="FK_registration_2" on-delete="CASCADE" on-update="CASCADE" referenced-key="PK_OFFERING" referenced-table="offering" referenced-table-schema="n3c_training" remarks="" source-entity-role="" source-multiplicity="0..*" source-relationship-type="" target-entity-role="" target-multiplicity="1" target-relationship-type="" uid="6ba6cc25:17261ebcfa9:-7efa">
+<foreign-key-description/>
+<foreign-key-figure>
+<fk-fig-bendpoint-list/>
+</foreign-key-figure>
+<foreign-key-column column-name="id" referenced-key-column-name="id"/>
+<foreign-key-column column-name="seqnum" referenced-key-column-name="seqnum"/>
+</foreign-key>
+<foreign-key alias="" name="FK_registration_1" on-delete="CASCADE" on-update="CASCADE" referenced-key="PK_PERSON" referenced-table="person" referenced-table-schema="n3c_training" remarks="" source-entity-role="" source-multiplicity="0..*" source-relationship-type="" target-entity-role="" target-multiplicity="1" target-relationship-type="" uid="6ba6cc25:17261ebcfa9:-7f18">
+<foreign-key-description/>
+<foreign-key-figure>
+<fk-fig-bendpoint-list/>
+</foreign-key-figure>
+<foreign-key-column column-name="email" referenced-key-column-name="email"/>
+</foreign-key>
+</foreign-key-list>
+<index-list/>
+</table>
+</table-list>
 </schema>
 </schema-list>
 </database-model>

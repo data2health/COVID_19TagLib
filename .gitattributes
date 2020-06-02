@@ -35,6 +35,7 @@ src/non-packaged-resources/biorxiv.sql -text
 src/non-packaged-resources/chictr_views.sql -text
 src/non-packaged-resources/crossref_views.sql -text
 src/non-packaged-resources/training.clay -text
+src/non-packaged-resources/training.sql -text
 src/non-packaged-resources/views.sql -text
 src/test/java/org/cd2h/covid/README.txt -text
 src/test/resources/README.txt -text
