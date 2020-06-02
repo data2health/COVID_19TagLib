@@ -176,7 +176,7 @@ public class BioRxivLoader {
 	logger.info("Fetching metadata...");
 	logger.info("");
 	PreparedStatement fetchStmt = conn
-		.prepareStatement("select doi from covid_biorxiv.biorxiv_current where doi !~ '\\.200' and doi not in (select doi from covid_biorxiv.biorxiv_meta_raw) order by pub_date");
+		.prepareStatement("select doi from covid_biorxiv.biorxiv_current where doi !~ '\\.200' and doi not in (select doi from covid_biorxiv.biorxiv_meta_raw) and doi not in (select doi from covid_biorxiv.biorxiv_fetch_suppress) order by pub_date");
 	ResultSet rs = fetchStmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
