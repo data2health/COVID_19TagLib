@@ -137,6 +137,24 @@ CREATE VIEW n3c_admin.dashboard3 AS
 CREATE VIEW dashboard AS
 select * from dashboard1 natural left join dashboard2 natural left join dashboard3;
 
+
+--
+-- personnel
+--
+
+create materialized view personnel as
+select
+	timestamp,
+	email_address,
+	first_name,
+	last_name,
+	would_you_like_to_onboard_to_n3c_::boolean as n3c_onboard,
+	would_you_like_to_onboard_to_cd2h_::boolean as cd2h_onboard,
+	substring(collaborative_analytics from '^[^ ]+')::boolean as collaborative_analytics
+from newformmaster
+where email_address is not null
+;
+
 --
 -- old stuff
 --
