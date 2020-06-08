@@ -88,8 +88,17 @@ CREATE VIEW n3c_admin.dashboard1 AS
     ncats.ctsa_non_ctsa,
     n3c.ctsa_community,
     n3c.group_consortium,
+    n3c.contacting_person,
+    n3c.contact_made,
+    n3c.pi_contact,
+    n3c.pi_email,
+    n3c.data_ingest,
     n3c.data_ingest_date,
-    n3c.initial_data_received
+    n3c.date_script_sent,
+    n3c.initial_data_received,
+    n3c.last_data_received,
+    n3c.update_frequency,
+    n3c.notes
    FROM n3c_admin.mapping_ncats,
     n3c_admin.ncats,
     n3c_admin.n3c
