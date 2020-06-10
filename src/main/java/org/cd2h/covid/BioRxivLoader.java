@@ -47,7 +47,8 @@ public class BioRxivLoader {
 
 	scan_feed();
 
-	fetch();
+	if (args.length > 1 && args[1].equals("-metadata"))
+	    fetch();
 	
 	scan_html();
 	scan_pdf();
