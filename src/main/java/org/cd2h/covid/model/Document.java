@@ -77,6 +77,9 @@ public class Document {
 	
 	if (references != null)
 	    references.segmentReferences();
+	
+	int citationCount = 0;
+	
 	// now for each of the categories, further refine the structure
 	for (Section section : sections) {
 	    switch (section.category) {
@@ -88,6 +91,7 @@ public class Document {
 		break;
 	    case BODY:
 		section.segment();
+		citationCount += section.citationCount();
 		break;
 	    case REFERENCES:
 		break;
@@ -95,6 +99,27 @@ public class Document {
 		break;
 	    case SUPPLEMENTAL:
 		break;
+	    }
+	}
+	
+	if (references != null && references.reference_style == Reference.Style.NUMBERED && citationCount == 0) {
+	    // no matches so probably superscript citation formatting
+	    for (Section section : sections) {
+		switch (section.category) {
+		case FRONT:
+		    break;
+		case ABSTRACT:
+		    break;
+		case BODY:
+		    section.rescanCitations();
+		    break;
+		case REFERENCES:
+		    break;
+		case MISC:
+		    break;
+		case SUPPLEMENTAL:
+		    break;
+		}
 	    }
 	}
     }

@@ -92,6 +92,22 @@ public class Section {
 	}
     }
     
+    public int citationCount() {
+	int citationCount = 0;
+	
+	for (Sentence sentence : sentences) {
+	    citationCount += sentence.citations.size();
+	}
+	
+	return citationCount;
+    }
+    
+    public void rescanCitations() {
+	for (Sentence sentence : sentences) {
+	    sentence.rescanCitations(parent.references == null ? new Vector<Reference>() : parent.references.references);
+	}
+    }
+    
     boolean terminalPunctuation(BxWord word) {
 	String wordString = word.toText();
 	return wordString.endsWith(".") || wordString.endsWith("!") || wordString.endsWith("?");
@@ -243,18 +259,19 @@ public class Section {
 	}
 	for (int i = 0; i < references.size(); i++) {
 	    Reference ref = references.elementAt(i);
-	    storeReference(i+1,ref);
+	    ref.seqNum = i+1;
+	    storeReference(ref);
 	}
     }
     
     static Pattern doiExpr1 = Pattern.compile(".*\\((10.\\d{3,9}/[-._;()/:<>a-zA-Z0-9]+)\\)");
     static Pattern doiExpr2 = Pattern.compile(".*(10.\\d{3,9}/[-._;()/:<>a-zA-Z0-9]+)");
     
-    public void storeReference(int seqnum, Reference reference) {
+    public void storeReference(Reference reference) {
 	try {
 	    PreparedStatement stmt = parent.conn.prepareStatement("insert into covid_biorxiv.reference(doi,seqnum,count,name,year,reference) values(?,?,?,?,?,?)");
 	    stmt.setString(1, parent.doi);
-	    stmt.setInt(2, seqnum);
+	    stmt.setInt(2, reference.seqNum);
 	    stmt.setInt(3, reference.lines.size());
 	    stmt.setString(4, reference.name);
 	    stmt.setInt(5, reference.year);

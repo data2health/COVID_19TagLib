@@ -69,6 +69,18 @@ create table reference (
     	REFERENCES document (doi) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+create table citation (
+	doi text,
+	seqnum int,
+	sentnum int,
+	refnum int,
+	PRIMARY KEY (doi,seqnum,sentnum,refnum),
+	CONSTRAINT FK_citation_1 FOREIGN KEY (doi,seqnum,sentnum)
+    	REFERENCES sentence (doi,seqnum,sentnum) ON DELETE CASCADE ON UPDATE CASCADE,
+	CONSTRAINT FK_citation_2 FOREIGN KEY (doi,refnum)
+    	REFERENCES reference (doi,seqnum) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 create table reference_stats (
 	doi text,
 	lines int,

@@ -3,6 +3,7 @@ package org.cd2h.covid.model;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Hashtable;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,6 +11,7 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Logger;
 import org.cd2h.covid.model.Reference.Style;
 
+import pl.edu.icm.cermine.structure.model.BxChunk;
 import pl.edu.icm.cermine.structure.model.BxWord;
 
 public class Sentence {
@@ -45,6 +47,27 @@ public class Sentence {
 	case UNKNOWN:
 	    break;
 	}
+    }
+    
+    void rescanCitations(Vector<Reference> references) {
+	logger.info("superscript citation scan: " + toString(words));
+	trimmedString = new StringBuffer();
+
+	for (int i = 0; i < words.size(); i++) {
+	    BxWord word = words.elementAt(i);
+	    if (word.getHeight() > word.getChild(word.childrenCount()-1).getHeight() * 1.5) {
+		logger.info("candidate superscript: " + word.toText());
+		for (int j = word.childrenCount() - 1; j >= 0; j--) {
+		    BxChunk chunk = word.getChild(j);
+		    if (chunk.getHeight() == word.getHeight())
+			break;
+		    logger.info("\tsuperscript chunk: " + chunk.toText() + "\theight: " + chunk.getHeight() + "\ty: " + chunk.getY());
+		}
+	    } else {
+		trimmedString.append((trimmedString.length() == 0 ? "" : " ") + word.toText());
+	    }
+	}
+	logger.info("\ttrimmed: " + trimmedString.toString());
     }
     
     void numberedScan(Vector<Reference> references) {
@@ -253,5 +276,20 @@ public class Sentence {
 	stmt.setString(5, trimmedString.toString());
 	stmt.execute();
 	stmt.close();
+	
+	Hashtable<Integer,Integer> refHash = new Hashtable<Integer,Integer>();
+	for (Citation citation : citations) {
+	    if (citation.citedReference == null || refHash.containsKey(citation.citedReference.seqNum))
+		continue;
+	    refHash.put(citation.citedReference.seqNum, 0);
+	    
+	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.citation values(?,?,?,?)");
+	    citeStmt.setString(1, doi);
+	    citeStmt.setInt(2, seqnum);
+	    citeStmt.setInt(3, sentnum);
+	    citeStmt.setInt(4, citation.citedReference.seqNum);
+	    citeStmt.execute();
+	    citeStmt.close();
+	}
     }
 }
