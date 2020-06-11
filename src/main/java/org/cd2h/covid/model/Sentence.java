@@ -250,7 +250,7 @@ public class Sentence {
 	stmt.setInt(2, seqnum);
 	stmt.setInt(3, sentnum);
 	stmt.setString(4, toString());
-	stmt.setString(5, null);
+	stmt.setString(5, trimmedString.toString());
 	stmt.execute();
 	stmt.close();
     }
