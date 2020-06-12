@@ -102,7 +102,7 @@ public class Document {
 	    }
 	}
 	
-	if (references != null && references.reference_style == Reference.Style.NUMBERED && citationCount == 0) {
+	if (references != null && Reference.numberedReferenceStyle(references.reference_style) && citationCount == 0) {
 	    // no matches so probably superscript citation formatting
 	    for (Section section : sections) {
 		switch (section.category) {
@@ -111,7 +111,28 @@ public class Document {
 		case ABSTRACT:
 		    break;
 		case BODY:
-		    section.rescanCitations();
+		    section.rescanCitations(Reference.Style.NUMBERED);
+		    break;
+		case REFERENCES:
+		    break;
+		case MISC:
+		    break;
+		case SUPPLEMENTAL:
+		    break;
+		}
+	    }
+	}
+
+	if (references != null && Reference.numberedReferenceStyle(references.reference_style) && citationCount == 0) {
+	    // no matches so let's try parenthesized citation formatting
+	    for (Section section : sections) {
+		switch (section.category) {
+		case FRONT:
+		    break;
+		case ABSTRACT:
+		    break;
+		case BODY:
+		    section.rescanCitations(Reference.Style.PARENTHESIZED);
 		    break;
 		case REFERENCES:
 		    break;

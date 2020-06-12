@@ -8,6 +8,16 @@ public class Reference {
     static Logger logger = Logger.getLogger(Reference.class);
     static enum Style {UNKNOWN, NUMBERED, BRACKETED, PARENTHESIZED, NAME_YEAR};
     
+    static public boolean numberedReferenceStyle(Style candidate) {
+	if (candidate == Style.NUMBERED)
+	    return true;
+	if (candidate == Style.BRACKETED)
+	    return true;
+	if (candidate == Style.PARENTHESIZED)
+	    return true;
+	return false;
+    }
+    
     int seqNum = 0;
     String name = null;
     int year = 0;

@@ -49,7 +49,7 @@ public class Sentence {
 	}
     }
     
-    void rescanCitations(Vector<Reference> references) {
+    void rescanSuperscriptCitations(Vector<Reference> references) {
 	logger.info("superscript citation scan: " + toString(words));
 	trimmedString = new StringBuffer();
 
@@ -57,11 +57,18 @@ public class Sentence {
 	    BxWord word = words.elementAt(i);
 	    if (word.getChild(word.childrenCount()-1).getHeight() / word.getHeight() < 0.8 && Math.abs(word.getY() - word.getChild(word.childrenCount()-1).getY()) < 1.0) {
 		logger.info("candidate superscript: " + word.toText() + "\theight: " + word.getHeight() + "\ty: " + word.getY());
+		StringBuffer citationString = new StringBuffer();
 		for (int j = word.childrenCount() - 1; j >= 0; j--) {
 		    BxChunk chunk = word.getChild(j);
 		    if (chunk.getHeight() / word.getHeight() > 0.8 || Math.abs(word.getY() - chunk.getY()) > 1.0)
 			break;
 		    logger.info("\tsuperscript chunk: " + chunk.toText() + "\theight: " + chunk.getHeight() + "\ty: " + chunk.getY());
+		    citationString.insert(0, chunk.toText());
+		}
+		if (numberedCitationMatcher(references,citationString.toString())) {
+		    trimmedString.append((trimmedString.length() == 0 ? "" : " ") + word.toText().substring(0,word.toText().length()-citationString.length()));
+		} else {
+		    trimmedString.append((trimmedString.length() == 0 ? "" : " ") + word.toText());
 		}
 	    } else {
 		trimmedString.append((trimmedString.length() == 0 ? "" : " ") + word.toText());

@@ -102,15 +102,21 @@ public class Section {
 	return citationCount;
     }
     
-    public void rescanCitations() {
-	for (Sentence sentence : sentences) {
-	    sentence.rescanCitations(parent.references == null ? new Vector<Reference>() : parent.references.references);
+    public void rescanCitations(Style style) {
+	switch (style) {
+	case NUMBERED:
+	    for (Sentence sentence : sentences) {
+		sentence.rescanSuperscriptCitations(parent.references == null ? new Vector<Reference>() : parent.references.references);
+	    }
+	    break;
+	default:
+	    break;
 	}
     }
     
     boolean terminalPunctuation(BxWord word) {
 	String wordString = word.toText();
-	return wordString.endsWith(".") || wordString.endsWith("!") || wordString.endsWith("?");
+	return wordString.endsWith(".") || wordString.endsWith("!") || wordString.endsWith("?") || wordString.matches(".*\\."+Sentence.numberedExtractionPattern.pattern().substring(1));
     }
     
     boolean capitalized(BxWord word) {
