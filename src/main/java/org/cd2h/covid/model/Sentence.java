@@ -55,11 +55,11 @@ public class Sentence {
 
 	for (int i = 0; i < words.size(); i++) {
 	    BxWord word = words.elementAt(i);
-	    if (word.getHeight() > word.getChild(word.childrenCount()-1).getHeight() * 1.5) {
-		logger.info("candidate superscript: " + word.toText());
+	    if (word.getChild(word.childrenCount()-1).getHeight() / word.getHeight() < 0.8 && Math.abs(word.getY() - word.getChild(word.childrenCount()-1).getY()) < 1.0) {
+		logger.info("candidate superscript: " + word.toText() + "\theight: " + word.getHeight() + "\ty: " + word.getY());
 		for (int j = word.childrenCount() - 1; j >= 0; j--) {
 		    BxChunk chunk = word.getChild(j);
-		    if (chunk.getHeight() == word.getHeight())
+		    if (chunk.getHeight() / word.getHeight() > 0.8 || Math.abs(word.getY() - chunk.getY()) > 1.0)
 			break;
 		    logger.info("\tsuperscript chunk: " + chunk.toText() + "\theight: " + chunk.getHeight() + "\ty: " + chunk.getY());
 		}
