@@ -3,8 +3,8 @@ insert into n3c_admin.ncats
 select
 	site_name,
 	pi_poc_name,
-	substring(dta_sent,'[0-9]+/[0-9]+/[0-9]+')::date,
-	substring(dta_executed,'[0-9]+/[0-9]+/[0-9]+')::date,
+	substring(dta_sent,'[0-9]+[-/][0-9]+[-/][0-9]+')::date,
+	substring(dta_executed,'[0-9]+[-/][0-9]+[-/][0-9]+')::date,
 	dua_sent::date,
 	dua_executed::date,
 	ctsa_non_ctsa
@@ -42,14 +42,14 @@ select
 	email_address,
 	first_name,
 	last_name,
-    google__g_suite_enabled_email__if_different_from_primary__pr as gmail,
-    slack_email_if_different_from_primary__previously_entered__a as slack,
+    google__g_suite_enabled_email__if_different_from_primary_add as gmail,
+    slack_email_if_different_from_primary_address as slack,
     github_handle as github,
     case when substring(orcid_id from '[0-9]+-[0-9]+-[0-9]+-[0-9X]+') = '0000-0000-0000-0000' then null else substring(orcid_id from '[0-9]+-[0-9]+-[0-9]+-[0-9X]+') end as orcid,
     assistant_email,
     institutional_affiliation__ctsa__or_employer__url_ as institution_url,
-    root_domain__calculated_ as root_domain,
-    institution_lookup,
+    root_domain__ as root_domain,
+    institution,
 	would_you_like_to_onboard_to_n3c_::boolean as n3c_onboard,
 	would_you_like_to_onboard_to_cd2h_::boolean as cd2h_onboard,
     substring(n3c_all_hands from '^[^ ]+')::boolean as n3c_all_hands,
@@ -68,6 +68,6 @@ select
     substring(next_generation_data_sharing from '^[^ ]+')::boolean as next_gen_data,
     substring(informatics_maturity_and_best_practices from '^[^ ]+')::boolean as maturity,
     substring(resource_discovery from '^[^ ]+')::boolean as resource_discovery
-from n3c_admin.newformmaster
+from n3c_admin.master
 where email_address is not null
 ;
