@@ -31,7 +31,7 @@ insert into n3c_admin.irb
     (irb_status.receipt_of_local_irb_approval_letter)::date AS local_receipt,
     (COALESCE(irb_status.sirb_onboarding_approved, irb_status.receipt_of_local_irb_approval_letter))::date AS cleared
    FROM n3c_admin.irb_status
-  WHERE (irb_status.institution IS NOT NULL);
+  WHERE (initial_contact_with_jhm is not null);
 
 delete from n3c_admin.mapping_ncats
 where n3c not in (select site from n3c_admin.n3c) or ncats not in (select site_name from n3c_admin.ncats);
