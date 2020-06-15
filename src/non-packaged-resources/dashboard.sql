@@ -21,6 +21,10 @@ CREATE TABLE n3c_admin.n3c (
 
 CREATE TABLE n3c_admin.ncats (
     site_name text,
+    batch_email text,
+    email text,
+    first text,
+    last text,
     pi_poc_name text,
     dta_sent date,
     dta_executed date,
