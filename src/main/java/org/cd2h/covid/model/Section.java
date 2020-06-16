@@ -92,6 +92,12 @@ public class Section {
 	}
     }
     
+    public void strip() {
+	for (Sentence sentence : sentences) {
+	    sentence.strip();
+	}
+    }
+    
     public int citationCount() {
 	int citationCount = 0;
 	

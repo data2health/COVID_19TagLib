@@ -145,6 +145,26 @@ public class Document {
 		}
 	    }
 	}
+
+	// clean the trimmed sentences of mentions of figures and tables - we're shooting for clean syntactic parses
+	for (Section section : sections) {
+	    switch (section.category) {
+	    case FRONT:
+		break;
+	    case ABSTRACT:
+		section.strip();
+		break;
+	    case BODY:
+		section.strip();
+		break;
+	    case REFERENCES:
+		break;
+	    case MISC:
+		break;
+	    case SUPPLEMENTAL:
+		break;
+	    }
+	}
     }
     
     Pattern affPattern = Pattern.compile("^[1-9*].*");

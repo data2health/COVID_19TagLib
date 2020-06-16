@@ -25,6 +25,8 @@ public class Sentence {
     Vector<BxWord> words = new Vector<BxWord>();
     StringBuffer trimmedString = new StringBuffer();
     Vector<Citation> citations = new Vector<Citation>();
+    Vector<String> figureMentions = new Vector<String>();
+    Vector<String> tableMentions = new Vector<String>();
     
     public Sentence(BxWord word) {
 	words.add(word);
@@ -47,6 +49,24 @@ public class Sentence {
 	case UNKNOWN:
 	    break;
 	}
+    }
+    
+    static Pattern figurePattern = Pattern.compile("^(.*) *(\\([^)]*Fig(?:\\.|ure)[^)]*\\))(.*)$");
+    static Pattern tablePattern = Pattern.compile("^(.*) *(\\([^)]*Table[^)]*\\))(.*)$");
+    
+    public void strip() {
+	strip(figureMentions, figurePattern);
+	strip(tableMentions, tablePattern);
+    }
+    
+    public void strip(Vector<String> mentions, Pattern pattern) {
+	Matcher matcher = pattern.matcher(trimmedString);
+	if (matcher.matches()) {
+	    logger.info("\tstrip pattern match: " + trimmedString);
+	    for (int j = 1; j <= matcher.groupCount(); j++) {
+		logger.info("\t\tmatch " + j + ": " + matcher.group(j));
+	    }
+	}	
     }
     
     static Pattern parentStartPattern = Pattern.compile("^(.*)\\(([0-9]+([-–][0-9]+)?)((,[0-9]+([-–][0-9]+)?)*)(,)?(\\))?(.*)$");
