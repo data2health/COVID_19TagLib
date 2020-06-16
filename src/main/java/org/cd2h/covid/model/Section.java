@@ -106,7 +106,12 @@ public class Section {
 	switch (style) {
 	case NUMBERED:
 	    for (Sentence sentence : sentences) {
-		sentence.rescanSuperscriptCitations(parent.references == null ? new Vector<Reference>() : parent.references.references);
+		sentence.superscriptScan(parent.references == null ? new Vector<Reference>() : parent.references.references);
+	    }
+	    break;
+	case PARENTHESIZED:
+	    for (Sentence sentence : sentences) {
+		sentence.parenthesizedScan(parent.references == null ? new Vector<Reference>() : parent.references.references);
 	    }
 	    break;
 	default:

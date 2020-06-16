@@ -112,6 +112,7 @@ public class Document {
 		    break;
 		case BODY:
 		    section.rescanCitations(Reference.Style.NUMBERED);
+		    citationCount += section.citationCount();
 		    break;
 		case REFERENCES:
 		    break;
@@ -133,6 +134,7 @@ public class Document {
 		    break;
 		case BODY:
 		    section.rescanCitations(Reference.Style.PARENTHESIZED);
+		    citationCount += section.citationCount();
 		    break;
 		case REFERENCES:
 		    break;

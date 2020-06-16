@@ -49,7 +49,68 @@ public class Sentence {
 	}
     }
     
-    void rescanSuperscriptCitations(Vector<Reference> references) {
+    static Pattern parentStartPattern = Pattern.compile("^(.*)\\(([0-9]+([-–][0-9]+)?)((,[0-9]+([-–][0-9]+)?)*)(,)?(\\))?(.*)$");
+    static Pattern parentEndPattern =          Pattern.compile("^([0-9]+([-–][0-9]+)?)(,)?(\\))?(.*)$");
+
+    void parenthesizedScan(Vector<Reference> references) {
+	String matchString = null;
+	logger.info("parenthesized citation scan: " + toString(words));
+	trimmedString = new StringBuffer();
+	int state = 0;
+	for (int i = 0; i < words.size(); i++) {
+	    BxWord word = words.elementAt(i);
+	    switch (state) {
+	    case 0:
+		// looking for the start (and perhaps end) of a parenthesized reference
+		Matcher matcher = parentStartPattern.matcher(word.toText());
+		if (matcher.matches()) {
+		    logger.info("\tstart pattern match: " + word.toText());
+		    for (int j = 0; j <= 9; j++) {
+			logger.info("\t\tmatch " + j + ": " + matcher.group(j));
+		    }
+		    if (matcher.group(8) != null && matcher.group(8).equals(")")) {
+			// single item or range	
+			if (numberedCitationMatcher(references, matcher.group(2)+(matcher.group(4) == null ? "" : matcher.group(4)))) {
+			    trimmedString.append((matcher.group(1).length() > 0 ? " " : "") + matcher.group(1));
+			    trimmedString.append(matcher.group(9));
+			} else {
+			    trimmedString.append((trimmedString.length() == 0 ? "" : " ") + word.toText());
+			}
+		    } else if (matcher.group(7) != null && matcher.group(7).equals(",")) {
+			logger.info("shifting to state 1");
+			state = 1;
+			matchString = matcher.group(2) + ",";
+			trimmedString.append((matcher.group(1).length() > 0 ? " " : "") + matcher.group(1));
+		    } else {
+			trimmedString.append((trimmedString.length() == 0 ? "" : " ") + word.toText());
+		    }
+		} else {
+		    trimmedString.append((trimmedString.length() == 0 ? "" : " ") + word.toText());
+		}
+		break;
+	    case 1:
+		// looking for the continuation (and perhaps end) of a parenthesized reference
+		matcher = parentEndPattern.matcher(word.toText());
+		if (matcher.matches()) {
+		    logger.info("\tend pattern match: " + word.toText());
+		    for (int j = 0; j <= 5; j++) {
+			logger.info("\t\tmatch " + j + ": " + matcher.group(j));
+		    }
+		    matchString += matcher.group(1);
+		    if (numberedCitationMatcher(references, matchString)) {
+			matchString = "";
+		    }
+		    trimmedString.append(matcher.group(5));
+		    if (matcher.group(3) == null)
+			state = 0;
+		}
+		break;
+	    }
+	}
+	logger.info("\ttrimmed: " + trimmedString.toString());
+    }
+    
+    void superscriptScan(Vector<Reference> references) {
 	logger.info("superscript citation scan: " + toString(words));
 	trimmedString = new StringBuffer();
 
@@ -263,7 +324,10 @@ public class Sentence {
     }
     
     public String toString() {
-	return toString(words);
+	if (trimmedString.length() == 0)
+	    return toString(words);
+	else
+	    return trimmedString.toString();
     }
     
     public String toString(Vector<BxWord> elements) {
