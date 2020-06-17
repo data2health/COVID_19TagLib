@@ -81,6 +81,26 @@ create table citation (
     	REFERENCES reference (doi,seqnum) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+create table table_mention (
+	doi text,
+	seqnum int,
+	sentnum int,
+	table_mention text,
+	PRIMARY KEY (doi,seqnum,sentnum,table_mention),
+	CONSTRAINT FK_table_mention_1 FOREIGN KEY (doi,seqnum,sentnum)
+    	REFERENCES sentence (doi,seqnum,sentnum) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+create table figure_mention (
+	doi text,
+	seqnum int,
+	sentnum int,
+	figure_mention text,
+	PRIMARY KEY (doi,seqnum,sentnum,figure_mention),
+	CONSTRAINT FK_table_mention_1 FOREIGN KEY (doi,seqnum,sentnum)
+    	REFERENCES sentence (doi,seqnum,sentnum) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 create table reference_stats (
 	doi text,
 	lines int,

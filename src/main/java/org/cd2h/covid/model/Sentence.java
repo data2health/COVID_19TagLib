@@ -340,7 +340,7 @@ public class Sentence {
     Reference nameYearReferenceScan(Vector<Reference> references, String name, String year) {
 	for (Reference reference : references) {
 	    logger.debug("\t\t\tcandidate: " + reference);
-	    if (reference.name.startsWith(name) && reference.year == Integer.parseInt(year))
+	    if (reference.name.startsWith(name) && reference.year != null && reference.year.equals(year))
 		return reference;
 	}
 	return null;
@@ -382,6 +382,36 @@ public class Sentence {
 	    citeStmt.setInt(2, seqnum);
 	    citeStmt.setInt(3, sentnum);
 	    citeStmt.setInt(4, citation.citedReference.seqNum);
+	    citeStmt.execute();
+	    citeStmt.close();
+	}
+
+	Hashtable<String,Integer> tableHash = new Hashtable<String,Integer>();
+	for (String table : tableMentions) {
+	    if (tableHash.containsKey(table))
+		continue;
+	    tableHash.put(table, 0);
+	    
+	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.table_mention values(?,?,?,?)");
+	    citeStmt.setString(1, doi);
+	    citeStmt.setInt(2, seqnum);
+	    citeStmt.setInt(3, sentnum);
+	    citeStmt.setString(4, table);
+	    citeStmt.execute();
+	    citeStmt.close();
+	}
+
+	Hashtable<String,Integer> figureHash = new Hashtable<String,Integer>();
+	for (String figure : figureMentions) {
+	    if (figureHash.containsKey(figure))
+		continue;
+	    figureHash.put(figure, 0);
+	    
+	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.figure_mention values(?,?,?,?)");
+	    citeStmt.setString(1, doi);
+	    citeStmt.setInt(2, seqnum);
+	    citeStmt.setInt(3, sentnum);
+	    citeStmt.setString(4, figure);
 	    citeStmt.execute();
 	    citeStmt.close();
 	}

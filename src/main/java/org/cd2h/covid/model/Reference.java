@@ -20,7 +20,7 @@ public class Reference {
     
     int seqNum = 0;
     String name = null;
-    int year = 0;
+    String year = null;
     String reference = null;
     Vector<Line> lines = new Vector<Line>();
     Vector<Citation> citations = new Vector<Citation>();
@@ -41,7 +41,7 @@ public class Reference {
 	this.reference = reference;
     }
     
-    public Reference(String name, int year, Line line, String reference) {
+    public Reference(String name, String year, Line line, String reference) {
 	this.name = name;
 	this.year = year;
 	lines.add(line);
@@ -69,7 +69,7 @@ public class Reference {
 	}
     }
     
-    public void setYear(int year) {
+    public void setYear(String year) {
 	this.year = year;
     }
     

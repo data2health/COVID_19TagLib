@@ -215,7 +215,7 @@ public class Section {
 	    Matcher matcher = pattern.matcher(line.rawText);
 	    if (matcher.matches()) {
 		logger.debug("\t\t\treference start: " + line.rawText);
-		current = new Reference(matcher.group(1),Integer.parseInt(matcher.group(2)),line,matcher.group(3));
+		current = new Reference(matcher.group(1),matcher.group(2),line,matcher.group(3));
 		references.add(current);
 	    } else {
 		logger.debug("\t\t\treference continuation: " + line.rawText);
@@ -238,7 +238,7 @@ public class Section {
 		    current = new Reference(line, matcher.group(1));
 		else
 		    current.addText(line, matcher.group(1));
-		current.setYear(Integer.parseInt(matcher.group(2)));
+		current.setYear(matcher.group(2));
 		current = null;
 	    } else if (current == null) {
 		logger.debug("\t\t\treference start: " + line.rawText);
@@ -291,7 +291,7 @@ public class Section {
 	    stmt.setInt(2, reference.seqNum);
 	    stmt.setInt(3, reference.lines.size());
 	    stmt.setString(4, reference.name);
-	    stmt.setInt(5, reference.year);
+	    stmt.setString(5, reference.year);
 	    stmt.setString(6, reference.reference);
 	    stmt.execute();
 	    stmt.close();
