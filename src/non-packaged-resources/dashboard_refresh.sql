@@ -33,7 +33,7 @@ from n3c_admin.status;
 truncate n3c_admin.acquisition;
 insert into n3c_admin.acquisition(site_name,first_meeting,primary_technical_contact,data_model,passing_data)
 select site_name,substring(date_of_first_meeting,'[0-9]+/[0-9]+/[0-9]+')::date,primary_technical_contact,data_model,passing_data_ 
-from n3c_admin.site_status;
+from n3c_admin.sitestatus;
 
 truncate n3c_admin.irb;
 insert into n3c_admin.irb
