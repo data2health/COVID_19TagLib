@@ -142,7 +142,7 @@ public class CERMINEExtractor implements Runnable {
 	}
     }
 
-    static void process(String fileName) throws SQLException, AnalysisException, IOException, TransformationException, ClassNotFoundException {
+    void process(String fileName) throws SQLException, AnalysisException, IOException, TransformationException, ClassNotFoundException {
 	
 	Document doc = null;
 	
