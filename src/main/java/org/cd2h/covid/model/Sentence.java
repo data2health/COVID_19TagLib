@@ -51,8 +51,8 @@ public class Sentence {
 	}
     }
     
-    static Pattern figurePattern = Pattern.compile("^(.*) *(\\([^)]*Fig(?:\\.|ure)[^)]*\\))(.*)$");
-    static Pattern tablePattern = Pattern.compile("^(.*) *(\\([^)]*Table[^)]*\\))(.*)$");
+    static Pattern figurePattern = Pattern.compile("^(.*) +(\\([^)]*Fig(?:\\.|ure)[^)]*\\))(.*)$");
+    static Pattern tablePattern = Pattern.compile("^(.*) +(\\([^)]*Table[^)]*\\))(.*)$");
     
     public void strip() {
 	strip(figureMentions, figurePattern);
@@ -61,11 +61,14 @@ public class Sentence {
     
     public void strip(Vector<String> mentions, Pattern pattern) {
 	Matcher matcher = pattern.matcher(trimmedString);
-	if (matcher.matches()) {
+	while (matcher.matches()) {
 	    logger.info("\tstrip pattern match: " + trimmedString);
 	    for (int j = 1; j <= matcher.groupCount(); j++) {
 		logger.info("\t\tmatch " + j + ": " + matcher.group(j));
 	    }
+	    trimmedString = new StringBuffer(matcher.group(1) + matcher.group(3));
+	    mentions.add(matcher.group(2));
+	    matcher = pattern.matcher(trimmedString);
 	}	
     }
     

@@ -329,6 +329,12 @@ public class Section {
 //	    }
 	    for (Sentence sentence : sentences) {
 		logger.info("\t\tsentence: " + sentence);
+		for(String string : sentence.figureMentions) {
+		    logger.info("\t\t\tfigure mention: " + string);
+		}
+		for(String string : sentence.tableMentions) {
+		    logger.info("\t\t\ttable mention: " + string);
+		}
 	    }
 	}
     }
