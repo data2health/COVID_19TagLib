@@ -3,6 +3,7 @@ package org.cd2h.covid.model;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Hashtable;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -238,7 +239,7 @@ public class Document {
 	    prev = line;
 	}
 	
-	logger.info("title: " + title);
+	logger.info("title: " + title + "\tdoi: " + doi);
 
 	PreparedStatement stmt = conn.prepareStatement("update covid_biorxiv.document set title = ? where doi = ?");
 	stmt.setString(1, title.trim());
@@ -290,8 +291,15 @@ public class Document {
 		affiliation.addAffiliationChar(" " );
 	    }
 	}
+	
+	Hashtable<String,String> affHash = new Hashtable<String,String>();
 	for (Affiliation aff : affs) {
 	    logger.info("affiliation: " + aff.link + " : " + aff.affiliation);
+	    if (affHash.containsKey(aff.link)) {
+		logger.info("\tskipping duplicate link: " + aff.link);
+		continue;
+	    }
+	    affHash.put(aff.link, aff.link);
 	    try {
 		PreparedStatement affStmt = conn.prepareStatement("insert into covid_biorxiv.institution values (?,?,?)");
 		affStmt.setString(1, doi);
@@ -367,9 +375,16 @@ public class Document {
 	    authStmt.executeUpdate();
 	    authStmt.close();
 	    
+	    Hashtable<String,String> affHash2 = new Hashtable<String,String>();
 	    for (Affiliation aff : auth.affiliations) {
+		if (affHash2.containsKey(aff.link)) {
+		    logger.info("\tskipping duplicate link: " + aff.link);
+		    continue;
+		}
+		affHash2.put(aff.link, aff.link);
 		try {
-		    PreparedStatement affStmt = conn.prepareStatement("insert into covid_biorxiv.affiliation values (?,?,?)");
+		    PreparedStatement affStmt = conn
+			    .prepareStatement("insert into covid_biorxiv.affiliation values (?,?,?)");
 		    affStmt.setString(1, doi);
 		    affStmt.setInt(2, seqnum);
 		    affStmt.setString(3, aff.link.trim());

@@ -44,13 +44,17 @@ public class Author {
 		    }
 		} else {
 		    //assuming that we have a numeric range
-		    int first = Integer.parseInt(aff1);
-		    int last = Integer.parseInt(aff2);
-		    for (int i = first; i <= last; i++) {
-			Affiliation affiliation = getAffiliationByTag(affs, i + "");
-			if (affiliation != null) {
-			    affiliations.add(affiliation);
+		    try {
+			int first = Integer.parseInt(aff1);
+			int last = Integer.parseInt(aff2);
+			for (int i = first; i <= last; i++) {
+			    Affiliation affiliation = getAffiliationByTag(affs, i + "");
+			    if (affiliation != null) {
+				affiliations.add(affiliation);
+			    }
 			}
+		    } catch (NumberFormatException e) {
+			logger.error("affiliation range parse failed: " + aff1 + " : " + aff2);;
 		    }
 		}
 	    }

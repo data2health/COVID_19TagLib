@@ -64,7 +64,8 @@ public class CERMINEExtractor implements Runnable {
 	prop_file = PropertyLoader.loadProperties("zotero");
 	staticConn = getConnection();
 	
-	simpleStmt("truncate covid_biorxiv.document cascade;");
+//	simpleStmt(staticConn, "truncate covid_biorxiv.document cascade;");
+//	simpleStmt(staticConn, "commit work;");
 	
 	if (args.length == 1) {
 	    CERMINEExtractor extractor = new CERMINEExtractor(0);
@@ -76,7 +77,7 @@ public class CERMINEExtractor implements Runnable {
 	    }
 	} else if (args.length > 1 && args[1].equals("-parallel")) {
 	    scan();
-	    int maxCrawlerThreads = Runtime.getRuntime().availableProcessors()/2;
+	    int maxCrawlerThreads = Runtime.getRuntime().availableProcessors() == 8 ? Runtime.getRuntime().availableProcessors()/2 : (Runtime.getRuntime().availableProcessors() * 3) / 4;
 	    Thread[] scannerThreads = new Thread[maxCrawlerThreads];
 
 	    for (int i = 0; i < maxCrawlerThreads; i++) {
@@ -98,21 +99,16 @@ public class CERMINEExtractor implements Runnable {
     }
     
     static void scan() throws SQLException {
-	logger.info("scanning directory...");
-	for (String file : (new File(filePrefix)).list()) {
-	    if (!file.endsWith(".pdf"))
-		continue;
-
-	    PreparedStatement stmt = staticConn.prepareStatement(
-		    "select doi from covid_biorxiv.biorxiv_map where url ~ ? and doi not in (select doi from covid_biorxiv.reference_stats)");
-	    stmt.setString(1, file);
-	    ResultSet rs = stmt.executeQuery();
-	    while (rs.next()) {
-		logger.debug("queuing " + file);
-		documentQueue.queue(new Document(rs.getString(1), file));
-	    }
-	    stmt.close();
+	logger.info("scanning file map...");
+	PreparedStatement stmt = staticConn.prepareStatement("select doi,url from covid_biorxiv.biorxiv_map where doi not in (select doi from covid_biorxiv.document)");
+	ResultSet rs = stmt.executeQuery();
+	while (rs.next()) {
+	    String doi = rs.getString(1);
+	    String file = rs.getString(2);
+	    logger.debug("queuing " + doi);
+	    documentQueue.queue(new Document(rs.getString(1), file.substring(file.lastIndexOf('/')+1)));
 	}
+	stmt.close();
 	logger.info("\t" + documentQueue.size() + " files queued.");
     }
     
@@ -122,6 +118,7 @@ public class CERMINEExtractor implements Runnable {
     public CERMINEExtractor(int threadID) throws ClassNotFoundException, SQLException {
 	this.threadID = threadID;
 	conn = getConnection();
+	simpleStmt(conn, "set constraints all deferred;");
     }
     
     @Override
@@ -136,8 +133,14 @@ public class CERMINEExtractor implements Runnable {
 		acquireBxDocument(document);
 		document.section();
 		document.dump();
+		simpleStmt(conn, "commit work");
+	    } catch (java.io.FileNotFoundException e) {
+		logger.info("[" + threadID + "] exception raised processing " + document.getDoi() + " : ", e);
+	    } catch (pl.edu.icm.cermine.exception.AnalysisException e) {
+		logger.info("[" + threadID + "] exception raised processing " + document.getDoi() + " : ", e);
 	    } catch (Exception e) {
 		logger.info("[" + threadID + "] exception raised processing " + document.getDoi() + " : ", e);
+		System.exit(0);
 	    }
 	}
     }
@@ -146,18 +149,33 @@ public class CERMINEExtractor implements Runnable {
 	
 	Document doc = null;
 	
-	PreparedStatement stmt = staticConn.prepareStatement("select doi from covid_biorxiv.biorxiv_map where url ~ ? and doi not in (select doi from covid_biorxiv.reference_stats)");
+	int check = 0;
+	PreparedStatement checkStmt = conn.prepareStatement("select count(*) from covid_biorxiv.document,covid_biorxiv.biorxiv_map where document.doi = biorxiv_map.doi and url ~ ?");
+	checkStmt.setString(1, fileName);
+	ResultSet checkRS = checkStmt.executeQuery();
+	while (checkRS.next()) {
+	    check = checkRS.getInt(1);
+	}
+	checkStmt.close();
+	if (check > 0) {
+	    logger.info("document already present, skipping...");
+	    return;
+	}
+	
+	PreparedStatement stmt = conn.prepareStatement("select doi from covid_biorxiv.biorxiv_map where url ~ ? and doi not in (select doi from covid_biorxiv.document)");
 	stmt.setString(1, fileName);
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
 	    logger.info("scanning " + fileName);
 	    doc = new Document(rs.getString(1), fileName);
-	    doc.setConnection(staticConn);
+	    doc.setConnection(conn);
 	    CERMINEExtractor extractor = new CERMINEExtractor(0);
 	    extractor.acquireBxDocument(doc);
 	    doc.section();
 	    doc.dump();
 	}
+	
+	simpleStmt(conn, "commit work");
     }
     
     static void test1() throws AnalysisException, IOException {
@@ -233,7 +251,7 @@ public class CERMINEExtractor implements Runnable {
 	stmt.setString(1, doc.getDoi());
 	stmt.executeUpdate();
 	stmt.close();
-	
+	simpleStmt(conn, "commit work");
         ContentExtractor extractor = getContentExtractor();
  	InputStream inputStream = new FileInputStream(filePrefix + doc.getFileName());
 	extractor.setPDF(inputStream);
@@ -485,13 +503,14 @@ public class CERMINEExtractor implements Runnable {
 	props.setProperty("user", prop_file.getProperty("jdbc.user"));
 	props.setProperty("password", prop_file.getProperty("jdbc.password"));
 	Connection conn = DriverManager.getConnection(prop_file.getProperty("jdbc.url"), props);
+	conn.setAutoCommit(false);
 	return conn;
     }
 
-    public static void simpleStmt(String queryString) {
+    public static void simpleStmt(Connection conn, String queryString) {
 	try {
 	    logger.info("executing " + queryString + "...");
-	    PreparedStatement beginStmt = staticConn.prepareStatement(queryString);
+	    PreparedStatement beginStmt = conn.prepareStatement(queryString);
 	    beginStmt.executeUpdate();
 	    beginStmt.close();
 	} catch (Exception e) {

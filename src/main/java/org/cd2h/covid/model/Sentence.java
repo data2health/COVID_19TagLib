@@ -225,7 +225,7 @@ public class Sentence {
 	logger.info("\ttrimmed: " + trimmedString.toString());
     }
     
-    static Pattern numberedExtractionPattern = Pattern.compile("^([0-9]+)([-–]([0-9]+))?([,;](.*))?$");
+    static Pattern numberedExtractionPattern = Pattern.compile("^([0-9]{1,3})([-–]([0-9]{1,3}))?([,;](.*))?$");
 
     boolean numberedCitationMatcher(Vector<Reference> references, String citationString) {
 	boolean matched = false;
@@ -265,7 +265,7 @@ public class Sentence {
     
     void nameYearScan(Vector<Reference> references) {
 	logger.info("name-year citation scan: " + toString(words));
-	for (int i = 0; i < words.size(); i++) {
+	for (int i = 0; i < words.size()-1; i++) {
 	    BxWord word = words.elementAt(i);
 	    Matcher matcher = nameYearPrefixCitationPattern.matcher(word.toText());
 	    if (matcher.matches()) {
