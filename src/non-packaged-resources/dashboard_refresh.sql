@@ -62,7 +62,7 @@ select
 	email_address,
 	first_name,
 	last_name,
-    google__g_suite_enabled_email__if_different_from_primary_add as gmail,
+    google__g_suite_enabled_email_ as gmail,
     slack_email_if_different_from_primary_address as slack,
     github_handle as github,
     case when substring(orcid_id from '[0-9]+-[0-9]+-[0-9]+-[0-9X]+') = '0000-0000-0000-0000' then null else substring(orcid_id from '[0-9]+-[0-9]+-[0-9]+-[0-9X]+') end as orcid,
