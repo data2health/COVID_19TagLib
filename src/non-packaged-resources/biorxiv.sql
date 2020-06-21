@@ -20,9 +20,31 @@ create table sentence (
     sentnum int,
     full_text text,
     trimmed_text text,
+    pos_tags text,
     PRIMARY KEY (doi,seqnum,sentnum),
-    CONSTRAINT FK_setence_1 FOREIGN KEY (doi,seqnum)
+    CONSTRAINT FK_sentence_1 FOREIGN KEY (doi,seqnum)
         REFERENCES section (doi,seqnum) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+create table parse (
+    doi text,
+    seqnum int,
+    sentnum int,
+    parsenum int,
+    parse text,
+    PRIMARY KEY (doi,seqnum,sentnum,parsenum),
+    CONSTRAINT FK_parse_1 FOREIGN KEY (doi,seqnum,sentnum)
+        REFERENCES sentence (doi,seqnum,sentnum) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+create table fragment (
+    doi text,
+    seqnum int,
+    sentnum int,
+    node text,
+    fragment text,
+    CONSTRAINT FK_fragment_1 FOREIGN KEY (doi,seqnum,sentnum)
+        REFERENCES sentence (doi,seqnum,sentnum) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 create table author (

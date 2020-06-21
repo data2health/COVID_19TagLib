@@ -9,7 +9,9 @@
 .settings/org.maven.ide.eclipse.prefs -text
 /pom.xml -text svneol=unset#application/xml
 src/main/java/org/cd2h/covid/ArXivLoader.java -text
+src/main/java/org/cd2h/covid/BioRxivInstantiator.java -text
 src/main/java/org/cd2h/covid/BioRxivLoader.java -text
+src/main/java/org/cd2h/covid/BioRxivProcessor.java -text
 src/main/java/org/cd2h/covid/CERMINEExtractor.java -text
 src/main/java/org/cd2h/covid/ChiCTRLoader.java -text
 src/main/java/org/cd2h/covid/CrossRefLoader.java -text
@@ -18,6 +20,7 @@ src/main/java/org/cd2h/covid/EudraCTLoader.java -text
 src/main/java/org/cd2h/covid/FacetIndexer.java -text
 src/main/java/org/cd2h/covid/LineComparator.java -text
 src/main/java/org/cd2h/covid/LitCOVIDLoader.java -text
+src/main/java/org/cd2h/covid/StringQueue.java -text
 src/main/java/org/cd2h/covid/ZoteroLoader.java -text
 src/main/java/org/cd2h/covid/detectors/SectionDetector.java -text
 src/main/java/org/cd2h/covid/model/Affiliation.java -text
