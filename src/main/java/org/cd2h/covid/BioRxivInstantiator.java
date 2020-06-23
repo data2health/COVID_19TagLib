@@ -21,23 +21,31 @@ import edu.uiowa.NLP_grammar.syntaxMatch.comparator.emailComparator;
 import edu.uiowa.NLP_grammar.syntaxMatch.comparator.entityComparator;
 import edu.uiowa.NLP_grammar.syntaxMatch.comparator.urlComparator;
 import edu.uiowa.PubMedCentral.comparator.PersonComparator;
+import edu.uiowa.PubMedCentral.entity.AnatomicalStructure;
 import edu.uiowa.PubMedCentral.entity.BiologicalFunction;
+import edu.uiowa.PubMedCentral.entity.BodyPart;
 import edu.uiowa.PubMedCentral.entity.ClinicalTrialRegistration;
 import edu.uiowa.PubMedCentral.entity.Collaboration;
 import edu.uiowa.PubMedCentral.entity.Disease;
+import edu.uiowa.PubMedCentral.entity.Event;
+import edu.uiowa.PubMedCentral.entity.Finding;
+import edu.uiowa.PubMedCentral.entity.Injury;
+import edu.uiowa.PubMedCentral.entity.ManufacturedObject;
 import edu.uiowa.PubMedCentral.entity.OrganicChemical;
 import edu.uiowa.PubMedCentral.entity.Organism;
 import edu.uiowa.PubMedCentral.entity.Organization;
+import edu.uiowa.PubMedCentral.entity.PathologicalFunction;
 import edu.uiowa.PubMedCentral.entity.Person;
+import edu.uiowa.PubMedCentral.entity.PhysiologicalFunction;
 import edu.uiowa.PubMedCentral.entity.PlaceName;
 import edu.uiowa.PubMedCentral.entity.Resource;
+import edu.uiowa.PubMedCentral.entity.TranscriptionFactor;
 import edu.uiowa.concept.Concept;
 import edu.uiowa.concept.ExhaustiveVectorConceptRecognizer;
 import edu.uiowa.concept.detector.GRIDDetector;
 import edu.uiowa.concept.detector.GeoNamesDetector;
 import edu.uiowa.concept.detector.UMLSDetector;
 import edu.uiowa.entity.Entity;
-import edu.uiowa.entity.named.Event;
 import edu.uiowa.extraction.LocalProperties;
 import edu.uiowa.extraction.Template;
 import edu.uiowa.extraction.TemplateInstantiator;
@@ -51,7 +59,15 @@ public class BioRxivInstantiator extends TemplateInstantiator {
     Hashtable<String, OrganicChemical> organicChemicalHash = new Hashtable<String, OrganicChemical>();
     Hashtable<String, Event> eventHash = new Hashtable<String, Event>();
     Hashtable<String, Disease> diseaseHash = new Hashtable<String, Disease>();
+    Hashtable<String, AnatomicalStructure> anatomicalStructureHash = new Hashtable<String, AnatomicalStructure>();
     Hashtable<String, BiologicalFunction> biologicalFunctionHash = new Hashtable<String, BiologicalFunction>();
+    Hashtable<String, BodyPart> bodyPartHash = new Hashtable<String, BodyPart>();
+    Hashtable<String, Finding> findingHash = new Hashtable<String, Finding>();
+    Hashtable<String, Injury> injuryHash = new Hashtable<String, Injury>();
+    Hashtable<String, ManufacturedObject> manufacturedObjectHash = new Hashtable<String, ManufacturedObject>();
+    Hashtable<String, PathologicalFunction> pathologicalFunctionHash = new Hashtable<String, PathologicalFunction>();
+    Hashtable<String, PhysiologicalFunction> physiologicalFunctionHash = new Hashtable<String, PhysiologicalFunction>();
+    Hashtable<String, TranscriptionFactor> transcriptionFactorHash = new Hashtable<String, TranscriptionFactor>();
     
     PersonComparator personComparator = new PersonComparator();
     String doi = null;
@@ -103,6 +119,19 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    constituent.setEntityClass("ClinicalTrial");
 	    bindNamedEntity(constituent, template, clinicalTrial);
 	    break;
+	case "anatomical_structure":
+	    AnatomicalStructure anatomicalStructure = anatomicalStructureMatch(constituent, template.tgrep);
+	    if (anatomicalStructure == null) {
+		logger.debug("anatomicalStructure instantiation failed! : " + anatomicalStructure);
+		logger.debug("\t\t" + template.tgrep);
+		logger.debug("\t\t" + constituent.getFragmentString());
+		logger.debug("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeAnatomicalStructure(doi, anatomicalStructure);
+	    constituent.setEntityClass("AnatomicalStructure");
+	    bindNamedEntity(constituent, template, anatomicalStructure);
+	    break;
 	case "biological_function":
 	    BiologicalFunction biologicalFunction = biologicalFunctionMatch(constituent, template.tgrep);
 	    if (biologicalFunction == null) {
@@ -115,6 +144,19 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    storeBiologicalFunction(doi, biologicalFunction);
 	    constituent.setEntityClass("BiologicalFunction");
 	    bindNamedEntity(constituent, template, biologicalFunction);
+	    break;
+	case "body_part":
+	    BodyPart bodyPart = bodyPartMatch(constituent, template.tgrep);
+	    if (bodyPart == null) {
+		logger.debug("bodyPart instantiation failed! : " + bodyPart);
+		logger.debug("\t\t" + template.tgrep);
+		logger.debug("\t\t" + constituent.getFragmentString());
+		logger.debug("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeBodyPart(doi, bodyPart);
+	    constituent.setEntityClass("BodyPart");
+	    bindNamedEntity(constituent, template, bodyPart);
 	    break;
 	case "disease":
 	    Disease disease = diseaseMatch(constituent, template.tgrep);
@@ -142,6 +184,32 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    constituent.setEntityClass("Event");
 	    bindNamedEntity(constituent, template, event);
 	    break;
+	case "finding":
+	    Finding finding = findingMatch(constituent, template.tgrep);
+	    if (finding == null) {
+		logger.debug("finding instantiation failed! : " + finding);
+		logger.debug("\t\t" + template.tgrep);
+		logger.debug("\t\t" + constituent.getFragmentString());
+		logger.debug("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeFinding(doi, finding);
+	    constituent.setEntityClass("Event");
+	    bindNamedEntity(constituent, template, finding);
+	    break;
+	case "injury":
+	    Injury injury = injuryMatch(constituent, template.tgrep);
+	    if (injury == null) {
+		logger.debug("injury instantiation failed! : " + injury);
+		logger.debug("\t\t" + template.tgrep);
+		logger.debug("\t\t" + constituent.getFragmentString());
+		logger.debug("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeInjury(doi, injury);
+	    constituent.setEntityClass("Injury");
+	    bindNamedEntity(constituent, template, injury);
+	    break;
 	case "location":
 	    PlaceName place = placeNameMatch(constituent, template.tgrep);
 	    if (place == null) {
@@ -154,6 +222,19 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    storePlaceName(doi, place);
 	    constituent.setEntityClass("Location");
 	    bindNamedEntity(constituent, template, place);
+	    break;
+	case "manufactored_object":
+	    ManufacturedObject manufacturedObject = manufacturedObjectMatch(constituent, template.tgrep);
+	    if (manufacturedObject == null) {
+		logger.debug("injury instantiation failed! : " + manufacturedObject);
+		logger.debug("\t\t" + template.tgrep);
+		logger.debug("\t\t" + constituent.getFragmentString());
+		logger.debug("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeManufacturedObject(doi, manufacturedObject);
+	    constituent.setEntityClass("ManufacturedObject");
+	    bindNamedEntity(constituent, template, manufacturedObject);
 	    break;
 	case "organic_chemical":
 	    OrganicChemical organicChemical = organicChemicalMatch(constituent, template.tgrep);
@@ -181,12 +262,138 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    constituent.setEntityClass("Organism");
 	    bindNamedEntity(constituent, template, organism);
 	    break;
+	case "pathological_function":
+	    PathologicalFunction pathologicalFunction =  pathologicalFunctionMatch(constituent, template.tgrep);
+	    if (pathologicalFunction == null) {
+		logger.debug("organism instantiation failed! : " + pathologicalFunction);
+		logger.debug("\t\t" + template.tgrep);
+		logger.debug("\t\t" + constituent.getFragmentString());
+		logger.debug("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storePathologicalFunction(doi, pathologicalFunction);
+	    constituent.setEntityClass("PathologicalFunction");
+	    bindNamedEntity(constituent, template, pathologicalFunction);
+	    break;
+	case "physiological_function":
+	    PhysiologicalFunction physiologicalFunction =  physiologicalFunctionMatch(constituent, template.tgrep);
+	    if (physiologicalFunction == null) {
+		logger.debug("organism instantiation failed! : " + physiologicalFunction);
+		logger.debug("\t\t" + template.tgrep);
+		logger.debug("\t\t" + constituent.getFragmentString());
+		logger.debug("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storePhysiologicalFunction(doi, physiologicalFunction);
+	    constituent.setEntityClass("PhysiologicalFunction");
+	    bindNamedEntity(constituent, template, physiologicalFunction);
+	    break;
+	case "transcription_factor":
+	    TranscriptionFactor transcriptionFactor =  transcriptionFactorMatch(constituent, template.tgrep);
+	    if (transcriptionFactor == null) {
+		logger.debug("organism instantiation failed! : " + transcriptionFactor);
+		logger.debug("\t\t" + template.tgrep);
+		logger.debug("\t\t" + constituent.getFragmentString());
+		logger.debug("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeTranscriptionFactor(doi, transcriptionFactor);
+	    constituent.setEntityClass("TranscriptionFactor");
+	    bindNamedEntity(constituent, template, transcriptionFactor);
+	    break;
 	default:
 	    break;
 	}
 	
     }
     
+   private void storeAnatomicalStructure(String doi, AnatomicalStructure anatomicalStructure) throws SQLException {
+	int id = 0;
+
+	AnatomicalStructure match = anatomicalStructureHash.get(anatomicalStructure.toString());
+	if (match != null) {
+	    anatomicalStructure.setID(match.getID());
+	} else {
+	    try {
+		PreparedStatement insert = conn.prepareStatement("insert into covid_model.anatomical_structure(anatomical_structure,umls_id,umls_match_string) values(?,?,?)", Statement.RETURN_GENERATED_KEYS);
+		insert.setString(1, anatomicalStructure.toString());
+		insert.setString(2, anatomicalStructure.getUmlsConcept());
+		insert.setString(3, anatomicalStructure.getUmlsMatchString());
+		insert.execute();
+		ResultSet rs = insert.getGeneratedKeys();
+		while (rs.next()) {
+		    id = rs.getInt(1);
+		    logger.info("new biologicalFunction id: " + id + " : " + anatomicalStructure);
+		    anatomicalStructure.setID(id);
+		    anatomicalStructureHash.put(anatomicalStructure.toString(), anatomicalStructure);
+		}
+		insert.close();
+	    } catch (SQLException e) {
+		if (e.getSQLState().equals("23505")) {
+		    conn.rollback();
+		    PreparedStatement select = conn.prepareStatement("select id from covid_model.anatomical_structure where anatomical_structure = ?");
+		    select.setString(1, anatomicalStructure.toString());
+		    ResultSet rs = select.executeQuery();
+		    while (rs.next()) {
+			id = rs.getInt(1);
+			logger.debug("organism id: " + id);
+			anatomicalStructure.setID(id);
+			anatomicalStructureHash.put(anatomicalStructure.toString(), anatomicalStructure);
+		    }
+		    select.close();
+
+		} else {
+		    e.printStackTrace();
+		}
+	    } finally {
+		conn.commit();
+	    }
+	}
+	try {
+	    PreparedStatement insert = conn.prepareStatement("insert into covid_model.anatomical_structure_mention(anatomical_structure_id,doi) values(?,?)");
+	    insert.setInt(1, anatomicalStructure.getID());
+	    insert.setString(2, doi);
+	    insert.execute();
+	} catch (SQLException e) {
+	    if (e.getSQLState().equals("23505")) {
+		conn.rollback();
+	    } else {
+		e.printStackTrace();
+	    }
+	} finally {
+	    conn.commit();
+	}
+	
+   }
+
+   private AnatomicalStructure anatomicalStructureMatch(syntaxTree constituent, String pattern) throws Exception {
+       AnatomicalStructure theAnatomicalStructure = null;
+	syntaxMatcher theMatcher = new syntaxMatcher(pattern);
+	if (theMatcher.isMatch(constituent)) {
+	    Vector<basicLexerToken> matchVector = theMatcher.matchesAsTokens();
+	    logger.debug("organism vector: " + matchVector);
+	    theAnatomicalStructure = new AnatomicalStructure(pruneMatchVector(matchVector));
+	    logger.debug("biological function entity: " + theAnatomicalStructure);
+
+	    ExhaustiveVectorConceptRecognizer umlsRecognizer = new ExhaustiveVectorConceptRecognizer(new UMLSDetector(), ExhaustiveVectorConceptRecognizer.Direction.BOTH, false);
+	    List umlsResults = umlsRecognizer.recognize(new Sentence(matchVector), getScanFence(constituent));
+	    logger.debug("UMLS results: " + umlsResults);
+	    for (Concept concept : (List<Concept>)umlsResults) {
+		Vector<edu.uiowa.UMLS.Concept> umlsConcepts = (Vector<edu.uiowa.UMLS.Concept>)concept.getKey();
+		if (umlsConcepts.size() == 1) {
+		    theAnatomicalStructure.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " := " + umlsConcepts.get(0));
+		    logger.debug("\tUMLS match: " + umlsConcepts.get(0));
+		} else {
+		    theAnatomicalStructure.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " :? " + umlsConcepts.get(0));
+		    for (edu.uiowa.UMLS.Concept umlsConcept : umlsConcepts) {
+			logger.debug("\tUMLS option: " + umlsConcept);
+		    }
+		}
+	    }
+	}
+	return theAnatomicalStructure;
+  }
+
    private void storeBiologicalFunction(String doi, BiologicalFunction biologicalFunction) throws SQLException {
 	int id = 0;
 
@@ -272,6 +479,354 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    }
 	}
 	return theBiologicalFunction;
+  }
+
+   private void storeBodyPart(String doi, BodyPart bodyPart) throws SQLException {
+	int id = 0;
+
+	BodyPart match = bodyPartHash.get(bodyPart.toString());
+	if (match != null) {
+	    bodyPart.setID(match.getID());
+	} else {
+	    try {
+		PreparedStatement insert = conn.prepareStatement("insert into covid_model.body_part(body_part,umls_id,umls_match_string) values(?,?,?)", Statement.RETURN_GENERATED_KEYS);
+		insert.setString(1, bodyPart.toString());
+		insert.setString(2, bodyPart.getUmlsConcept());
+		insert.setString(3, bodyPart.getUmlsMatchString());
+		insert.execute();
+		ResultSet rs = insert.getGeneratedKeys();
+		while (rs.next()) {
+		    id = rs.getInt(1);
+		    logger.info("new biologicalFunction id: " + id + " : " + bodyPart);
+		    bodyPart.setID(id);
+		    bodyPartHash.put(bodyPart.toString(), bodyPart);
+		}
+		insert.close();
+	    } catch (SQLException e) {
+		if (e.getSQLState().equals("23505")) {
+		    conn.rollback();
+		    PreparedStatement select = conn.prepareStatement("select id from covid_model.body_part where body_part = ?");
+		    select.setString(1, bodyPart.toString());
+		    ResultSet rs = select.executeQuery();
+		    while (rs.next()) {
+			id = rs.getInt(1);
+			logger.debug("organism id: " + id);
+			bodyPart.setID(id);
+			bodyPartHash.put(bodyPart.toString(), bodyPart);
+		    }
+		    select.close();
+
+		} else {
+		    e.printStackTrace();
+		}
+	    } finally {
+		conn.commit();
+	    }
+	}
+	try {
+	    PreparedStatement insert = conn.prepareStatement("insert into covid_model.body_part_mention(body_part_id,doi) values(?,?)");
+	    insert.setInt(1, bodyPart.getID());
+	    insert.setString(2, doi);
+	    insert.execute();
+	} catch (SQLException e) {
+	    if (e.getSQLState().equals("23505")) {
+		conn.rollback();
+	    } else {
+		e.printStackTrace();
+	    }
+	} finally {
+	    conn.commit();
+	}
+	
+   }
+
+   private BodyPart bodyPartMatch(syntaxTree constituent, String pattern) throws Exception {
+       BodyPart theBodyPart = null;
+	syntaxMatcher theMatcher = new syntaxMatcher(pattern);
+	if (theMatcher.isMatch(constituent)) {
+	    Vector<basicLexerToken> matchVector = theMatcher.matchesAsTokens();
+	    logger.debug("organism vector: " + matchVector);
+	    theBodyPart = new BodyPart(pruneMatchVector(matchVector));
+	    logger.debug("biological function entity: " + theBodyPart);
+
+	    ExhaustiveVectorConceptRecognizer umlsRecognizer = new ExhaustiveVectorConceptRecognizer(new UMLSDetector(), ExhaustiveVectorConceptRecognizer.Direction.BOTH, false);
+	    List umlsResults = umlsRecognizer.recognize(new Sentence(matchVector), getScanFence(constituent));
+	    logger.debug("UMLS results: " + umlsResults);
+	    for (Concept concept : (List<Concept>)umlsResults) {
+		Vector<edu.uiowa.UMLS.Concept> umlsConcepts = (Vector<edu.uiowa.UMLS.Concept>)concept.getKey();
+		if (umlsConcepts.size() == 1) {
+		    theBodyPart.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " := " + umlsConcepts.get(0));
+		    logger.debug("\tUMLS match: " + umlsConcepts.get(0));
+		} else {
+		    theBodyPart.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " :? " + umlsConcepts.get(0));
+		    for (edu.uiowa.UMLS.Concept umlsConcept : umlsConcepts) {
+			logger.debug("\tUMLS option: " + umlsConcept);
+		    }
+		}
+	    }
+	}
+	return theBodyPart;
+  }
+
+   private void storeFinding(String doi, Finding finding) throws SQLException {
+	int id = 0;
+
+	Finding match = findingHash.get(finding.toString());
+	if (match != null) {
+	    finding.setID(match.getID());
+	} else {
+	    try {
+		PreparedStatement insert = conn.prepareStatement("insert into covid_model.finding(finding,umls_id,umls_match_string) values(?,?,?)", Statement.RETURN_GENERATED_KEYS);
+		insert.setString(1, finding.toString());
+		insert.setString(2, finding.getUmlsConcept());
+		insert.setString(3, finding.getUmlsMatchString());
+		insert.execute();
+		ResultSet rs = insert.getGeneratedKeys();
+		while (rs.next()) {
+		    id = rs.getInt(1);
+		    logger.info("new finding id: " + id + " : " + finding);
+		    finding.setID(id);
+		    findingHash.put(finding.toString(), finding);
+		}
+		insert.close();
+	    } catch (SQLException e) {
+		if (e.getSQLState().equals("23505")) {
+		    conn.rollback();
+		    PreparedStatement select = conn.prepareStatement("select id from covid_model.finding where finding = ?");
+		    select.setString(1, finding.toString());
+		    ResultSet rs = select.executeQuery();
+		    while (rs.next()) {
+			id = rs.getInt(1);
+			logger.debug("finding id: " + id);
+			finding.setID(id);
+			findingHash.put(finding.toString(), finding);
+		    }
+		    select.close();
+
+		} else {
+		    e.printStackTrace();
+		}
+	    } finally {
+		conn.commit();
+	    }
+	}
+	try {
+	    PreparedStatement insert = conn.prepareStatement("insert into covid_model.finding_mention(finding_id,doi) values(?,?)");
+	    insert.setInt(1, finding.getID());
+	    insert.setString(2, doi);
+	    insert.execute();
+	} catch (SQLException e) {
+	    if (e.getSQLState().equals("23505")) {
+		conn.rollback();
+	    } else {
+		e.printStackTrace();
+	    }
+	} finally {
+	    conn.commit();
+	}
+	
+   }
+
+   private Finding findingMatch(syntaxTree constituent, String pattern) throws Exception {
+       Finding theFinding = null;
+	syntaxMatcher theMatcher = new syntaxMatcher(pattern);
+	if (theMatcher.isMatch(constituent)) {
+	    Vector<basicLexerToken> matchVector = theMatcher.matchesAsTokens();
+	    logger.debug("organism vector: " + matchVector);
+	    theFinding = new Finding(pruneMatchVector(matchVector));
+	    logger.debug("biological function entity: " + theFinding);
+
+	    ExhaustiveVectorConceptRecognizer umlsRecognizer = new ExhaustiveVectorConceptRecognizer(new UMLSDetector(), ExhaustiveVectorConceptRecognizer.Direction.BOTH, false);
+	    List umlsResults = umlsRecognizer.recognize(new Sentence(matchVector), getScanFence(constituent));
+	    logger.debug("UMLS results: " + umlsResults);
+	    for (Concept concept : (List<Concept>)umlsResults) {
+		Vector<edu.uiowa.UMLS.Concept> umlsConcepts = (Vector<edu.uiowa.UMLS.Concept>)concept.getKey();
+		if (umlsConcepts.size() == 1) {
+		    theFinding.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " := " + umlsConcepts.get(0));
+		    logger.debug("\tUMLS match: " + umlsConcepts.get(0));
+		} else {
+		    theFinding.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " :? " + umlsConcepts.get(0));
+		    for (edu.uiowa.UMLS.Concept umlsConcept : umlsConcepts) {
+			logger.debug("\tUMLS option: " + umlsConcept);
+		    }
+		}
+	    }
+	}
+	return theFinding;
+  }
+
+   private void storeInjury(String doi, Injury injury) throws SQLException {
+	int id = 0;
+
+	Injury match = injuryHash.get(injury.toString());
+	if (match != null) {
+	    injury.setID(match.getID());
+	} else {
+	    try {
+		PreparedStatement insert = conn.prepareStatement("insert into covid_model.injury(injury,umls_id,umls_match_string) values(?,?,?)", Statement.RETURN_GENERATED_KEYS);
+		insert.setString(1, injury.toString());
+		insert.setString(2, injury.getUmlsConcept());
+		insert.setString(3, injury.getUmlsMatchString());
+		insert.execute();
+		ResultSet rs = insert.getGeneratedKeys();
+		while (rs.next()) {
+		    id = rs.getInt(1);
+		    logger.info("new injury id: " + id + " : " + injury);
+		    injury.setID(id);
+		    injuryHash.put(injury.toString(), injury);
+		}
+		insert.close();
+	    } catch (SQLException e) {
+		if (e.getSQLState().equals("23505")) {
+		    conn.rollback();
+		    PreparedStatement select = conn.prepareStatement("select id from covid_model.injury where injury = ?");
+		    select.setString(1, injury.toString());
+		    ResultSet rs = select.executeQuery();
+		    while (rs.next()) {
+			id = rs.getInt(1);
+			logger.debug("injury id: " + id);
+			injury.setID(id);
+			injuryHash.put(injury.toString(), injury);
+		    }
+		    select.close();
+
+		} else {
+		    e.printStackTrace();
+		}
+	    } finally {
+		conn.commit();
+	    }
+	}
+	try {
+	    PreparedStatement insert = conn.prepareStatement("insert into covid_model.injury_mention(injury_id,doi) values(?,?)");
+	    insert.setInt(1, injury.getID());
+	    insert.setString(2, doi);
+	    insert.execute();
+	} catch (SQLException e) {
+	    if (e.getSQLState().equals("23505")) {
+		conn.rollback();
+	    } else {
+		e.printStackTrace();
+	    }
+	} finally {
+	    conn.commit();
+	}
+	
+   }
+
+   private Injury injuryMatch(syntaxTree constituent, String pattern) throws Exception {
+       Injury theInjury = null;
+	syntaxMatcher theMatcher = new syntaxMatcher(pattern);
+	if (theMatcher.isMatch(constituent)) {
+	    Vector<basicLexerToken> matchVector = theMatcher.matchesAsTokens();
+	    logger.debug("injury vector: " + matchVector);
+	    theInjury = new Injury(pruneMatchVector(matchVector));
+	    logger.debug("injury entity: " + theInjury);
+
+	    ExhaustiveVectorConceptRecognizer umlsRecognizer = new ExhaustiveVectorConceptRecognizer(new UMLSDetector(), ExhaustiveVectorConceptRecognizer.Direction.BOTH, false);
+	    List umlsResults = umlsRecognizer.recognize(new Sentence(matchVector), getScanFence(constituent));
+	    logger.debug("UMLS results: " + umlsResults);
+	    for (Concept concept : (List<Concept>)umlsResults) {
+		Vector<edu.uiowa.UMLS.Concept> umlsConcepts = (Vector<edu.uiowa.UMLS.Concept>)concept.getKey();
+		if (umlsConcepts.size() == 1) {
+		    theInjury.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " := " + umlsConcepts.get(0));
+		    logger.debug("\tUMLS match: " + umlsConcepts.get(0));
+		} else {
+		    theInjury.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " :? " + umlsConcepts.get(0));
+		    for (edu.uiowa.UMLS.Concept umlsConcept : umlsConcepts) {
+			logger.debug("\tUMLS option: " + umlsConcept);
+		    }
+		}
+	    }
+	}
+	return theInjury;
+  }
+
+   private void storeManufacturedObject(String doi, ManufacturedObject manufacturedObject) throws SQLException {
+	int id = 0;
+
+	ManufacturedObject match = manufacturedObjectHash.get(manufacturedObject.toString());
+	if (match != null) {
+	    manufacturedObject.setID(match.getID());
+	} else {
+	    try {
+		PreparedStatement insert = conn.prepareStatement("insert into covid_model.manufactured_object(manufactured_object,umls_id,umls_match_string) values(?,?,?)", Statement.RETURN_GENERATED_KEYS);
+		insert.setString(1, manufacturedObject.toString());
+		insert.setString(2, manufacturedObject.getUmlsConcept());
+		insert.setString(3, manufacturedObject.getUmlsMatchString());
+		insert.execute();
+		ResultSet rs = insert.getGeneratedKeys();
+		while (rs.next()) {
+		    id = rs.getInt(1);
+		    logger.info("new manufactured object id: " + id + " : " + manufacturedObject);
+		    manufacturedObject.setID(id);
+		    manufacturedObjectHash.put(manufacturedObject.toString(), manufacturedObject);
+		}
+		insert.close();
+	    } catch (SQLException e) {
+		if (e.getSQLState().equals("23505")) {
+		    conn.rollback();
+		    PreparedStatement select = conn.prepareStatement("select id from covid_model.manufactured_object where manufactured_object = ?");
+		    select.setString(1, manufacturedObject.toString());
+		    ResultSet rs = select.executeQuery();
+		    while (rs.next()) {
+			id = rs.getInt(1);
+			logger.debug("manufactured object id: " + id);
+			manufacturedObject.setID(id);
+			manufacturedObjectHash.put(manufacturedObject.toString(), manufacturedObject);
+		    }
+		    select.close();
+
+		} else {
+		    e.printStackTrace();
+		}
+	    } finally {
+		conn.commit();
+	    }
+	}
+	try {
+	    PreparedStatement insert = conn.prepareStatement("insert into covid_model.manufactured_object_mention(manufactured_object_id,doi) values(?,?)");
+	    insert.setInt(1, manufacturedObject.getID());
+	    insert.setString(2, doi);
+	    insert.execute();
+	} catch (SQLException e) {
+	    if (e.getSQLState().equals("23505")) {
+		conn.rollback();
+	    } else {
+		e.printStackTrace();
+	    }
+	} finally {
+	    conn.commit();
+	}
+	
+   }
+
+   private ManufacturedObject manufacturedObjectMatch(syntaxTree constituent, String pattern) throws Exception {
+       ManufacturedObject theManufacturedObject = null;
+	syntaxMatcher theMatcher = new syntaxMatcher(pattern);
+	if (theMatcher.isMatch(constituent)) {
+	    Vector<basicLexerToken> matchVector = theMatcher.matchesAsTokens();
+	    logger.debug("manufactured_object vector: " + matchVector);
+	    theManufacturedObject = new ManufacturedObject(pruneMatchVector(matchVector));
+	    logger.debug("manufactured_object entity: " + theManufacturedObject);
+
+	    ExhaustiveVectorConceptRecognizer umlsRecognizer = new ExhaustiveVectorConceptRecognizer(new UMLSDetector(), ExhaustiveVectorConceptRecognizer.Direction.BOTH, false);
+	    List umlsResults = umlsRecognizer.recognize(new Sentence(matchVector), getScanFence(constituent));
+	    logger.debug("UMLS results: " + umlsResults);
+	    for (Concept concept : (List<Concept>)umlsResults) {
+		Vector<edu.uiowa.UMLS.Concept> umlsConcepts = (Vector<edu.uiowa.UMLS.Concept>)concept.getKey();
+		if (umlsConcepts.size() == 1) {
+		    theManufacturedObject.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " := " + umlsConcepts.get(0));
+		    logger.debug("\tUMLS match: " + umlsConcepts.get(0));
+		} else {
+		    theManufacturedObject.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " :? " + umlsConcepts.get(0));
+		    for (edu.uiowa.UMLS.Concept umlsConcept : umlsConcepts) {
+			logger.debug("\tUMLS option: " + umlsConcept);
+		    }
+		}
+	    }
+	}
+	return theManufacturedObject;
   }
 
     private void storeOrganism(String doi, Organism organism) throws SQLException {
@@ -445,6 +1000,264 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    }
 	}
 	return theOrganicChemical;
+   }
+
+    private void storePathologicalFunction(String doi, PathologicalFunction pathologicalFunction) throws SQLException {
+	int id = 0;
+
+	PathologicalFunction match = pathologicalFunctionHash.get(pathologicalFunction.toString());
+	if (match != null) {
+	    pathologicalFunction.setID(match.getID());
+	} else {
+	    try {
+		PreparedStatement insert = conn.prepareStatement("insert into covid_model.pathological_function(pathological_function,umls_id,umls_match_string) values(?,?,?)", Statement.RETURN_GENERATED_KEYS);
+		insert.setString(1, pathologicalFunction.toString());
+		insert.setString(2, pathologicalFunction.getUmlsConcept());
+		insert.setString(3, pathologicalFunction.getUmlsMatchString());
+		insert.execute();
+		ResultSet rs = insert.getGeneratedKeys();
+		while (rs.next()) {
+		    id = rs.getInt(1);
+		    logger.info("new organic chemical id: " + id + " : " + pathologicalFunction);
+		    pathologicalFunction.setID(id);
+		    pathologicalFunctionHash.put(pathologicalFunction.toString(), pathologicalFunction);
+		}
+		insert.close();
+	    } catch (SQLException e) {
+		if (e.getSQLState().equals("23505")) {
+		    conn.rollback();
+		    PreparedStatement select = conn.prepareStatement("select id from covid_model.pathological_function where pathological_function = ?");
+		    select.setString(1, pathologicalFunction.toString());
+		    ResultSet rs = select.executeQuery();
+		    while (rs.next()) {
+			id = rs.getInt(1);
+			logger.debug("organic chemical id: " + id);
+			pathologicalFunction.setID(id);
+			pathologicalFunctionHash.put(pathologicalFunction.toString(), pathologicalFunction);
+		    }
+		    select.close();
+
+		} else {
+		    e.printStackTrace();
+		}
+	    } finally {
+		conn.commit();
+	    }
+	}
+	try {
+	    PreparedStatement insert = conn.prepareStatement("insert into covid_model.pathological_function_mention(pathological_function_id,doi) values(?,?)");
+	    insert.setInt(1, pathologicalFunction.getID());
+	    insert.setString(2, doi);
+	    insert.execute();
+	} catch (SQLException e) {
+	    if (e.getSQLState().equals("23505")) {
+		conn.rollback();
+	    } else {
+		e.printStackTrace();
+	    }
+	} finally {
+	    conn.commit();
+	}
+    }
+
+    private PathologicalFunction pathologicalFunctionMatch(syntaxTree constituent, String pattern) throws Exception {
+	PathologicalFunction thePathologicalFunction = null;
+	syntaxMatcher theMatcher = new syntaxMatcher(pattern);
+	if (theMatcher.isMatch(constituent)) {
+	    Vector<basicLexerToken> matchVector = theMatcher.matchesAsTokens();
+	    logger.debug("pathological_function vector: " + matchVector);
+	    thePathologicalFunction = new PathologicalFunction(pruneMatchVector(matchVector));
+	    logger.debug("pathological_function entity: " + thePathologicalFunction);
+
+	    ExhaustiveVectorConceptRecognizer umlsRecognizer = new ExhaustiveVectorConceptRecognizer(new UMLSDetector(), ExhaustiveVectorConceptRecognizer.Direction.BOTH, false);
+	    List umlsResults = umlsRecognizer.recognize(new Sentence(matchVector), getScanFence(constituent));
+	    logger.debug("UMLS results: " + umlsResults);
+	    for (Concept concept : (List<Concept>)umlsResults) {
+		Vector<edu.uiowa.UMLS.Concept> umlsConcepts = (Vector<edu.uiowa.UMLS.Concept>)concept.getKey();
+		if (umlsConcepts.size() == 1) {
+		    thePathologicalFunction.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " := " + umlsConcepts.get(0));
+		    logger.debug("\tUMLS match: " + umlsConcepts.get(0));
+		} else {
+		    thePathologicalFunction.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " :? " + umlsConcepts.get(0));
+		    for (edu.uiowa.UMLS.Concept umlsConcept : umlsConcepts) {
+			logger.debug("\tUMLS option: " + umlsConcept);
+		    }
+		}
+	    }
+	}
+	return thePathologicalFunction;
+   }
+
+    private void storePhysiologicalFunction(String doi, PhysiologicalFunction physiologicalFunction) throws SQLException {
+	int id = 0;
+
+	PhysiologicalFunction match = physiologicalFunctionHash.get(physiologicalFunction.toString());
+	if (match != null) {
+	    physiologicalFunction.setID(match.getID());
+	} else {
+	    try {
+		PreparedStatement insert = conn.prepareStatement("insert into covid_model.physiological_function(physiological_function,umls_id,umls_match_string) values(?,?,?)", Statement.RETURN_GENERATED_KEYS);
+		insert.setString(1, physiologicalFunction.toString());
+		insert.setString(2, physiologicalFunction.getUmlsConcept());
+		insert.setString(3, physiologicalFunction.getUmlsMatchString());
+		insert.execute();
+		ResultSet rs = insert.getGeneratedKeys();
+		while (rs.next()) {
+		    id = rs.getInt(1);
+		    logger.info("new physiological_function id: " + id + " : " + physiologicalFunction);
+		    physiologicalFunction.setID(id);
+		    physiologicalFunctionHash.put(physiologicalFunction.toString(), physiologicalFunction);
+		}
+		insert.close();
+	    } catch (SQLException e) {
+		if (e.getSQLState().equals("23505")) {
+		    conn.rollback();
+		    PreparedStatement select = conn.prepareStatement("select id from covid_model.physiological_function where physiological_function = ?");
+		    select.setString(1, physiologicalFunction.toString());
+		    ResultSet rs = select.executeQuery();
+		    while (rs.next()) {
+			id = rs.getInt(1);
+			logger.debug("physiological_function id: " + id);
+			physiologicalFunction.setID(id);
+			physiologicalFunctionHash.put(physiologicalFunction.toString(), physiologicalFunction);
+		    }
+		    select.close();
+
+		} else {
+		    e.printStackTrace();
+		}
+	    } finally {
+		conn.commit();
+	    }
+	}
+	try {
+	    PreparedStatement insert = conn.prepareStatement("insert into covid_model.physiological_function_mention(physiological_function_id,doi) values(?,?)");
+	    insert.setInt(1, physiologicalFunction.getID());
+	    insert.setString(2, doi);
+	    insert.execute();
+	} catch (SQLException e) {
+	    if (e.getSQLState().equals("23505")) {
+		conn.rollback();
+	    } else {
+		e.printStackTrace();
+	    }
+	} finally {
+	    conn.commit();
+	}
+    }
+
+    private PhysiologicalFunction physiologicalFunctionMatch(syntaxTree constituent, String pattern) throws Exception {
+	PhysiologicalFunction thePhysiologicalFunction = null;
+	syntaxMatcher theMatcher = new syntaxMatcher(pattern);
+	if (theMatcher.isMatch(constituent)) {
+	    Vector<basicLexerToken> matchVector = theMatcher.matchesAsTokens();
+	    logger.debug("physiological_function vector: " + matchVector);
+	    thePhysiologicalFunction = new PhysiologicalFunction(pruneMatchVector(matchVector));
+	    logger.debug("physiological_function entity: " + thePhysiologicalFunction);
+
+	    ExhaustiveVectorConceptRecognizer umlsRecognizer = new ExhaustiveVectorConceptRecognizer(new UMLSDetector(), ExhaustiveVectorConceptRecognizer.Direction.BOTH, false);
+	    List umlsResults = umlsRecognizer.recognize(new Sentence(matchVector), getScanFence(constituent));
+	    logger.debug("UMLS results: " + umlsResults);
+	    for (Concept concept : (List<Concept>)umlsResults) {
+		Vector<edu.uiowa.UMLS.Concept> umlsConcepts = (Vector<edu.uiowa.UMLS.Concept>)concept.getKey();
+		if (umlsConcepts.size() == 1) {
+		    thePhysiologicalFunction.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " := " + umlsConcepts.get(0));
+		    logger.debug("\tUMLS match: " + umlsConcepts.get(0));
+		} else {
+		    thePhysiologicalFunction.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " :? " + umlsConcepts.get(0));
+		    for (edu.uiowa.UMLS.Concept umlsConcept : umlsConcepts) {
+			logger.debug("\tUMLS option: " + umlsConcept);
+		    }
+		}
+	    }
+	}
+	return thePhysiologicalFunction;
+   }
+
+    private void storeTranscriptionFactor(String doi, TranscriptionFactor transcriptionFactor) throws SQLException {
+	int id = 0;
+
+	TranscriptionFactor match = transcriptionFactorHash.get(transcriptionFactor.toString());
+	if (match != null) {
+	    transcriptionFactor.setID(match.getID());
+	} else {
+	    try {
+		PreparedStatement insert = conn.prepareStatement("insert into covid_model.transcription_factor(transcription_factor,umls_id,umls_match_string) values(?,?,?)", Statement.RETURN_GENERATED_KEYS);
+		insert.setString(1, transcriptionFactor.toString());
+		insert.setString(2, transcriptionFactor.getUmlsConcept());
+		insert.setString(3, transcriptionFactor.getUmlsMatchString());
+		insert.execute();
+		ResultSet rs = insert.getGeneratedKeys();
+		while (rs.next()) {
+		    id = rs.getInt(1);
+		    logger.info("new transcription_factor id: " + id + " : " + transcriptionFactor);
+		    transcriptionFactor.setID(id);
+		    transcriptionFactorHash.put(transcriptionFactor.toString(), transcriptionFactor);
+		}
+		insert.close();
+	    } catch (SQLException e) {
+		if (e.getSQLState().equals("23505")) {
+		    conn.rollback();
+		    PreparedStatement select = conn.prepareStatement("select id from covid_model.transcription_factor where transcription_factor = ?");
+		    select.setString(1, transcriptionFactor.toString());
+		    ResultSet rs = select.executeQuery();
+		    while (rs.next()) {
+			id = rs.getInt(1);
+			logger.debug("transcription_factor id: " + id);
+			transcriptionFactor.setID(id);
+			transcriptionFactorHash.put(transcriptionFactor.toString(), transcriptionFactor);
+		    }
+		    select.close();
+
+		} else {
+		    e.printStackTrace();
+		}
+	    } finally {
+		conn.commit();
+	    }
+	}
+	try {
+	    PreparedStatement insert = conn.prepareStatement("insert into covid_model.transcription_factor_mention(transcription_factor_id,doi) values(?,?)");
+	    insert.setInt(1, transcriptionFactor.getID());
+	    insert.setString(2, doi);
+	    insert.execute();
+	} catch (SQLException e) {
+	    if (e.getSQLState().equals("23505")) {
+		conn.rollback();
+	    } else {
+		e.printStackTrace();
+	    }
+	} finally {
+	    conn.commit();
+	}
+    }
+
+    private TranscriptionFactor transcriptionFactorMatch(syntaxTree constituent, String pattern) throws Exception {
+	TranscriptionFactor theTranscriptionFactor = null;
+	syntaxMatcher theMatcher = new syntaxMatcher(pattern);
+	if (theMatcher.isMatch(constituent)) {
+	    Vector<basicLexerToken> matchVector = theMatcher.matchesAsTokens();
+	    logger.debug("transcription_factor vector: " + matchVector);
+	    theTranscriptionFactor = new TranscriptionFactor(pruneMatchVector(matchVector));
+	    logger.debug("transcription_factor entity: " + theTranscriptionFactor);
+
+	    ExhaustiveVectorConceptRecognizer umlsRecognizer = new ExhaustiveVectorConceptRecognizer(new UMLSDetector(), ExhaustiveVectorConceptRecognizer.Direction.BOTH, false);
+	    List umlsResults = umlsRecognizer.recognize(new Sentence(matchVector), getScanFence(constituent));
+	    logger.debug("UMLS results: " + umlsResults);
+	    for (Concept concept : (List<Concept>)umlsResults) {
+		Vector<edu.uiowa.UMLS.Concept> umlsConcepts = (Vector<edu.uiowa.UMLS.Concept>)concept.getKey();
+		if (umlsConcepts.size() == 1) {
+		    theTranscriptionFactor.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " := " + umlsConcepts.get(0));
+		    logger.debug("\tUMLS match: " + umlsConcepts.get(0));
+		} else {
+		    theTranscriptionFactor.setUmlsMatch(umlsConcepts.get(0).getConceptID(),(String)concept.getPhrase() + " :? " + umlsConcepts.get(0));
+		    for (edu.uiowa.UMLS.Concept umlsConcept : umlsConcepts) {
+			logger.debug("\tUMLS option: " + umlsConcept);
+		    }
+		}
+	    }
+	}
+	return theTranscriptionFactor;
    }
 
     private void storeEvent(String doi, Event event) throws SQLException {
