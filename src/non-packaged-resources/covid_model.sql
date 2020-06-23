@@ -35,24 +35,32 @@ CREATE TABLE covid_model.disease (
 CREATE TABLE covid_model.event (
        id serial NOT NULL
      , event TEXT UNIQUE
+     , umls_id TEXT
+     , umls_match_string TEXT
      , PRIMARY KEY (id)
 );
 
 CREATE TABLE covid_model.finding (
        id serial NOT NULL
      , finding TEXT UNIQUE
+     , umls_id TEXT
+     , umls_match_string TEXT
      , PRIMARY KEY (id)
 );
 
 CREATE TABLE covid_model.injury (
        id serial NOT NULL
      , injury TEXT UNIQUE
+     , umls_id TEXT
+     , umls_match_string TEXT
      , PRIMARY KEY (id)
 );
 
 CREATE TABLE covid_model.manufactured_object (
        id serial NOT NULL
      , manufactured_object TEXT UNIQUE
+     , umls_id TEXT
+     , umls_match_string TEXT
      , PRIMARY KEY (id)
 );
 
