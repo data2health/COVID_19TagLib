@@ -36,6 +36,7 @@ src/main/resources/META-INF/taglib.tld -text svneol=unset#application/xml
 src/non-packaged-resources/Model.clay -text svneol=unset#application/xml
 src/non-packaged-resources/biorxiv.sql -text
 src/non-packaged-resources/chictr_views.sql -text
+src/non-packaged-resources/covid_model.sql -text
 src/non-packaged-resources/crossref_views.sql -text
 src/non-packaged-resources/dashboard.sql -text
 src/non-packaged-resources/dashboard_refresh.sql -text

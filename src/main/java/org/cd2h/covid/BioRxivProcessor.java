@@ -55,7 +55,7 @@ public class BioRxivProcessor implements Runnable {
 	}
 	logger.info("\t" + doiQueue.size() + " files queued.");
 
-	int maxCrawlerThreads = Runtime.getRuntime().availableProcessors() == 8 ? Runtime.getRuntime().availableProcessors() / 2 : (Runtime.getRuntime().availableProcessors() * 3) / 4;
+	int maxCrawlerThreads = Runtime.getRuntime().availableProcessors() == 8 ? Runtime.getRuntime().availableProcessors() / 4 : (Runtime.getRuntime().availableProcessors() * 3) / 4;
 //	maxCrawlerThreads = 1;
 	Thread[] scannerThreads = new Thread[maxCrawlerThreads];
 
@@ -84,7 +84,6 @@ public class BioRxivProcessor implements Runnable {
 	if (mode.equals("fragment"))
 	    Concept.initialize(conn);
 	theParser = new SegmentParser(new biomedicalLexerMod(), new SimpleStanfordParserBridge(), new BiomedicalSentenceGenerator(conn));
-	theGenerator = new FragmentGenerator(new AcknowledgementDecorator(prop_file, conn), new BioRxivInstantiator(prop_file, conn), new TemplatePromoter(conn));
     }
 
     @Override
@@ -114,6 +113,7 @@ public class BioRxivProcessor implements Runnable {
 	    int seqnum = rs.getInt(1);
 	    int sentnum = rs.getInt(2);
 	    String sentence = rs.getString(3);
+	    int parseCount = 0;
 	    TextSegment segment = theParser.parse(sentence);
 	    for (TextSegmentElement element : segment.getElementVector()) {
 		logger.info("[" + threadID + "] sentence: " + element.getSentence());
@@ -126,7 +126,6 @@ public class BioRxivProcessor implements Runnable {
 		sentStmt.execute();
 		sentStmt.close();
 		
-		int parseCount = 0;
 		for (syntaxTree theTree : element.getParseVector()) {
 		    logger.info("[" + threadID + "]\tparse: " + theTree.treeString());
 
@@ -146,6 +145,7 @@ public class BioRxivProcessor implements Runnable {
     }
 
     public void fragment(String doi) throws Exception {
+	theGenerator = new FragmentGenerator(new AcknowledgementDecorator(prop_file, conn), new BioRxivInstantiator(prop_file, conn, doi), new TemplatePromoter(conn));
 	PreparedStatement sourceStmt = conn.prepareStatement("select seqnum, sentnum, parsenum, parse from covid_biorxiv.parse where doi = ? order by seqnum,sentnum");
 	sourceStmt.setString(1, doi);
 	ResultSet sourceRS = sourceStmt.executeQuery();
@@ -155,7 +155,7 @@ public class BioRxivProcessor implements Runnable {
 	    int parsenum = sourceRS.getInt(3);
 	    String parseString = sourceRS.getString(4);
 	    logger.debug("[" + threadID + "] : " + doi + " : " + seqnum + " : " + sentnum + " : " + parsenum + " : " + parseString);
-	    for (ParseFragment fragment : theGenerator.fragments(0, parseString)) {
+	    for (ParseFragment fragment : theGenerator.fragments(doi, parseString)) {
 		logger.info("\tfragment: " + fragment.getFragmentString());
 		logger.info("\t\tparse: " + fragment.getFragmentParse());
 
