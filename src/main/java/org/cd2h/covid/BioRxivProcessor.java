@@ -50,7 +50,7 @@ public class BioRxivProcessor implements Runnable {
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
-	    logger.info("queueing : " + doi);
+	    logger.debug("queueing : " + doi);
 	    doiQueue.queue(doi);
 	}
 	logger.info("\t" + doiQueue.size() + " files queued.");
@@ -81,8 +81,6 @@ public class BioRxivProcessor implements Runnable {
     public BioRxivProcessor(int threadID) throws Exception {
 	this.threadID = threadID;
 	conn = getConnection();
-	if (mode.equals("fragment"))
-	    Concept.initialize(conn);
 	theParser = new SegmentParser(new biomedicalLexerMod(), new SimpleStanfordParserBridge(), new BiomedicalSentenceGenerator(conn));
     }
 
@@ -145,7 +143,7 @@ public class BioRxivProcessor implements Runnable {
     }
 
     public void fragment(String doi) throws Exception {
-	theGenerator = new FragmentGenerator(new AcknowledgementDecorator(prop_file, conn), new BioRxivInstantiator(prop_file, conn, doi), new TemplatePromoter(conn));
+	theGenerator = new FragmentGenerator(new BioRxivDecorator(conn), new BioRxivInstantiator(prop_file, conn, doi), new TemplatePromoter(conn));
 	PreparedStatement sourceStmt = conn.prepareStatement("select seqnum, sentnum, parsenum, parse from covid_biorxiv.parse where doi = ? order by seqnum,sentnum");
 	sourceStmt.setString(1, doi);
 	ResultSet sourceRS = sourceStmt.executeQuery();

@@ -9,6 +9,7 @@
 .settings/org.maven.ide.eclipse.prefs -text
 /pom.xml -text svneol=unset#application/xml
 src/main/java/org/cd2h/covid/ArXivLoader.java -text
+src/main/java/org/cd2h/covid/BioRxivDecorator.java -text
 src/main/java/org/cd2h/covid/BioRxivInstantiator.java -text
 src/main/java/org/cd2h/covid/BioRxivLoader.java -text
 src/main/java/org/cd2h/covid/BioRxivProcessor.java -text
