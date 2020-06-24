@@ -41,9 +41,8 @@ public class BioRxivDecorator extends Decorator {
 
     @Override
     public boolean decorateTree(syntaxTree theTree) throws Exception {
-	decorateTree(theTree, "AnatomicalFunction", new anatomicalStructureComparator());
-	decorateTree(theTree, "BiologicalFunction", new biologicalFunctionComparator());
-//	decorateTree(theTree, "BodyPart", new bodyPartComparator());
+	decorateTree(theTree, "AnatomicalStructure", new anatomicalStructureComparator());
+	decorateTree(theTree, "BodyPart", new bodyPartComparator());
 	decorateTree(theTree, "Disease", new diseaseComparator());
 	decorateTree(theTree, "Event", new eventComparator());
 	decorateTree(theTree, "Finding", new findingComparator());
@@ -54,6 +53,7 @@ public class BioRxivDecorator extends Decorator {
 	decorateTree(theTree, "PathologicalFunction", new pathologicalFunctionComparator());
 	decorateTree(theTree, "PhysiologicalFunction", new physiologicalFunctionComparator());
 	decorateTree(theTree, "TranscriptionFactor", new transcriptionFactorComparator());
+	decorateTree(theTree, "BiologicalFunction", new biologicalFunctionComparator());
 	return false;
     }
 
@@ -74,7 +74,7 @@ public class BioRxivDecorator extends Decorator {
     
     private boolean decorateTree(syntaxTree theTree, String pattern, String entity, syntaxMatchFunction function) throws Exception {
 	syntaxMatcher theMatcher = new syntaxMatcher(pattern);
-	theMatcher.registerFunction(pattern, function);
+//	theMatcher.registerFunction(pattern, function);
 	theMatcher.registerFunction("isAnatomicalStructure", new anatomicalStructureComparator());
 	theMatcher.registerFunction("isBodyPart", new bodyPartComparator());
 	theMatcher.registerFunction("isDisease", new diseaseComparator());
