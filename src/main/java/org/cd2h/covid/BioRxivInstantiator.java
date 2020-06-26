@@ -1268,8 +1268,10 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    event.setID(match.getID());
 	} else {
 	    try {
-		PreparedStatement insert = conn.prepareStatement("insert into covid_model.event(event) values(?)", Statement.RETURN_GENERATED_KEYS);
+		PreparedStatement insert = conn.prepareStatement("insert into covid_model.event(event,umls_id,umls_match_string) values(?,?,?)", Statement.RETURN_GENERATED_KEYS);
 		insert.setString(1, event.toString());
+		insert.setString(2, event.getUmlsConcept());
+		insert.setString(3, event.getUmlsMatchString());
 		insert.execute();
 		ResultSet rs = insert.getGeneratedKeys();
 		while (rs.next()) {

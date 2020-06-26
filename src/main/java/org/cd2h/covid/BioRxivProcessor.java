@@ -17,10 +17,7 @@ import edu.uiowa.NLP_grammar.SimpleStanfordParserBridge;
 import edu.uiowa.NLP_grammar.TextSegment;
 import edu.uiowa.NLP_grammar.TextSegmentElement;
 import edu.uiowa.NLP_grammar.syntaxTree;
-import edu.uiowa.PubMedCentral.AcknowledgementDecorator;
-import edu.uiowa.PubMedCentral.AcknowledgementInstantiator;
 import edu.uiowa.PubMedCentral.BiomedicalSentenceGenerator;
-import edu.uiowa.UMLS.Concept;
 import edu.uiowa.extraction.LocalProperties;
 import edu.uiowa.extraction.PropertyLoader;
 import edu.uiowa.extraction.TemplatePromoter;
@@ -47,9 +44,12 @@ public class BioRxivProcessor implements Runnable {
 	    stmt = conn.prepareStatement("select distinct doi from covid_biorxiv.parse where doi not in (select doi from covid_biorxiv.fragment)");
 	    break;
 	}
+	int skip = 0;
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
+	    if (++skip < 10)
+		continue;
 	    logger.debug("queueing : " + doi);
 	    doiQueue.queue(doi);
 	}
@@ -88,10 +88,16 @@ public class BioRxivProcessor implements Runnable {
     public void run() {
 	while (!doiQueue.isCompleted()) {
 	    String doi = doiQueue.dequeue();
+	    if (doi == null)
+		return;
 	    try {
 		switch (mode) {
 		case "parse":
-		    parse(doi);
+		    try {
+			parse(doi);
+		    } catch (Exception e) {
+			logger.error("Exception raised parsing : " + doi, e);
+		    }
 		    break;
 		case "fragment":
 		    fragment(doi);
@@ -104,7 +110,8 @@ public class BioRxivProcessor implements Runnable {
     }
 
     public void parse(String doi) throws SQLException {
-	PreparedStatement stmt = conn.prepareStatement("select seqnum,sentnum,trimmed_text from covid_biorxiv.sentence where doi = ?");
+	logger.info("[" + threadID + "] processing: " + doi);
+	PreparedStatement stmt = conn.prepareStatement("select seqnum,sentnum,trimmed_text from covid_biorxiv.sentence where trimmed_text is not null and trimmed_text != '' and doi = ?");
 	stmt.setString(1, doi);
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
@@ -112,6 +119,7 @@ public class BioRxivProcessor implements Runnable {
 	    int sentnum = rs.getInt(2);
 	    String sentence = rs.getString(3);
 	    int parseCount = 0;
+		logger.info("[" + threadID + "] sentence: " + sentence);
 	    TextSegment segment = theParser.parse(sentence);
 	    for (TextSegmentElement element : segment.getElementVector()) {
 		logger.info("[" + threadID + "] sentence: " + element.getSentence());
