@@ -21,12 +21,23 @@ import edu.uiowa.NLP_grammar.syntaxMatch.comparator.entityComparator;
 import edu.uiowa.NLP_grammar.syntaxMatch.comparator.urlComparator;
 import edu.uiowa.PubMedCentral.comparator.PersonComparator;
 import edu.uiowa.PubMedCentral.entity.AnatomicalStructure;
+import edu.uiowa.PubMedCentral.entity.BiologicalFunction;
 import edu.uiowa.PubMedCentral.entity.ClinicalTrialRegistration;
 import edu.uiowa.PubMedCentral.entity.Collaboration;
+import edu.uiowa.PubMedCentral.entity.Disease;
+import edu.uiowa.PubMedCentral.entity.Event;
+import edu.uiowa.PubMedCentral.entity.Finding;
+import edu.uiowa.PubMedCentral.entity.Injury;
+import edu.uiowa.PubMedCentral.entity.ManufacturedObject;
+import edu.uiowa.PubMedCentral.entity.OrganicChemical;
+import edu.uiowa.PubMedCentral.entity.Organism;
 import edu.uiowa.PubMedCentral.entity.Organization;
+import edu.uiowa.PubMedCentral.entity.PathologicalFunction;
 import edu.uiowa.PubMedCentral.entity.Person;
+import edu.uiowa.PubMedCentral.entity.PhysiologicalFunction;
 import edu.uiowa.PubMedCentral.entity.PlaceName;
 import edu.uiowa.PubMedCentral.entity.Resource;
+import edu.uiowa.PubMedCentral.entity.TranscriptionFactor;
 import edu.uiowa.PubMedCentral.entity.UMLSMatch;
 import edu.uiowa.UMLS.Semantics;
 import edu.uiowa.concept.Concept;
@@ -43,19 +54,39 @@ import edu.uiowa.lex.basicLexerToken;
 
 public class BioRxivInstantiator extends TemplateInstantiator {
     Hashtable<String, Person> personHash = new Hashtable<String, Person>();
-    Hashtable<String, Resource> placeNameHash = new Hashtable<String, Resource>();
-    Hashtable<String, Resource> organismHash = new Hashtable<String, Resource>();
-    Hashtable<String, Resource> organicChemicalHash = new Hashtable<String, Resource>();
-    Hashtable<String, Resource> eventHash = new Hashtable<String, Resource>();
-    Hashtable<String, Resource> diseaseHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> activityHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> anatomicalStructureHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> biologicalFunctionHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> bodyPartHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> conceptHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> disciplineHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> diseaseHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> entityHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> eventHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> findingHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> functionalRelationshipHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> groupHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> groupAttributeHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> humanProcessHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> injuryHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> intellectualProductHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> languageHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> manufacturedObjectHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> naturalProcessHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> organicChemicalHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> organismHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> organismAttributeHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> organizationHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> pathologicalFunctionHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> physicalRelationshipHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> physiologicalFunctionHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> processHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> relationshipHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> spatialRelationshipHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> substanceHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> techniqueHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> temporalRelationshipHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> placeNameHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> transcriptionFactorHash = new Hashtable<String, Resource>();
     
     PersonComparator personComparator = new PersonComparator();
@@ -94,28 +125,42 @@ public class BioRxivInstantiator extends TemplateInstantiator {
     protected void instantiateEntity(String id, syntaxTree constituent, Template template) throws Exception {
 	logger.debug("matched template: " + template);
 	Resource resource = null;
+	logger.info("instantiating template relation: " + template.relation);
 	switch (template.relation) {
 	case "clinical_trial":
 	    ClinicalTrialRegistration clinicalTrial = clinicalTrialMatch(constituent, template.tgrep);
 	    if (clinicalTrial == null) {
 		// unlike some of the other patterns, these drive on specific strings in the text, so a null match is frequent
-		logger.debug("clinical_trial instantiation failed! : " + clinicalTrial);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("clinical_trial instantiation failed! : " + clinicalTrial);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeClinicalTrial(doi, clinicalTrial);
 	    constituent.setEntityClass("ClinicalTrial");
 	    bindNamedEntity(constituent, template, clinicalTrial);
 	    break;
-	case "anatomical_structure":
-	     resource = resourceMatch(constituent, template.tgrep);
+	case "activity":
+	     resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("anatomicalStructure instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("activity instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, activityHash, "activity");
+	    constituent.setEntityClass("Activity");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "anatomical_structure":
+	     resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("anatomicalStructure instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeResource(doi, resource, anatomicalStructureHash, "anatomical_structure");
@@ -123,12 +168,12 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	case "biological_function":
-	    resource = resourceMatch(constituent, template.tgrep);
+	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("biologicalFunction instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("biologicalFunction instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeResource(doi, resource, biologicalFunctionHash, "biological_function");
@@ -136,38 +181,77 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	case "body_part":
-	    resource = resourceMatch(constituent, template.tgrep);
+	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("bodyPart instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("bodyPart instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeResource(doi, resource, bodyPartHash, "body_part");
 	    constituent.setEntityClass("BodyPart");
 	    bindNamedEntity(constituent, template, resource);
 	    break;
-	case "disease":
-	   resource = resourceMatch(constituent, template.tgrep);
+	case "concept":
+	   resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("disease instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("concept instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
-	    storeResource(doi, resource, diseaseHash, "disease");
-	    constituent.setEntityClass("Disease");
+	    storeResource(doi, resource, conceptHash, "concept");
+	    constituent.setEntityClass("Concept");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "discipline":
+		   resource = resourceMatch(constituent, template);
+		    if (resource == null) {
+			logger.info("discipline instantiation failed! : " + resource);
+			logger.info("\t\t" + template.tgrep);
+			logger.info("\t\t" + constituent.getFragmentString());
+			logger.info("\t\t" + constituent.treeString());
+			break;
+		    }
+		    storeResource(doi, resource, disciplineHash, "discipline");
+		    constituent.setEntityClass("Discipline");
+		    bindNamedEntity(constituent, template, resource);
+		    break;
+	case "disease":
+		   resource = resourceMatch(constituent, template);
+		    if (resource == null) {
+			logger.info("disease instantiation failed! : " + resource);
+			logger.info("\t\t" + template.tgrep);
+			logger.info("\t\t" + constituent.getFragmentString());
+			logger.info("\t\t" + constituent.treeString());
+			break;
+		    }
+		    storeResource(doi, resource, diseaseHash, "disease");
+		    constituent.setEntityClass("Disease");
+		    bindNamedEntity(constituent, template, resource);
+		    break;
+	case "entity":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("entity instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, entityHash, "entity");
+	    constituent.setEntityClass("Entity");
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	case "event":
-	    resource = resourceMatch(constituent, template.tgrep);
+	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("event instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("event instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeResource(doi, resource, eventHash, "event");
@@ -175,38 +259,116 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	case "finding":
-	    resource = resourceMatch(constituent, template.tgrep);
+	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("finding instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("finding instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeResource(doi, resource, findingHash, "finding");
 	    constituent.setEntityClass("Event");
 	    bindNamedEntity(constituent, template, resource);
 	    break;
-	case "injury":
-	    resource = resourceMatch(constituent, template.tgrep);
+	case "functional_relationship":
+	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("injury instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("functional_relationship instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, functionalRelationshipHash, "functional_relationship");
+	    constituent.setEntityClass("FunctionalRelationship");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "group":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("group instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, groupHash, "group");
+	    constituent.setEntityClass("Group");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "group_attribute":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("group_attribute instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, groupAttributeHash, "group_attribute");
+	    constituent.setEntityClass("GroupAttribute");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "human_process":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("human_process instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, humanProcessHash, "human_process");
+	    constituent.setEntityClass("HumanProcess");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "injury":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("injury instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeResource(doi, resource, injuryHash, "injury");
 	    constituent.setEntityClass("Injury");
 	    bindNamedEntity(constituent, template, resource);
 	    break;
-	case "manufactored_object":
-	    resource = resourceMatch(constituent, template.tgrep);
+	case "intellectual_product":
+	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("injury instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("intellectual_product instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, intellectualProductHash, "intellectual_product");
+	    constituent.setEntityClass("IntellectualProduct");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "language":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("language instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, languageHash, "language");
+	    constituent.setEntityClass("Language");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "manufactured_object":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("injury instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeResource(doi, resource, manufacturedObjectHash, "manufactured_object");
@@ -214,12 +376,12 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	case "organic_chemical":
-	    resource = resourceMatch(constituent, template.tgrep);
+	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("organic_chemical instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("organic_chemical instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeResource(doi, resource, organicChemicalHash, "organic_chemical");
@@ -227,12 +389,12 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	case "organism":
-	    resource = resourceMatch(constituent, template.tgrep);
+	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("organism instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("organism instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeResource(doi, resource, organismHash, "organism");
@@ -240,12 +402,12 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	case "pathological_function":
-	    resource = resourceMatch(constituent, template.tgrep);
+	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("organism instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("organism instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeResource(doi, resource, pathologicalFunctionHash, "pathological_function");
@@ -253,12 +415,12 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	case "physiological_function":
-	    resource = resourceMatch(constituent, template.tgrep);
+	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("organism instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("organism instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeResource(doi, resource, physiologicalFunctionHash, "physiological_function");
@@ -266,12 +428,12 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	case "transcription_factor":
-	    resource = resourceMatch(constituent, template.tgrep);
+	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.debug("organism instantiation failed! : " + resource);
-		logger.debug("\t\t" + template.tgrep);
-		logger.debug("\t\t" + constituent.getFragmentString());
-		logger.debug("\t\t" + constituent.treeString());
+		logger.info("organism instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
 	    storeResource(doi, resource, transcriptionFactorHash, "transcription_factor");
@@ -286,7 +448,7 @@ public class BioRxivInstantiator extends TemplateInstantiator {
     
    private void storeResource(String doi, Resource resource, Hashtable<String, Resource> resourceHash, String sqlName) throws SQLException {
 	int id = 0;
-
+	logger.info("storing resource: doi: " + doi + "\tsqlname: " + sqlName + "\tresource: " + resource);
 	Resource match = resourceHash.get(resource.toString());
 	if (match != null) {
 	    resource.setID(match.getID());
@@ -352,14 +514,14 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	
    }
 
-   private Resource resourceMatch(syntaxTree constituent, String pattern) throws Exception {
+   private Resource resourceMatch(syntaxTree constituent, Template template) throws Exception {
        Resource theResource = null;
-	syntaxMatcher theMatcher = new syntaxMatcher(pattern);
+	syntaxMatcher theMatcher = new syntaxMatcher(template.tgrep);
 	if (theMatcher.isMatch(constituent)) {
 	    Vector<basicLexerToken> matchVector = theMatcher.matchesAsTokens();
-	    logger.debug("organism vector: " + matchVector);
+	    logger.debug(template.relation + " vector: " + matchVector);
 	    theResource = new AnatomicalStructure(pruneMatchVector(matchVector));
-	    logger.debug("biological function entity: " + theResource);
+	    logger.debug(template.relation + " entity: " + theResource);
 
 	    ExhaustiveVectorConceptRecognizer umlsRecognizer = new ExhaustiveVectorConceptRecognizer(new UMLSDetector(), ExhaustiveVectorConceptRecognizer.Direction.BOTH, false);
 	    List umlsResults = umlsRecognizer.recognize(new Sentence(matchVector), getScanFence(constituent));
@@ -382,7 +544,39 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    }
 	}
 	return theResource;
-  }
+   }
+   
+   private Resource instantiateResource(Template template, Vector<basicLexerToken> vector) {
+       switch (template.relation) {
+       case "clinical_trial":
+	   return new ClinicalTrialRegistration(vector);
+       case "anatomical_structure":
+	   return new AnatomicalStructure(vector);
+       case "biological_function":
+	   return new BiologicalFunction(vector);
+       case "disease":
+	   return new Disease(vector);
+       case "event":
+	   return new Event(vector);
+       case "finding":
+	   return new Finding(vector);
+       case "injury":
+	   return new Injury(vector);
+       case "manufactured_object":
+	   return new ManufacturedObject(vector);
+       case "organic_chemical":
+	   return new OrganicChemical(vector);
+       case "organism":
+	   return new Organism(vector);
+       case "pathological_function":
+	   return new PathologicalFunction(vector);
+       case "physiological_function":
+	   return new PhysiologicalFunction(vector);
+       case "transcription_factor":
+	   return new TranscriptionFactor(vector);
+       }
+       return null;
+   }
 
     PlaceName placeNameMatch(syntaxTree theNode, String pattern) throws Exception {
 	PlaceName thePlaceName = null;
