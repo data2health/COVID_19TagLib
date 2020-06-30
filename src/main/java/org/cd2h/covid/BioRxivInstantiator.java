@@ -20,23 +20,40 @@ import edu.uiowa.NLP_grammar.syntaxMatch.comparator.emailComparator;
 import edu.uiowa.NLP_grammar.syntaxMatch.comparator.entityComparator;
 import edu.uiowa.NLP_grammar.syntaxMatch.comparator.urlComparator;
 import edu.uiowa.PubMedCentral.comparator.PersonComparator;
+import edu.uiowa.PubMedCentral.entity.Activity;
 import edu.uiowa.PubMedCentral.entity.AnatomicalStructure;
 import edu.uiowa.PubMedCentral.entity.BiologicalFunction;
+import edu.uiowa.PubMedCentral.entity.BodyPart;
 import edu.uiowa.PubMedCentral.entity.ClinicalTrialRegistration;
 import edu.uiowa.PubMedCentral.entity.Collaboration;
+import edu.uiowa.PubMedCentral.entity.ConceptualRelationship;
+import edu.uiowa.PubMedCentral.entity.Discipline;
 import edu.uiowa.PubMedCentral.entity.Disease;
 import edu.uiowa.PubMedCentral.entity.Event;
 import edu.uiowa.PubMedCentral.entity.Finding;
+import edu.uiowa.PubMedCentral.entity.FunctionalRelationship;
+import edu.uiowa.PubMedCentral.entity.Group;
+import edu.uiowa.PubMedCentral.entity.GroupAttribute;
+import edu.uiowa.PubMedCentral.entity.HumanProcess;
 import edu.uiowa.PubMedCentral.entity.Injury;
+import edu.uiowa.PubMedCentral.entity.IntellectualProduct;
+import edu.uiowa.PubMedCentral.entity.Language;
 import edu.uiowa.PubMedCentral.entity.ManufacturedObject;
+import edu.uiowa.PubMedCentral.entity.NaturalProcess;
 import edu.uiowa.PubMedCentral.entity.OrganicChemical;
 import edu.uiowa.PubMedCentral.entity.Organism;
+import edu.uiowa.PubMedCentral.entity.OrganismAttribute;
 import edu.uiowa.PubMedCentral.entity.Organization;
 import edu.uiowa.PubMedCentral.entity.PathologicalFunction;
 import edu.uiowa.PubMedCentral.entity.Person;
+import edu.uiowa.PubMedCentral.entity.PhysicalRelationship;
 import edu.uiowa.PubMedCentral.entity.PhysiologicalFunction;
 import edu.uiowa.PubMedCentral.entity.PlaceName;
+import edu.uiowa.PubMedCentral.entity.Relationship;
 import edu.uiowa.PubMedCentral.entity.Resource;
+import edu.uiowa.PubMedCentral.entity.SpatialRelationship;
+import edu.uiowa.PubMedCentral.entity.Substance;
+import edu.uiowa.PubMedCentral.entity.TemporalRelationship;
 import edu.uiowa.PubMedCentral.entity.TranscriptionFactor;
 import edu.uiowa.concept.Concept;
 import edu.uiowa.concept.ExhaustiveVectorConceptRecognizer;
@@ -291,7 +308,7 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
-	    storeResource(doi, resource, groupHash, "group");
+	    storeResource(doi, resource, groupHash, "grp");
 	    constituent.setEntityClass("Group");
 	    bindNamedEntity(constituent, template, resource);
 	    break;
@@ -652,7 +669,7 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 			if (cuiHash.containsKey(umlsConcept.getConceptID()))
 			    continue;
 			cuiHash.put(umlsConcept.getConceptID(), "");
-			theResource.setUmlsMatch(umlsConcept.getConceptID(),(String)concept.getPhrase() + " :? " + umlsConcept);
+			theResource.setUmlsMatch(umlsConcept.getConceptID(),(String)umlsConcept.getTerm() + " :? " + umlsConcept);
 			logger.info("\tUMLS option: " + umlsConcept);
 		    }
 		}
@@ -665,28 +682,68 @@ public class BioRxivInstantiator extends TemplateInstantiator {
        switch (template.relation) {
        case "clinical_trial":
 	   return new ClinicalTrialRegistration(vector);
+       case "activity":
+	   return new Activity(vector);
        case "anatomical_structure":
 	   return new AnatomicalStructure(vector);
        case "biological_function":
 	   return new BiologicalFunction(vector);
+       case "body_part":
+	   return new BodyPart(vector);
+       case "concept":
+	   return new edu.uiowa.PubMedCentral.entity.Concept(vector);
+       case "conceptual_relationship":
+	   return new ConceptualRelationship(vector);
+       case "discipline":
+	   return new Discipline(vector);
        case "disease":
 	   return new Disease(vector);
+       case "entity":
+ 	   return new edu.uiowa.PubMedCentral.entity.Entity(vector);
        case "event":
 	   return new Event(vector);
        case "finding":
 	   return new Finding(vector);
+       case "functional_relationship":
+	   return new FunctionalRelationship(vector);
+       case "group_attribute":
+	   return new GroupAttribute(vector);
+       case "group":
+	   return new Group(vector);
+       case "human_process":
+	   return new HumanProcess(vector);
        case "injury":
 	   return new Injury(vector);
+       case "intellectual_product":
+	   return new IntellectualProduct(vector);
+       case "language":
+	   return new Language(vector);
        case "manufactured_object":
 	   return new ManufacturedObject(vector);
+       case "natural_process":
+	   return new NaturalProcess(vector);
        case "organic_chemical":
 	   return new OrganicChemical(vector);
        case "organism":
 	   return new Organism(vector);
+       case "organism_attribute":
+	   return new OrganismAttribute(vector);
        case "pathological_function":
 	   return new PathologicalFunction(vector);
+       case "physical_relationship":
+	   return new PhysicalRelationship(vector);
        case "physiological_function":
 	   return new PhysiologicalFunction(vector);
+       case "process":
+	   return new edu.uiowa.PubMedCentral.entity.Process(vector);
+       case "relationship":
+	   return new Relationship(vector);
+       case "spatial_relationship":
+	   return new SpatialRelationship(vector);
+       case "substance":
+	   return new Substance(vector);
+       case "temporal_relationship":
+	   return new TemporalRelationship(vector);
        case "transcription_factor":
 	   return new TranscriptionFactor(vector);
        }
