@@ -365,7 +365,7 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	case "manufactured_object":
 	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.info("injury instantiation failed! : " + resource);
+		logger.info("manufactured_object instantiation failed! : " + resource);
 		logger.info("\t\t" + template.tgrep);
 		logger.info("\t\t" + constituent.getFragmentString());
 		logger.info("\t\t" + constituent.treeString());
@@ -373,6 +373,19 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    }
 	    storeResource(doi, resource, manufacturedObjectHash, "manufactured_object");
 	    constituent.setEntityClass("ManufacturedObject");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "natural_process":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("natural_process instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, naturalProcessHash, "natural_process");
+	    constituent.setEntityClass("NaturalProcess");
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	case "organic_chemical":
@@ -401,6 +414,32 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    constituent.setEntityClass("Organism");
 	    bindNamedEntity(constituent, template, resource);
 	    break;
+	case "organism_attribute":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("organism_attribute instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, organismAttributeHash, "organism_attribute");
+	    constituent.setEntityClass("OrganismAttribute");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "organization":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("organization instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, organizationHash, "organization");
+	    constituent.setEntityClass("Organization");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
 	case "pathological_function":
 	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
@@ -414,6 +453,19 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    constituent.setEntityClass("PathologicalFunction");
 	    bindNamedEntity(constituent, template, resource);
 	    break;
+	case "physical_relationship":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("physical_relationship instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, physicalRelationshipHash, "physical_relationship");
+	    constituent.setEntityClass("PhysicalRelationship");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
 	case "physiological_function":
 	    resource = resourceMatch(constituent, template);
 	    if (resource == null) {
@@ -425,6 +477,71 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    }
 	    storeResource(doi, resource, physiologicalFunctionHash, "physiological_function");
 	    constituent.setEntityClass("PhysiologicalFunction");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "process":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("process instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, processHash, "process");
+	    constituent.setEntityClass("Process");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "relationship":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("relationship instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, relationshipHash, "relationship");
+	    constituent.setEntityClass("Relationship");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "spatial_relationship":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("spatial_relationship instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, spatialRelationshipHash, "spatial_relationship");
+	    constituent.setEntityClass("SpatialRelationship");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "substance":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("substance instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, substanceHash, "substance");
+	    constituent.setEntityClass("Substance");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "temporal_relationship":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("temporal_relationship instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, temporalRelationshipHash, "temporal_relationship");
+	    constituent.setEntityClass("TemporalRelationship");
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	case "transcription_factor":
