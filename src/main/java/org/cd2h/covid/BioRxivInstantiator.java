@@ -38,8 +38,6 @@ import edu.uiowa.PubMedCentral.entity.PhysiologicalFunction;
 import edu.uiowa.PubMedCentral.entity.PlaceName;
 import edu.uiowa.PubMedCentral.entity.Resource;
 import edu.uiowa.PubMedCentral.entity.TranscriptionFactor;
-import edu.uiowa.PubMedCentral.entity.UMLSMatch;
-import edu.uiowa.UMLS.Semantics;
 import edu.uiowa.concept.Concept;
 import edu.uiowa.concept.ExhaustiveVectorConceptRecognizer;
 import edu.uiowa.concept.detector.GRIDDetector;
@@ -637,7 +635,7 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	if (theMatcher.isMatch(constituent)) {
 	    Vector<basicLexerToken> matchVector = theMatcher.matchesAsTokens();
 	    logger.debug(template.relation + " vector: " + matchVector);
-	    theResource = new AnatomicalStructure(pruneMatchVector(matchVector));
+	    theResource = instantiateResource(template, pruneMatchVector(matchVector));
 	    logger.debug(template.relation + " entity: " + theResource);
 
 	    ExhaustiveVectorConceptRecognizer umlsRecognizer = new ExhaustiveVectorConceptRecognizer(new UMLSDetector(), ExhaustiveVectorConceptRecognizer.Direction.BOTH, false);
