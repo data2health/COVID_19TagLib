@@ -150,6 +150,7 @@ public class BioRxivDecorator extends Decorator {
 	theMatcher.registerFunction("isTemporalRelationship", new temporalRelationshipComparator());
 	theMatcher.registerFunction("isTranscriptionFactor", new transcriptionFactorComparator());
 	
+	logger.info("entity: " + entity + "\tfunction: " + function + "\tpattern: " + pattern + "\tfragment: " + theTree.treeString());
 	if (theMatcher.hasMatch(theTree)) {
 	    logger.debug("<<<<< matched >>>>>");
 	    for (syntaxMatch theMatchNode : theMatcher.matches()) {
@@ -159,7 +160,7 @@ public class BioRxivDecorator extends Decorator {
 		    theMatchNode.getPhrase().setEntity(theMatchNode.getPhrase().getEntityClass());
 		else
 		    theMatchNode.getPhrase().setEntity(entity);
-		logger.debug("match node: " + theMatchNode.getPhrase().treeString());
+		logger.debug("match node: " + theMatchNode.getPhrase().getParent().getFragmentString(true,true));
 		if (theMatchNode.getPhrase().getFragmentStringVector2().size() == 0) {
 		    logger.debug("** fragment is empty!");
 		} else

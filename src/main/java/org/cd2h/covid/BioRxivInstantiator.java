@@ -649,11 +649,12 @@ public class BioRxivInstantiator extends TemplateInstantiator {
    private Resource resourceMatch(syntaxTree constituent, Template template) throws Exception {
        Resource theResource = null;
 	syntaxMatcher theMatcher = new syntaxMatcher(template.tgrep);
+	logger.info(template.relation + " tgrep: " + template.tgrep + "\tconstituent: " + constituent.treeString());
 	if (theMatcher.isMatch(constituent)) {
 	    Vector<basicLexerToken> matchVector = theMatcher.matchesAsTokens();
-	    logger.debug(template.relation + " vector: " + matchVector);
+	    logger.info(template.relation + " vector: " + matchVector);
 	    theResource = instantiateResource(template, pruneMatchVector(matchVector));
-	    logger.debug(template.relation + " entity: " + theResource);
+	    logger.info(template.relation + " entity: " + theResource);
 
 	    ExhaustiveVectorConceptRecognizer umlsRecognizer = new ExhaustiveVectorConceptRecognizer(new UMLSDetector(), ExhaustiveVectorConceptRecognizer.Direction.BOTH, false);
 	    List umlsResults = umlsRecognizer.recognize(new Sentence(matchVector), getScanFence(constituent));
