@@ -8,7 +8,10 @@ import edu.uiowa.NLP_grammar.syntaxTree;
 import edu.uiowa.NLP_grammar.syntaxMatch.syntaxMatch;
 import edu.uiowa.NLP_grammar.syntaxMatch.syntaxMatchFunction;
 import edu.uiowa.NLP_grammar.syntaxMatch.syntaxMatcher;
+import edu.uiowa.NLP_grammar.syntaxMatch.comparator.placeNameComparator;
+import edu.uiowa.PubMedCentral.comparator.GeoNameComparator;
 import edu.uiowa.UMLS.Concept;
+import edu.uiowa.UMLS.Semantics;
 import edu.uiowa.UMLS.comparators.activityComparator;
 import edu.uiowa.UMLS.comparators.anatomicalStructureComparator;
 import edu.uiowa.UMLS.comparators.biologicalFunctionComparator;
@@ -42,6 +45,7 @@ import edu.uiowa.UMLS.comparators.spatialRelationshipComparator;
 import edu.uiowa.UMLS.comparators.substanceComparator;
 import edu.uiowa.UMLS.comparators.temporalRelationshipComparator;
 import edu.uiowa.UMLS.comparators.transcriptionFactorComparator;
+import edu.uiowa.entity.named.PlaceName;
 import edu.uiowa.extraction.Decorator;
 
 public class BioRxivDecorator extends Decorator {
@@ -58,6 +62,7 @@ public class BioRxivDecorator extends Decorator {
     
     private void initialize(Connection conn) throws Exception {
 	Concept.initialize(conn, true);
+	PlaceName.initialize();
     }
 
     @Override
@@ -95,6 +100,9 @@ public class BioRxivDecorator extends Decorator {
 	decorateTree(theTree, "Substance", new substanceComparator());
 	decorateTree(theTree, "TemporalRelationship", new temporalRelationshipComparator());
 	decorateTree(theTree, "TranscriptionFactor", new transcriptionFactorComparator());
+
+	decorateTree(theTree, "*", new GeoNameComparator());
+
 	return false;
     }
 
@@ -149,21 +157,28 @@ public class BioRxivDecorator extends Decorator {
 	theMatcher.registerFunction("isSubstance", new substanceComparator());
 	theMatcher.registerFunction("isTemporalRelationship", new temporalRelationshipComparator());
 	theMatcher.registerFunction("isTranscriptionFactor", new transcriptionFactorComparator());
+
+//	theMatcher.registerFunction("isPlaceName", new placeNameComparator());
+	theMatcher.registerFunction("isGeoName", new GeoNameComparator());
+	
 	
 	if (theMatcher.hasMatch(theTree)) {
-	    logger.debug("<<<<< matched >>>>>");
+	    logger.info("<<<<< matched >>>>>");
 	    for (syntaxMatch theMatchNode : theMatcher.matches()) {
 		if (entity.equals("*"))
 		    theMatchNode.getPhrase().setEntity(theMatchNode.getPhrase().getEntityClass());
-		else
+		else if (Semantics.getByEntityName(entity) == null)
 		    theMatchNode.getPhrase().setEntity(entity);
-		logger.debug("entity: " + entity + "\tmatch node: " + theMatchNode.getPhrase().treeString() + "\t" + theMatchNode.getPhrase().getParent().getFragmentString(true,true));
+		else {
+		    theMatchNode.getPhrase().setEntity(Semantics.getByEntityName(entity));
+		    logger.info("entity: " + entity + "\tmatch node: " + theMatchNode.getPhrase().treeString() + "\t" + theMatchNode.getPhrase().getParent().getFragmentString(true,true) + "\t" + theMatchNode.getPhrase().getUMLSSemantics());
+		}
 		if (theMatchNode.getPhrase().getFragmentStringVector2().size() == 0) {
-		    logger.debug("** fragment is empty!");
+		    logger.info("** fragment is empty!");
 		} else
-		    logger.debug("fragment: " + theMatchNode.getPhrase().getFragmentStringVector2().firstElement());
-		for (int i = 1; i <= theMatchNode.matchCount(); i++)
-		    logger.info("\tmatch slot [" + i + "]: " + theMatchNode.getMatch(i).treeString());
+		    logger.info("fragment: " + theMatchNode.getPhrase().getFragmentStringVector2().firstElement());
+//		for (int i = 1; i <= theMatchNode.matchCount(); i++)
+//		    logger.info("\tmatch slot [" + i + "]: " + theMatchNode.getMatch(i).treeString());
 	    }
 	}
 
