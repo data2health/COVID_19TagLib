@@ -312,6 +312,14 @@ CREATE TABLE covid_model.concept_mention (
                   REFERENCES covid_model.concept (id)
 );
 
+CREATE TABLE covid_model.conceptual_relationship_mention (
+       conceptual_relationship_id INT NOT NULL
+     , doi text NOT NULL
+     , PRIMARY KEY (conceptual_relationship_id, doi)
+     , CONSTRAINT FK_TABLE_conceptual_relationship_id_1 FOREIGN KEY (conceptual_relationship_id)
+                  REFERENCES covid_model.conceptual_relationship (id)
+);
+
 CREATE TABLE covid_model.discipline_mention (
        discipline_id INT NOT NULL
      , doi text NOT NULL
