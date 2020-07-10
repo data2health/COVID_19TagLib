@@ -40,6 +40,46 @@ CREATE TABLE covid_model.concept (
      , PRIMARY KEY (id)
 );
 
+CREATE TABLE covid_model.temporal_concept (
+       id serial NOT NULL
+     , temporal_concept TEXT UNIQUE
+     , umls_id TEXT
+     , umls_match_string TEXT
+     , PRIMARY KEY (id)
+);
+
+CREATE TABLE covid_model.qualitative_concept (
+       id serial NOT NULL
+     , qualitative_concept TEXT UNIQUE
+     , umls_id TEXT
+     , umls_match_string TEXT
+     , PRIMARY KEY (id)
+);
+
+CREATE TABLE covid_model.quantitative_concept (
+       id serial NOT NULL
+     , quantitative_concept TEXT UNIQUE
+     , umls_id TEXT
+     , umls_match_string TEXT
+     , PRIMARY KEY (id)
+);
+
+CREATE TABLE covid_model.functional_concept (
+       id serial NOT NULL
+     , functional_concept TEXT UNIQUE
+     , umls_id TEXT
+     , umls_match_string TEXT
+     , PRIMARY KEY (id)
+);
+
+CREATE TABLE covid_model.spatial_concept (
+       id serial NOT NULL
+     , spatial_concept TEXT UNIQUE
+     , umls_id TEXT
+     , umls_match_string TEXT
+     , PRIMARY KEY (id)
+);
+
 CREATE TABLE covid_model.conceptual_relationship (
        id serial NOT NULL
      , conceptual_relationship TEXT UNIQUE
@@ -310,6 +350,46 @@ CREATE TABLE covid_model.concept_mention (
      , PRIMARY KEY (concept_id, doi)
      , CONSTRAINT FK_TABLE_concept_1 FOREIGN KEY (concept_id)
                   REFERENCES covid_model.concept (id)
+);
+
+CREATE TABLE covid_model.temporal_concept_mention (
+       temporal_concept_id INT NOT NULL
+     , doi text NOT NULL
+     , PRIMARY KEY (temporal_concept_id, doi)
+     , CONSTRAINT FK_TABLE_temporal_concept_1 FOREIGN KEY (temporal_concept_id)
+                  REFERENCES covid_model.temporal_concept (id)
+);
+
+CREATE TABLE covid_model.qualitative_concept_mention (
+       qualitative_concept_id INT NOT NULL
+     , doi text NOT NULL
+     , PRIMARY KEY (qualitative_concept_id, doi)
+     , CONSTRAINT FK_TABLE_qualitative_concept_1 FOREIGN KEY (qualitative_concept_id)
+                  REFERENCES covid_model.qualitative_concept (id)
+);
+
+CREATE TABLE covid_model.quantitative_concept_mention (
+       quantitative_concept_id INT NOT NULL
+     , doi text NOT NULL
+     , PRIMARY KEY (quantitative_concept_id, doi)
+     , CONSTRAINT FK_TABLE_quantitative_concept_1 FOREIGN KEY (quantitative_concept_id)
+                  REFERENCES covid_model.quantitative_concept (id)
+);
+
+CREATE TABLE covid_model.functional_concept_mention (
+       functional_concept_id INT NOT NULL
+     , doi text NOT NULL
+     , PRIMARY KEY (functional_concept_id, doi)
+     , CONSTRAINT FK_TABLE_functional_concept_1 FOREIGN KEY (functional_concept_id)
+                  REFERENCES covid_model.functional_concept (id)
+);
+
+CREATE TABLE covid_model.spatial_concept_mention (
+       spatial_concept_id INT NOT NULL
+     , doi text NOT NULL
+     , PRIMARY KEY (spatial_concept_id, doi)
+     , CONSTRAINT FK_TABLE_spatial_concept_1 FOREIGN KEY (spatial_concept_id)
+                  REFERENCES covid_model.spatial_concept (id)
 );
 
 CREATE TABLE covid_model.conceptual_relationship_mention (

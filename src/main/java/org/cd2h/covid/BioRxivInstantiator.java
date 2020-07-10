@@ -31,6 +31,7 @@ import edu.uiowa.PubMedCentral.entity.Discipline;
 import edu.uiowa.PubMedCentral.entity.Disease;
 import edu.uiowa.PubMedCentral.entity.Event;
 import edu.uiowa.PubMedCentral.entity.Finding;
+import edu.uiowa.PubMedCentral.entity.FunctionalConcept;
 import edu.uiowa.PubMedCentral.entity.FunctionalRelationship;
 import edu.uiowa.PubMedCentral.entity.Group;
 import edu.uiowa.PubMedCentral.entity.GroupAttribute;
@@ -49,10 +50,14 @@ import edu.uiowa.PubMedCentral.entity.Person;
 import edu.uiowa.PubMedCentral.entity.PhysicalRelationship;
 import edu.uiowa.PubMedCentral.entity.PhysiologicalFunction;
 import edu.uiowa.PubMedCentral.entity.PlaceName;
+import edu.uiowa.PubMedCentral.entity.QualitativeConcept;
+import edu.uiowa.PubMedCentral.entity.QuantitativeConcept;
 import edu.uiowa.PubMedCentral.entity.Relationship;
 import edu.uiowa.PubMedCentral.entity.Resource;
+import edu.uiowa.PubMedCentral.entity.SpatialConcept;
 import edu.uiowa.PubMedCentral.entity.SpatialRelationship;
 import edu.uiowa.PubMedCentral.entity.Substance;
+import edu.uiowa.PubMedCentral.entity.TemporalConcept;
 import edu.uiowa.PubMedCentral.entity.TemporalRelationship;
 import edu.uiowa.PubMedCentral.entity.TranscriptionFactor;
 import edu.uiowa.concept.Concept;
@@ -214,18 +219,83 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	case "concept":
+		   resource = resourceMatch(constituent, template);
+		    if (resource == null) {
+			logger.info("concept instantiation failed! : " + resource);
+			logger.info("\t\t" + template.tgrep);
+			logger.info("\t\t" + constituent.getFragmentString());
+			logger.info("\t\t" + constituent.treeString());
+			break;
+		    }
+		    storeResource(doi, resource, conceptHash, "concept");
+		    constituent.setEntityClass("Concept");
+		    bindNamedEntity(constituent, template, resource);
+		    break;
+	case "temporal_concept":
 	   resource = resourceMatch(constituent, template);
 	    if (resource == null) {
-		logger.info("concept instantiation failed! : " + resource);
+		logger.info("temporal_concept instantiation failed! : " + resource);
 		logger.info("\t\t" + template.tgrep);
 		logger.info("\t\t" + constituent.getFragmentString());
 		logger.info("\t\t" + constituent.treeString());
 		break;
 	    }
-	    storeResource(doi, resource, conceptHash, "concept");
-	    constituent.setEntityClass("Concept");
+	    storeResource(doi, resource, temporalConceptHash, "temporal_concept");
+	    constituent.setEntityClass("TemporalConcept");
 	    bindNamedEntity(constituent, template, resource);
 	    break;
+	case "qualitative_concept":
+		   resource = resourceMatch(constituent, template);
+		    if (resource == null) {
+			logger.info("qualitative_concept instantiation failed! : " + resource);
+			logger.info("\t\t" + template.tgrep);
+			logger.info("\t\t" + constituent.getFragmentString());
+			logger.info("\t\t" + constituent.treeString());
+			break;
+		    }
+		    storeResource(doi, resource, qualitativeConceptHash, "qualitative_concept");
+		    constituent.setEntityClass("QualitativeConcept");
+		    bindNamedEntity(constituent, template, resource);
+		    break;
+	case "quantitative_concept":
+		   resource = resourceMatch(constituent, template);
+		    if (resource == null) {
+			logger.info("quantitative_concept instantiation failed! : " + resource);
+			logger.info("\t\t" + template.tgrep);
+			logger.info("\t\t" + constituent.getFragmentString());
+			logger.info("\t\t" + constituent.treeString());
+			break;
+		    }
+		    storeResource(doi, resource, quantitativeConceptHash, "quantitative_concept");
+		    constituent.setEntityClass("QuantitativeConcept");
+		    bindNamedEntity(constituent, template, resource);
+		    break;
+	case "functional_concept":
+		   resource = resourceMatch(constituent, template);
+		    if (resource == null) {
+			logger.info("functional_concept instantiation failed! : " + resource);
+			logger.info("\t\t" + template.tgrep);
+			logger.info("\t\t" + constituent.getFragmentString());
+			logger.info("\t\t" + constituent.treeString());
+			break;
+		    }
+		    storeResource(doi, resource, functionalConceptHash, "functional_concept");
+		    constituent.setEntityClass("FunctionalConcept");
+		    bindNamedEntity(constituent, template, resource);
+		    break;
+	case "spatial_concept":
+		   resource = resourceMatch(constituent, template);
+		    if (resource == null) {
+			logger.info("spatial_concept instantiation failed! : " + resource);
+			logger.info("\t\t" + template.tgrep);
+			logger.info("\t\t" + constituent.getFragmentString());
+			logger.info("\t\t" + constituent.treeString());
+			break;
+		    }
+		    storeResource(doi, resource, spatialConceptHash, "spatial_concept");
+		    constituent.setEntityClass("SpatialConcept");
+		    bindNamedEntity(constituent, template, resource);
+		    break;
 	case "discipline":
 		   resource = resourceMatch(constituent, template);
 		    if (resource == null) {
@@ -698,6 +768,16 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	   return new BodyPart(vector);
        case "concept":
 	   return new edu.uiowa.PubMedCentral.entity.Concept(vector);
+       case "temporal_concept":
+	   return new TemporalConcept(vector);
+       case "qualitative_concept":
+	   return new QualitativeConcept(vector);
+       case "quantitative_concept":
+	   return new QuantitativeConcept(vector);
+       case "functional_concept":
+	   return new FunctionalConcept(vector);
+       case "spatial_concept":
+	   return new SpatialConcept(vector);
        case "conceptual_relationship":
 	   return new ConceptualRelationship(vector);
        case "discipline":
