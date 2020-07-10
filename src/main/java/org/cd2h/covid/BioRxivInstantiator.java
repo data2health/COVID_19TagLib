@@ -74,6 +74,11 @@ public class BioRxivInstantiator extends TemplateInstantiator {
     Hashtable<String, Resource> biologicalFunctionHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> bodyPartHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> conceptHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> temporalConceptHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> qualitativeConceptHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> quantitativeConceptHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> functionalConceptHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> spatialConceptHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> disciplineHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> diseaseHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> entityHash = new Hashtable<String, Resource>();
