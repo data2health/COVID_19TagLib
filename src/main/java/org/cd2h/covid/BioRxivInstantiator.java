@@ -111,8 +111,9 @@ public class BioRxivInstantiator extends TemplateInstantiator {
     Hashtable<String, Resource> substanceHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> techniqueHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> temporalRelationshipHash = new Hashtable<String, Resource>();
-    Hashtable<String, Resource> placeNameHash = new Hashtable<String, Resource>();
     Hashtable<String, Resource> transcriptionFactorHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> placeNameHash = new Hashtable<String, Resource>();
+    Hashtable<String, Resource> geoNameHash = new Hashtable<String, Resource>();
     
     PersonComparator personComparator = new PersonComparator();
     String doi = null;
@@ -645,6 +646,32 @@ public class BioRxivInstantiator extends TemplateInstantiator {
 	    }
 	    storeResource(doi, resource, transcriptionFactorHash, "transcription_factor");
 	    constituent.setEntityClass("TranscriptionFactor");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "place_name":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("place_name instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, placeNameHash, "place_name");
+	    constituent.setEntityClass("PlaceName");
+	    bindNamedEntity(constituent, template, resource);
+	    break;
+	case "geoname":
+	    resource = resourceMatch(constituent, template);
+	    if (resource == null) {
+		logger.info("geoname instantiation failed! : " + resource);
+		logger.info("\t\t" + template.tgrep);
+		logger.info("\t\t" + constituent.getFragmentString());
+		logger.info("\t\t" + constituent.treeString());
+		break;
+	    }
+	    storeResource(doi, resource, geoNameHash, "geoname");
+	    constituent.setEntityClass("GeoName");
 	    bindNamedEntity(constituent, template, resource);
 	    break;
 	default:

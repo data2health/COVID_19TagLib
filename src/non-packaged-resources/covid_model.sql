@@ -307,8 +307,24 @@ CREATE TABLE covid_model.transcription_factor (
 CREATE TABLE covid_model.technique (
        id serial NOT NULL
      , technique TEXT UNIQUE
+     , geoname_id TEXT
+     , geoname_match_string TEXT
+     , PRIMARY KEY (id)
+);
+
+CREATE TABLE covid_model.place_name (
+       id serial NOT NULL
+     , place_name TEXT UNIQUE
      , umls_id TEXT
      , umls_match_string TEXT
+     , PRIMARY KEY (id)
+);
+
+CREATE TABLE covid_model.geoname (
+       id serial NOT NULL
+     , geoname TEXT UNIQUE
+     , geoname_id TEXT
+     , geoname_match_string TEXT
      , PRIMARY KEY (id)
 );
 
@@ -625,4 +641,18 @@ CREATE TABLE covid_model.technique_mention (
                   REFERENCES covid_model.technique (id)
 );
 
+CREATE TABLE covid_model.place_name_mention (
+       place_name_id INT NOT NULL
+     , doi text NOT NULL
+     , PRIMARY KEY (place_name_id, doi)
+     , CONSTRAINT FK_TABLE_25_1 FOREIGN KEY (place_name_id)
+                  REFERENCES covid_model.place_name (id)
+);
 
+CREATE TABLE covid_model.geoname_mention (
+       geoname_id INT NOT NULL
+     , doi text NOT NULL
+     , PRIMARY KEY (geoname_id, doi)
+     , CONSTRAINT FK_TABLE_25_1 FOREIGN KEY (geoname_id)
+                  REFERENCES covid_model.geoname (id)
+);
