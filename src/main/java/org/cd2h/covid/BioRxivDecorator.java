@@ -66,52 +66,53 @@ public class BioRxivDecorator extends Decorator {
     }
     
     private void initialize(Connection conn) throws Exception {
-//	Concept.initialize(conn, true);
-	PlaceName.initialize();
+	Concept.initialize(conn, true);
+//	PlaceName.initialize();
     }
 
     @Override
     public boolean decorateTree(syntaxTree theTree) throws Exception {
-//	decorateTree(theTree, "Activity", new activityComparator());
-//	decorateTree(theTree, "AnatomicalStructure", new anatomicalStructureComparator());
-//	decorateTree(theTree, "BiologicalFunction", new biologicalFunctionComparator());
-//	decorateTree(theTree, "BodyPart", new bodyPartComparator());
-//	decorateTree(theTree, "Concept", new conceptComparator());
-//	decorateTree(theTree, "TemporalConcept", new temporalConceptComparator());
-//	decorateTree(theTree, "QualitativeConcept", new qualitativeConceptComparator());
-//	decorateTree(theTree, "QuantitativeConcept", new quantitativeConceptComparator());
-//	decorateTree(theTree, "FunctionalConcept", new functionalConceptComparator());
-//	decorateTree(theTree, "SpatialConcept", new spatialConceptComparator());
-//	decorateTree(theTree, "ConceptualRelationship", new conceptualRelationshipComparator());
-//	decorateTree(theTree, "Discipline", new disciplineComparator());
-//	decorateTree(theTree, "Disease", new diseaseComparator());
-//	decorateTree(theTree, "Entity", new entityComparator());
-//	decorateTree(theTree, "Event", new eventComparator());
-//	decorateTree(theTree, "Finding", new findingComparator());
-//	decorateTree(theTree, "FunctionalRelationship", new functionalRelationshipComparator());
-//	decorateTree(theTree, "Group", new groupComparator());
-//	decorateTree(theTree, "GroupAttribute", new groupAttributeComparator());
-//	decorateTree(theTree, "HumanProcess", new humanProcessComparator());
-//	decorateTree(theTree, "Injury", new injuryComparator());
-//	decorateTree(theTree, "IntellectualProduct", new intellectualProductComparator());
-//	decorateTree(theTree, "Language", new languageComparator());
-//	decorateTree(theTree, "ManufacuredObject", new manufacturedObjectComparator());
-//	decorateTree(theTree, "NaturalProcess", new naturalProcessComparator());
-//	decorateTree(theTree, "OrganicChemical", new organicChemicalComparator());
-//	decorateTree(theTree, "Organism", new organismComparator());
-//	decorateTree(theTree, "OrganismAttribute", new organismAttributeComparator());
-//	decorateTree(theTree, "Organization", new organizationComparator());
-//	decorateTree(theTree, "PathologicalFunction", new pathologicalFunctionComparator());
-//	decorateTree(theTree, "PhysicalRelationship", new physicalRelationshipComparator());
-//	decorateTree(theTree, "PhysiologicalFunction", new physiologicalFunctionComparator());
-//	decorateTree(theTree, "Process", new processComparator());
-//	decorateTree(theTree, "Relationship", new relationshipComparator());
-//	decorateTree(theTree, "SpatialRelationship", new spatialRelationshipComparator());
-//	decorateTree(theTree, "Substance", new substanceComparator());
-//	decorateTree(theTree, "TemporalRelationship", new temporalRelationshipComparator());
-//	decorateTree(theTree, "TranscriptionFactor", new transcriptionFactorComparator());
+	decorateTree(theTree, "Activity", new activityComparator());
+	decorateTree(theTree, "AnatomicalStructure", new anatomicalStructureComparator());
+	decorateTree(theTree, "BiologicalFunction", new biologicalFunctionComparator());
+	decorateTree(theTree, "BodyPart", new bodyPartComparator());
+	decorateTree(theTree, "Concept", new conceptComparator());
+	decorateTree(theTree, "TemporalConcept", new temporalConceptComparator());
+	decorateTree(theTree, "QualitativeConcept", new qualitativeConceptComparator());
+	decorateTree(theTree, "QuantitativeConcept", new quantitativeConceptComparator());
+	decorateTree(theTree, "FunctionalConcept", new functionalConceptComparator());
+	decorateTree(theTree, "SpatialConcept", new spatialConceptComparator());
+	decorateTree(theTree, "ConceptualRelationship", new conceptualRelationshipComparator());
+	decorateTree(theTree, "Discipline", new disciplineComparator());
+	decorateTree(theTree, "Disease", new diseaseComparator());
+	decorateTree(theTree, "Entity", new entityComparator());
+	decorateTree(theTree, "Event", new eventComparator());
+	decorateTree(theTree, "Finding", new findingComparator());
+	decorateTree(theTree, "FunctionalRelationship", new functionalRelationshipComparator());
+	decorateTree(theTree, "Group", new groupComparator());
+	decorateTree(theTree, "GroupAttribute", new groupAttributeComparator());
+	decorateTree(theTree, "HumanProcess", new humanProcessComparator());
+	decorateTree(theTree, "Injury", new injuryComparator());
+	decorateTree(theTree, "IntellectualProduct", new intellectualProductComparator());
+	decorateTree(theTree, "Language", new languageComparator());
+	decorateTree(theTree, "ManufacuredObject", new manufacturedObjectComparator());
+	decorateTree(theTree, "NaturalProcess", new naturalProcessComparator());
+	decorateTree(theTree, "OrganicChemical", new organicChemicalComparator());
+	decorateTree(theTree, "Organism", new organismComparator());
+	decorateTree(theTree, "OrganismAttribute", new organismAttributeComparator());
+	decorateTree(theTree, "Organization", new organizationComparator());
+	decorateTree(theTree, "PathologicalFunction", new pathologicalFunctionComparator());
+	decorateTree(theTree, "PhysicalRelationship", new physicalRelationshipComparator());
+	decorateTree(theTree, "PhysiologicalFunction", new physiologicalFunctionComparator());
+	decorateTree(theTree, "Process", new processComparator());
+	decorateTree(theTree, "Relationship", new relationshipComparator());
+	decorateTree(theTree, "SpatialRelationship", new spatialRelationshipComparator());
+	decorateTree(theTree, "Substance", new substanceComparator());
+	decorateTree(theTree, "TemporalRelationship", new temporalRelationshipComparator());
+	decorateTree(theTree, "TranscriptionFactor", new transcriptionFactorComparator());
 
-	decorateTree(theTree, "Geoname", new GeoNameComparator());
+//	decorateTree(theTree, "PlaceName", new placeNameComparator());
+	decorateTree(theTree, "GeoName", new GeoNameComparator());
 
 	return false;
     }
@@ -176,17 +177,28 @@ public class BioRxivDecorator extends Decorator {
 //	theMatcher.registerFunction("isPlaceName", new placeNameComparator());
 	theMatcher.registerFunction("isGeoName", new GeoNameComparator());
 	
-	logger.info("pattern: " + pattern + "\tentity: " + entity + "\ttree: " + theTree.trimmedPhraseAsString());
+//	logger.info("pattern: " + pattern + "\tentity: " + entity + "\ttree: " + theTree.trimmedPhraseAsString());
 	if (theMatcher.hasMatch(theTree)) {
 	    logger.info("<<<<< matched >>>>>");
 	    for (syntaxMatch theMatchNode : theMatcher.matches()) {
-		if (entity.equals("*"))
-		    theMatchNode.getPhrase().setEntity(theMatchNode.getPhrase().getEntityClass());
-		else if (Semantics.getByEntityName(entity) == null)
-		    theMatchNode.getPhrase().setEntity(entity);
-		else {
-		    theMatchNode.getPhrase().setEntity(Semantics.getByEntityName(entity));
-		    logger.info("entity: " + entity + "\tmatch node: " + theMatchNode.getPhrase().treeString() + "\t" + theMatchNode.getPhrase().getParent().getFragmentString(true,true) + "\t" + theMatchNode.getPhrase().getUMLSSemantics());
+		syntaxTree matchPhrase = theMatchNode.getPhrase();
+		logger.info("\tentity: " + entity);
+		logger.info("\tmatchPhrase: " + matchPhrase.trimmedPhraseAsString());
+		logger.info("\t\twordnet: " + matchPhrase.getWordNetEntry());
+		logger.info("\t\tthesaurus entry: " + matchPhrase.getNASAThesaurusEntry());
+		logger.info("\t\tumls: " + matchPhrase.getUMLSEntry());
+		logger.info("\t\tumls semantics: " + matchPhrase.getUMLSSemantics());
+		logger.info("\t\tentity: " + matchPhrase.getEntityID());
+		logger.info("\t\tentity class: " + matchPhrase.getEntityClass());
+		if (entity.equals("*")) {
+		    matchPhrase.setEntity(matchPhrase.getEntityClass());
+		} else if (matchPhrase.getEntityClass() != null) {
+		    matchPhrase.setEntity(matchPhrase.getEntityClass());
+//		} else if (Semantics.getByEntityName(entity) == null) {
+//		    matchPhrase.setEntity(entity);
+		} else {
+		    matchPhrase.setEntity(Semantics.getByEntityName(entity));
+		    logger.info("entity: " + entity + "\tmatch node: " + matchPhrase.treeString() + "\t" + matchPhrase.getParent().getFragmentString(true,true) + "\t" + matchPhrase.getUMLSSemantics());
 		}
 		if (theMatchNode.getPhrase().getFragmentStringVector2().size() == 0) {
 		    logger.info("** fragment is empty!");
