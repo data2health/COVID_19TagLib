@@ -10,6 +10,21 @@ import edu.uiowa.NLP_grammar.syntaxMatch.syntaxMatchFunction;
 import edu.uiowa.NLP_grammar.syntaxMatch.syntaxMatcher;
 import edu.uiowa.NLP_grammar.syntaxMatch.comparator.placeNameComparator;
 import edu.uiowa.PubMedCentral.comparator.GeoNameComparator;
+import edu.uiowa.Translator.comparators.anatomicalEntityComparator;
+import edu.uiowa.Translator.comparators.biologicalProcessComparator;
+import edu.uiowa.Translator.comparators.cellularComponentComparator;
+import edu.uiowa.Translator.comparators.chemicalSubstanceComparator;
+import edu.uiowa.Translator.comparators.drugComparator;
+import edu.uiowa.Translator.comparators.geneComparator;
+import edu.uiowa.Translator.comparators.humanPhenotypeComparator;
+import edu.uiowa.Translator.comparators.molecularActivityComparator;
+import edu.uiowa.Translator.comparators.molecularEntityComparator;
+import edu.uiowa.Translator.comparators.namedThingComparator;
+import edu.uiowa.Translator.comparators.organismalEntityComparator;
+import edu.uiowa.Translator.comparators.proteinComparator;
+import edu.uiowa.Translator.comparators.publicationComparator;
+import edu.uiowa.Translator.comparators.rnaComparator;
+import edu.uiowa.Translator.comparators.sequenceComparator;
 import edu.uiowa.UMLS.Concept;
 import edu.uiowa.UMLS.Semantics;
 import edu.uiowa.UMLS.comparators.activityComparator;
@@ -66,8 +81,9 @@ public class BioRxivDecorator extends Decorator {
     }
     
     private void initialize(Connection conn) throws Exception {
-	Concept.initialize(conn, true);
-	PlaceName.initialize();
+	edu.uiowa.Translator.entity.Entity.initialize(conn);
+//	Concept.initialize(conn, true);
+//	PlaceName.initialize();
     }
 
     @Override
@@ -113,6 +129,23 @@ public class BioRxivDecorator extends Decorator {
 
 	decorateTree(theTree, "PlaceName", new placeNameComparator());
 	decorateTree(theTree, "GeoName", new GeoNameComparator());
+	
+	decorateTree(theTree, "TranslatorAnatomicalEntity", new anatomicalEntityComparator());
+	decorateTree(theTree, "TranslatorBiologicalProcess", new biologicalProcessComparator());
+	decorateTree(theTree, "TranslatorCellularComponent", new cellularComponentComparator());
+	decorateTree(theTree, "TranslatorChemicalSubstance", new chemicalSubstanceComparator());
+	decorateTree(theTree, "TranslatorDisease", new edu.uiowa.Translator.comparators.diseaseComparator());
+	decorateTree(theTree, "TranslatorDrug", new drugComparator());
+	decorateTree(theTree, "TranslatorGene", new geneComparator());
+	decorateTree(theTree, "TranslatorHumanPhenotype", new humanPhenotypeComparator());
+	decorateTree(theTree, "TranslatorMolecularActivity", new molecularActivityComparator());
+	decorateTree(theTree, "TranslatorMolecularEntity", new molecularEntityComparator());
+	decorateTree(theTree, "TranslatorNamedThing", new namedThingComparator());
+	decorateTree(theTree, "TranslatorOrganismalEntity", new organismalEntityComparator());
+	decorateTree(theTree, "TranslatorProtein", new proteinComparator());
+	decorateTree(theTree, "TranslatorPublication", new publicationComparator());
+	decorateTree(theTree, "TranslatorRNA", new rnaComparator());
+	decorateTree(theTree, "TranslatorSequence", new sequenceComparator());
 
 	return false;
     }
@@ -177,28 +210,47 @@ public class BioRxivDecorator extends Decorator {
 	theMatcher.registerFunction("isPlaceName", new placeNameComparator());
 	theMatcher.registerFunction("isGeoName", new GeoNameComparator());
 	
+	theMatcher.registerFunction("isTranslatorAnatomicalEntity", new anatomicalEntityComparator());
+	theMatcher.registerFunction("isTranslatorBiologicalProcess", new biologicalProcessComparator());
+	theMatcher.registerFunction("isTranslatorCellularComponent", new cellularComponentComparator());
+	theMatcher.registerFunction("isTranslatorChemicalSubstance", new chemicalSubstanceComparator());
+	theMatcher.registerFunction("isTranslatorDisease", new edu.uiowa.Translator.comparators.diseaseComparator());
+	theMatcher.registerFunction("isTranslatorDrug", new drugComparator());
+	theMatcher.registerFunction("isTranslatorGene", new geneComparator());
+	theMatcher.registerFunction("isTranslatorHumanPhenotype", new humanPhenotypeComparator());
+	theMatcher.registerFunction("isTranslatorMolecularActivity", new molecularActivityComparator());
+	theMatcher.registerFunction("isTranslatorMolecularEntity", new molecularEntityComparator());
+	theMatcher.registerFunction("isTranslatorNamedThing", new namedThingComparator());
+	theMatcher.registerFunction("isTranslatorOrganismalEntity", new organismalEntityComparator());
+	theMatcher.registerFunction("isTranslatorProtein", new proteinComparator());
+	theMatcher.registerFunction("isTranslatorPublication", new publicationComparator());
+	theMatcher.registerFunction("isTranslatorRNA", new rnaComparator());
+	theMatcher.registerFunction("isTranslatorSequence", new sequenceComparator());
+	
 	logger.trace("pattern: " + pattern + "\tentity: " + entity + "\ttree: " + theTree.trimmedPhraseAsString());
 	if (theMatcher.hasMatch(theTree)) {
-	    logger.debug("<<<<< matched >>>>>");
+	    logger.info("<<<<< matched >>>>>");
 	    for (syntaxMatch theMatchNode : theMatcher.matches()) {
 		syntaxTree matchPhrase = theMatchNode.getPhrase();
-		logger.debug("\tentity: " + entity);
-		logger.debug("\tmatchPhrase: " + matchPhrase.trimmedPhraseAsString());
-		logger.debug("\t\twordnet: " + matchPhrase.getWordNetEntry());
-		logger.debug("\t\tthesaurus entry: " + matchPhrase.getNASAThesaurusEntry());
-		logger.debug("\t\tumls: " + matchPhrase.getUMLSEntry());
-		logger.debug("\t\tumls semantics: " + matchPhrase.getUMLSSemantics());
-		logger.debug("\t\tentity: " + matchPhrase.getEntityID());
-		logger.debug("\t\tentity class: " + matchPhrase.getEntityClass());
+		logger.info("\tentity: " + entity);
+		logger.info("\tmatchPhrase: " + matchPhrase.trimmedPhraseAsString());
+		logger.info("\t\twordnet: " + matchPhrase.getWordNetEntry());
+		logger.info("\t\tthesaurus entry: " + matchPhrase.getNASAThesaurusEntry());
+		logger.info("\t\tumls: " + matchPhrase.getUMLSEntry());
+		logger.info("\t\tumls semantics: " + matchPhrase.getUMLSSemantics());
+		logger.info("\t\tentity: " + matchPhrase.getEntityID());
+		logger.info("\t\tentity class: " + matchPhrase.getEntityClass());
 		if (entity.equals("*")) {
 		    matchPhrase.setEntity(matchPhrase.getEntityClass());
 		} else if (matchPhrase.getEntityClass() != null) {
 		    matchPhrase.setEntity(matchPhrase.getEntityClass());
 //		} else if (Semantics.getByEntityName(entity) == null) {
 //		    matchPhrase.setEntity(entity);
-		} else {
+		} else if (matchPhrase.getUMLSSemantics() != null){
 		    matchPhrase.setEntity(Semantics.getByEntityName(entity));
-		    logger.debug("entity: " + entity + "\tmatch node: " + matchPhrase.treeString() + "\t" + matchPhrase.getParent().getFragmentString(true,true) + "\t" + matchPhrase.getUMLSSemantics());
+		    logger.info("entity: " + entity + "\tmatch node: " + matchPhrase.treeString() + "\t" + matchPhrase.getParent().getFragmentString(true,true) + "\t" + matchPhrase.getUMLSSemantics());
+		} else {
+		    matchPhrase.setEntity(entity);
 		}
 		if (theMatchNode.getPhrase().getFragmentStringVector2().size() == 0) {
 		    logger.debug("** fragment is empty!");
