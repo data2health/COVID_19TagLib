@@ -10,6 +10,7 @@ import edu.uiowa.NLP_grammar.syntaxMatch.syntaxMatchFunction;
 import edu.uiowa.NLP_grammar.syntaxMatch.syntaxMatcher;
 import edu.uiowa.NLP_grammar.syntaxMatch.comparator.placeNameComparator;
 import edu.uiowa.PubMedCentral.comparator.GeoNameComparator;
+import edu.uiowa.PubMedCentral.entity.PlaceName;
 import edu.uiowa.Translator.comparators.anatomicalEntityComparator;
 import edu.uiowa.Translator.comparators.biologicalProcessComparator;
 import edu.uiowa.Translator.comparators.cellularComponentComparator;
@@ -65,7 +66,6 @@ import edu.uiowa.UMLS.comparators.substanceComparator;
 import edu.uiowa.UMLS.comparators.temporalConceptComparator;
 import edu.uiowa.UMLS.comparators.temporalRelationshipComparator;
 import edu.uiowa.UMLS.comparators.transcriptionFactorComparator;
-import edu.uiowa.entity.named.PlaceName;
 import edu.uiowa.extraction.Decorator;
 
 public class BioRxivDecorator extends Decorator {
@@ -82,8 +82,46 @@ public class BioRxivDecorator extends Decorator {
     
     private void initialize(Connection conn) throws Exception {
 	edu.uiowa.Translator.entity.Entity.initialize(conn);
-//	Concept.initialize(conn, true);
-//	PlaceName.initialize();
+	Concept.initialize(conn, true);
+	PlaceName.initialize();
+	
+	activityComparator.initialize(conn, "covid_biorxiv");
+	anatomicalStructureComparator.initialize(conn, "covid_biorxiv");
+	biologicalFunctionComparator.initialize(conn, "covid_biorxiv");
+	bodyPartComparator.initialize(conn, "covid_biorxiv");
+	conceptComparator.initialize(conn, "covid_biorxiv");
+	temporalConceptComparator.initialize(conn, "covid_biorxiv");
+	qualitativeConceptComparator.initialize(conn, "covid_biorxiv");
+	quantitativeConceptComparator.initialize(conn, "covid_biorxiv");
+	functionalConceptComparator.initialize(conn, "covid_biorxiv");
+	spatialConceptComparator.initialize(conn, "covid_biorxiv");
+	conceptualRelationshipComparator.initialize(conn, "covid_biorxiv");
+	disciplineComparator.initialize(conn, "covid_biorxiv");
+	diseaseComparator.initialize(conn, "covid_biorxiv");
+	entityComparator.initialize(conn, "covid_biorxiv");
+	eventComparator.initialize(conn, "covid_biorxiv");
+	findingComparator.initialize(conn, "covid_biorxiv");
+	functionalRelationshipComparator.initialize(conn, "covid_biorxiv");
+	groupComparator.initialize(conn, "covid_biorxiv");
+	groupAttributeComparator.initialize(conn, "covid_biorxiv");
+	humanProcessComparator.initialize(conn, "covid_biorxiv");
+	injuryComparator.initialize(conn, "covid_biorxiv");
+	intellectualProductComparator.initialize(conn, "covid_biorxiv");
+	languageComparator.initialize(conn, "covid_biorxiv");
+	manufacturedObjectComparator.initialize(conn, "covid_biorxiv");
+	naturalProcessComparator.initialize(conn, "covid_biorxiv");
+	organicChemicalComparator.initialize(conn, "covid_biorxiv");
+	organismComparator.initialize(conn, "covid_biorxiv");
+	organismAttributeComparator.initialize(conn, "covid_biorxiv");
+	organizationComparator.initialize(conn, "covid_biorxiv");
+	pathologicalFunctionComparator.initialize(conn, "covid_biorxiv");
+	physiologicalFunctionComparator.initialize(conn, "covid_biorxiv");
+	processComparator.initialize(conn, "covid_biorxiv");
+	relationshipComparator.initialize(conn, "covid_biorxiv");
+	spatialRelationshipComparator.initialize(conn, "covid_biorxiv");
+	substanceComparator.initialize(conn, "covid_biorxiv");
+	temporalRelationshipComparator.initialize(conn, "covid_biorxiv");
+	transcriptionFactorComparator.initialize(conn, "covid_biorxiv");
     }
 
     @Override
