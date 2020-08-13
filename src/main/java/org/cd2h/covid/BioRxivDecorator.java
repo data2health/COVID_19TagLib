@@ -267,17 +267,17 @@ public class BioRxivDecorator extends Decorator {
 	
 	logger.trace("pattern: " + pattern + "\tentity: " + entity + "\ttree: " + theTree.trimmedPhraseAsString());
 	if (theMatcher.hasMatch(theTree)) {
-	    logger.info("<<<<< matched >>>>>");
+	    logger.debug("<<<<< matched >>>>>");
 	    for (syntaxMatch theMatchNode : theMatcher.matches()) {
 		syntaxTree matchPhrase = theMatchNode.getPhrase();
-		logger.info("\tentity: " + entity);
-		logger.info("\tmatchPhrase: " + matchPhrase.trimmedPhraseAsString());
-		logger.info("\t\twordnet: " + matchPhrase.getWordNetEntry());
-		logger.info("\t\tthesaurus entry: " + matchPhrase.getNASAThesaurusEntry());
-		logger.info("\t\tumls: " + matchPhrase.getUMLSEntry());
-		logger.info("\t\tumls semantics: " + matchPhrase.getUMLSSemantics());
-		logger.info("\t\tentity: " + matchPhrase.getEntityID());
-		logger.info("\t\tentity class: " + matchPhrase.getEntityClass());
+		logger.debug("\tentity: " + entity);
+		logger.debug("\tmatchPhrase: " + matchPhrase.trimmedPhraseAsString());
+		logger.debug("\t\twordnet: " + matchPhrase.getWordNetEntry());
+		logger.debug("\t\tthesaurus entry: " + matchPhrase.getNASAThesaurusEntry());
+		logger.debug("\t\tumls: " + matchPhrase.getUMLSEntry());
+		logger.debug("\t\tumls semantics: " + matchPhrase.getUMLSSemantics());
+		logger.debug("\t\tentity: " + matchPhrase.getEntityID());
+		logger.debug("\t\tentity class: " + matchPhrase.getEntityClass());
 		if (entity.equals("*")) {
 		    matchPhrase.setEntity(matchPhrase.getEntityClass());
 		} else if (matchPhrase.getEntityClass() != null) {
@@ -286,7 +286,7 @@ public class BioRxivDecorator extends Decorator {
 //		    matchPhrase.setEntity(entity);
 		} else if (matchPhrase.getUMLSSemantics() != null){
 		    matchPhrase.setEntity(Semantics.getByEntityName(entity));
-		    logger.info("entity: " + entity + "\tmatch node: " + matchPhrase.treeString() + "\t" + matchPhrase.getParent().getFragmentString(true,true) + "\t" + matchPhrase.getUMLSSemantics());
+		    logger.debug("entity: " + entity + "\tmatch node: " + matchPhrase.treeString() + "\t" + matchPhrase.getParent().getFragmentString(true,true) + "\t" + matchPhrase.getUMLSSemantics());
 		} else {
 		    matchPhrase.setEntity(entity);
 		}
