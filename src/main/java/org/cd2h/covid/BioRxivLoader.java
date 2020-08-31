@@ -45,16 +45,58 @@ public class BioRxivLoader {
 	PropertyConfigurator.configure("/Users/eichmann/Documents/Components/log4j.info");
 	initialize();
 
-	scan_feed();
+	new_scan_feed();
 
-	if (args.length > 1 && args[1].equals("-metadata"))
-	    fetch();
-	
-	scan_html();
-	scan_pdf();
+//	if (args.length > 1 && args[1].equals("-metadata"))
+//	    fetch();
+//	
+//	scan_html();
+//	scan_pdf();
 
     }
 
+    static public void new_scan_feed() throws SQLException, IOException {
+	int count = 30;
+	int cursor = 0;
+
+	while (count == 30) {
+	    count = 0;
+
+	    logger.info("");
+	    logger.info("fetching page " + cursor);
+	    logger.info("");
+
+	    URL theURL = new URL("https://api.biorxiv.org/covid19/" + cursor);
+	    BufferedReader reader = new BufferedReader(new InputStreamReader(theURL.openConnection().getInputStream()));
+
+	    JSONObject results = new JSONObject(new JSONTokener(reader));
+	    JSONArray resultArray = results.getJSONArray("collection");
+	    logger.trace("array: " + resultArray.toString(3));
+	    
+	    for (int i = 0; i < resultArray.length(); i++) {
+		if (resultArray.isNull(i))
+		    continue;
+		JSONObject theObject = resultArray.getJSONObject(i);
+		logger.trace("object: " + theObject.toString(3));
+		String doi = theObject.getString("rel_doi");
+		logger.info("DOI: " + doi + " : " + theObject.getString("rel_title"));
+
+//		PreparedStatement citeStmt = conn
+//			.prepareStatement("insert into covid_biorxiv.raw_biorxiv values (?::jsonb)");
+//		citeStmt.setString(1, theObject.toString());
+//		citeStmt.executeUpdate();
+//		citeStmt.close();
+
+		count++;
+	    }
+	    cursor += 30;
+	}
+
+	logger.info("total preprints: " + count);
+
+	simpleStmt("refresh materialized view covid_biorxiv.biorxiv_current");
+    }
+    
     static public void scan_feed() throws SQLException, IOException {
 	int count = 0;
 	simpleStmt("truncate covid_biorxiv.raw_biorxiv");
@@ -71,6 +113,7 @@ public class BioRxivLoader {
 		continue;
 	    JSONObject theObject = resultArray.getJSONObject(i);
 	    logger.trace("object: " + theObject.toString(3));
+	    logger.info("DOI: " + theObject.getString("rel_doi"));
 	    logger.info("title: " + theObject.getString("rel_title"));
 
 	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.raw_biorxiv values (?::jsonb)");
