@@ -81,11 +81,22 @@ public class BioRxivLoader {
 		String doi = theObject.getString("rel_doi");
 		logger.info("DOI: " + doi + " : " + theObject.getString("rel_title"));
 
-//		PreparedStatement citeStmt = conn
-//			.prepareStatement("insert into covid_biorxiv.raw_biorxiv values (?::jsonb)");
-//		citeStmt.setString(1, theObject.toString());
-//		citeStmt.executeUpdate();
-//		citeStmt.close();
+		try {
+		    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.new_raw_biorxiv values (?,?::jsonb)");
+		    citeStmt.setString(1, doi);
+		    citeStmt.setString(2, theObject.toString());
+		    citeStmt.executeUpdate();
+		    citeStmt.close();
+		} catch (SQLException e) {
+		    if (e.getSQLState().equals("23505")) {
+//			conn.rollback();
+			continue;
+		    } else {
+			e.printStackTrace();
+		    }
+		} finally {
+//		    conn.commit();
+		}
 
 		count++;
 	    }
