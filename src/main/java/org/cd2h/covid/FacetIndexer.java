@@ -1003,7 +1003,7 @@ public class FacetIndexer implements Runnable {
 	    while (subrs.next()) {
 		String intervention_type = subrs.getString(1);
 		String intervention_name = subrs.getString(2);
-		logger.info(ID + ": " + intervention_type + " : " + intervention_name);
+		logger.debug(ID + ": " + intervention_type + " : " + intervention_name);
 		try {
 		    paths.add(new CategoryPath("Intervention/"+intervention_type+"/"+intervention_name, '/'));
 		} catch (Exception e) {

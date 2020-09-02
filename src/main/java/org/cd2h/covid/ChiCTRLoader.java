@@ -70,13 +70,13 @@ public class ChiCTRLoader {
 		success = true;
 		String description = element.text();
 		String htmlURL = element.attr("href");
-		logger.info("description: " + description + "\turl: " + htmlURL);
+		logger.debug("description: " + description + "\turl: " + htmlURL);
 		URL url = new URL(new URL(web), htmlURL);
 		InputStream content = (InputStream) url.getContent();
 		BufferedReader in = new BufferedReader(new InputStreamReader(content));
 		SAXReader reader = new SAXReader(false);
 		Document document = reader.read(in);
-		logger.info("trialid" + trialID + "\tcontent: " + document.asXML());
+		logger.debug("trialid" + trialID + "\tcontent: " + document.asXML());
 		PreparedStatement statement = conn.prepareStatement("insert into covid_chictr.raw values(?,?::xml)");
 		statement.setString(1, trialID);
 		statement.setString(2, document.asXML());
