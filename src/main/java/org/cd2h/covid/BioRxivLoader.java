@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -47,11 +48,11 @@ public class BioRxivLoader {
 
 	new_scan_feed();
 
-//	if (args.length > 1 && args[1].equals("-metadata"))
-//	    fetch();
-//	
-//	scan_html();
-//	scan_pdf();
+	if (args.length > 1 && args[1].equals("-metadata"))
+	    fetch();
+	
+	scan_html();
+	scan_pdf();
 
     }
 
@@ -79,25 +80,22 @@ public class BioRxivLoader {
 		JSONObject theObject = resultArray.getJSONObject(i);
 		logger.trace("object: " + theObject.toString(3));
 		String doi = theObject.getString("rel_doi");
-		logger.info("DOI: " + doi + " : " + theObject.getString("rel_title"));
 
 		try {
-		    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.new_raw_biorxiv values (?,?::jsonb)");
+		    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_biorxiv.raw_biorxiv(doi,raw) values (?,?::jsonb)");
 		    citeStmt.setString(1, doi);
 		    citeStmt.setString(2, theObject.toString());
 		    citeStmt.executeUpdate();
 		    citeStmt.close();
 		} catch (SQLException e) {
 		    if (e.getSQLState().equals("23505")) {
-//			conn.rollback();
 			continue;
 		    } else {
 			e.printStackTrace();
 		    }
-		} finally {
-//		    conn.commit();
 		}
 
+		logger.info("DOI: " + doi + " : " + theObject.getString("rel_title"));
 		count++;
 	    }
 	    cursor += 30;
@@ -175,9 +173,16 @@ public class BioRxivLoader {
 		    citeStmt.setString(2, href);
 		    citeStmt.executeUpdate();
 		    citeStmt.close();
-		    URL fetchURL = new URL(new URL(link.replace("http", "https")), href);
-		    logger.info("\tfetching... " + fetchURL);
-		    Files.copy(fetchURL.openStream(), Paths.get(filePrefix + fetchURL.getFile().substring(fetchURL.getFile().lastIndexOf('/') + 1)), StandardCopyOption.REPLACE_EXISTING);
+		    URL fetchURL = new URL(new URL(link), href);
+		    logger.info("\tfetching new... " + fetchURL);
+		    // for whatever reason, we're starting to see 301 permanent redirects on fetchURL...
+		    URLConnection connection = fetchURL.openConnection();
+		    String redirect = connection.getHeaderField("Location");
+		    if (redirect != null){
+			logger.info("\t\tredirecting to... " + redirect);
+		        connection = new URL(new URL(redirect), href).openConnection();
+		    }
+		    Files.copy(connection.getInputStream(), Paths.get(filePrefix + fetchURL.getFile().substring(fetchURL.getFile().lastIndexOf('/') + 1)), StandardCopyOption.REPLACE_EXISTING);
 		} else if (!href.equals(old_href)) {
 		    // updated entry
 		    PreparedStatement citeStmt = conn.prepareStatement("update covid_biorxiv.biorxiv_map set url = ? where doi = ?");
@@ -185,9 +190,16 @@ public class BioRxivLoader {
 		    citeStmt.setString(2, doi);
 		    citeStmt.executeUpdate();
 		    citeStmt.close();
-		    URL fetchURL = new URL(new URL(link.replace("http", "https")), href);
-		    logger.info("\tfetching... " + fetchURL);
-		    Files.copy(fetchURL.openStream(), Paths.get(filePrefix + fetchURL.getFile().substring(fetchURL.getFile().lastIndexOf('/') + 1)), StandardCopyOption.REPLACE_EXISTING);
+		    URL fetchURL = new URL(new URL(link), href);
+		    logger.info("\tfetching updated... " + fetchURL);
+		    // for whatever reason, we're starting to see 301 permanent redirects on fetchURL...
+		    URLConnection connection = fetchURL.openConnection();
+		    String redirect = connection.getHeaderField("Location");
+		    if (redirect != null){
+			logger.info("\t\tredirecting to... " + redirect);
+		        connection = new URL(new URL(redirect), href).openConnection();
+		    }
+		    Files.copy(connection.getInputStream(), Paths.get(filePrefix + fetchURL.getFile().substring(fetchURL.getFile().lastIndexOf('/') + 1)), StandardCopyOption.REPLACE_EXISTING);
 		} else {
 		    logger.info("\tskipping...");
 		}
