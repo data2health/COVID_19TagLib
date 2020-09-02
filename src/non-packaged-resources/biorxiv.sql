@@ -1,3 +1,19 @@
+CREATE TABLE covid_biorxiv.raw_biorxiv (
+    doi text PRIMARY KEY,
+    raw jsonb
+);
+
+CREATE MATERIALIZED VIEW covid_biorxiv.biorxiv_current AS
+ SELECT (raw_biorxiv.raw ->> 'rel_doi'::text) AS doi,
+    (raw_biorxiv.raw ->> 'rel_title'::text) AS title,
+    (raw_biorxiv.raw ->> 'rel_authors'::text) AS authors,
+    (raw_biorxiv.raw ->> 'rel_link'::text) AS link,
+    (raw_biorxiv.raw ->> 'rel_site'::text) AS site,
+    ((raw_biorxiv.raw ->> 'rel_date'::text))::date AS pub_date,
+    (raw_biorxiv.raw ->> 'rel_abs'::text) AS abstract
+   FROM covid_biorxiv.raw_biorxiv
+  WITH NO DATA;
+
 create table document (
 	doi text,
 	title text,
