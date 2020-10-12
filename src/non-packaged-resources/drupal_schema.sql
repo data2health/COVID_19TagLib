@@ -176,8 +176,22 @@ select
 from
     (select
         'https://covid.cd2h.org/node/'||nid as url,
+        cross_cutting::boolean,
         title,
-        substring(summary from '<p>(.*)</p.*') as summary
+        substring(summary from '<p>(.*)</p.*') as summary,
+        substring(description from '<h2>Mission</h2>[^<]*(.*)') as description,
+        ( select jsonb_agg(leads)
+        	from (select
+        				delta,
+        				'https://covid.cd2h.org/node/'||lead_nid as url,
+        				bio.title as name,
+        				substring(bio.body_value from '<p>(.*)</p.*') as institution
+        			from domain_team_lead, bio
+        			where domain_team_lead.nid = domain_team.nid
+        			  and lead_nid = bio.nid
+        			order by delta
+        			) as leads
+        	) as leads
      from domain_team
     ) as team
 ;
