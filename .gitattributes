@@ -41,6 +41,7 @@ src/non-packaged-resources/covid_model.sql -text
 src/non-packaged-resources/crossref_views.sql -text
 src/non-packaged-resources/dashboard.sql -text
 src/non-packaged-resources/dashboard_refresh.sql -text
+src/non-packaged-resources/drupal_schema.sql -text
 src/non-packaged-resources/drupal_views.sql -text
 src/non-packaged-resources/kg.sql -text
 src/non-packaged-resources/training.clay -text
