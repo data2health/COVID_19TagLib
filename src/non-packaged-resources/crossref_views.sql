@@ -16,7 +16,7 @@ select
     (message->>'publisher')::text as publisher,
     (message->>'group-title')::text as group_title,
     (((message->>'institution')::jsonb)->>'name')::text as institution_name,
-    true
+    (((message->>'created')::jsonb)->>'date-time')::timestamp as created
 from
 	raw_message
 ;
