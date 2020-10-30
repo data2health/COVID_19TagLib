@@ -36,6 +36,8 @@ public class CrossRefLoader {
 
 	scan_biorxiv();
 	scan_litcovid();
+	
+	scan_n3c_expertise();
     }
 
     static public void scan_biorxiv() throws SQLException, IOException, SAXException, TikaException {
@@ -43,11 +45,13 @@ public class CrossRefLoader {
 	logger.info("scanning bioRxiv...");
 	logger.info("");
 	PreparedStatement fetchStmt = conn.prepareStatement(
-		"select distinct doi from covid_biorxiv.biorxiv_current where doi not in (select doi from covid_crossref.raw_crossref) and doi not in (select doi from covid_crossref.raw_suppress)");
+		"select distinct doi from covid_biorxiv.biorxiv_current "
+		+ "where doi not in (select doi from covid_crossref.raw_crossref) "
+		+ "and doi not in (select doi from covid_crossref.raw_suppress)");
 	ResultSet rs = fetchStmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
-	    fetchCrossRef(doi);
+	    fetchCrossRef(doi, "covid_crossref");
 	}
     }
     
@@ -56,15 +60,35 @@ public class CrossRefLoader {
 	logger.info("scanning LitCOVID...");
 	logger.info("");
 	PreparedStatement fetchStmt = conn.prepareStatement(
-		"select distinct e_location_id from covid_litcovid.e_location_id where e_id_type ='doi' and e_location_id not in (select doi from covid_crossref.raw_crossref) and e_location_id not in (select doi from covid_crossref.raw_suppress)");
+		"select distinct e_location_id from covid_litcovid.e_location_id "
+		+ "where e_id_type ='doi' "
+		+ "and e_location_id not in (select doi from covid_crossref.raw_crossref) "
+		+ "and e_location_id not in (select doi from covid_crossref.raw_suppress)");
 	ResultSet rs = fetchStmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
-	    fetchCrossRef(doi);
+	    fetchCrossRef(doi, "covid_crossref");
 	}
     }
     
-    static void fetchCrossRef(String doi) {
+    static public void scan_n3c_expertise() throws SQLException, IOException, SAXException, TikaException {
+	logger.info("");
+	logger.info("scanning N3C expertise...");
+	logger.info("");
+	PreparedStatement fetchStmt = conn.prepareStatement(
+		"select distinct doi from n3c_expertise.crossref_map "
+		+ "where doi not in (select doi from covid_crossref.raw_crossref)"
+		+ " and doi not in (select doi from n3c_crossref.raw_crossref)"
+		+ " and doi not in (select doi from n3c_crossref.raw_suppress)"
+		+ " and doi not in (select doi from covid_crossref.raw_suppress)");
+	ResultSet rs = fetchStmt.executeQuery();
+	while (rs.next()) {
+	    String doi = rs.getString(1);
+	    fetchCrossRef(doi, "n3c_crossref");
+	}
+    }
+    
+    static void fetchCrossRef(String doi, String schema) {
 	    logger.info("DOI: " + doi);
 	try {
 	    URL theURL = new URL("https://api.crossref.org/v1/works/" + doi);
@@ -73,7 +97,7 @@ public class CrossRefLoader {
 	    JSONObject results = new JSONObject(new JSONTokener(reader));
 	    // JSONArray resultArray = results.getJSONArray("rels");
 	    logger.info("results: " + results.toString(3));
-	    PreparedStatement citeStmt = conn.prepareStatement("insert into covid_crossref.raw_crossref values (?,?::jsonb)");
+	    PreparedStatement citeStmt = conn.prepareStatement("insert into "+schema+".raw_crossref values (?,?::jsonb)");
 	    citeStmt.setString(1, doi);
 	    citeStmt.setString(2, results.toString(3));
 	    citeStmt.executeUpdate();
@@ -82,7 +106,7 @@ public class CrossRefLoader {
 	    logger.error("Exception raised: " + e);
 	    PreparedStatement citeStmt;
 	    try {
-		citeStmt = conn.prepareStatement("insert into covid_crossref.raw_suppress values (?)");
+		citeStmt = conn.prepareStatement("insert into "+schema+".raw_suppress values (?)");
 		citeStmt.setString(1, doi);
 		citeStmt.executeUpdate();
 		citeStmt.close();
