@@ -34,10 +34,15 @@ public class CrossRefLoader {
 	PropertyConfigurator.configure("/Users/eichmann/Documents/Components/log4j.info");
 	initialize();
 
+	if (args.length == 0) {
 	scan_biorxiv();
 	scan_litcovid();
 	
 	scan_n3c_expertise();
+	scan_oag();
+	} else if (args[0].equals("oag")) {
+	    scan_oag();
+	}
     }
 
     static public void scan_biorxiv() throws SQLException, IOException, SAXException, TikaException {
@@ -85,6 +90,21 @@ public class CrossRefLoader {
 	while (rs.next()) {
 	    String doi = rs.getString(1);
 	    fetchCrossRef(doi, "n3c_crossref");
+	}
+    }
+    
+    static public void scan_oag() throws SQLException, IOException, SAXException, TikaException {
+	logger.info("");
+	logger.info("scanning OAG...");
+	logger.info("");
+	PreparedStatement fetchStmt = conn.prepareStatement(
+		"select distinct doi from oag_n3c.doi "
+		+ "where doi not in (select doi from oag_crossref.raw_crossref)"
+		+ " and doi not in (select doi from oag_crossref.raw_suppress)");
+	ResultSet rs = fetchStmt.executeQuery();
+	while (rs.next()) {
+	    String doi = rs.getString(1);
+	    fetchCrossRef(doi, "oag_crossref");
 	}
     }
     
