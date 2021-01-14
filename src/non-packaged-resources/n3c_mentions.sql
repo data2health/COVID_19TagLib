@@ -16,3 +16,13 @@ from covid_biorxiv.reference
 where reference ~'[nN]3[cC]'
   and doi in (select doi from n3c_mention_suppress where not suppress)
 order by 1,2;
+
+create view covid_biorxiv.cohort_med as
+select  temp as original, '['||lower(substring(temp from 1 for 1))||upper(substring(temp from 1 for 1))||']'||lower(substring(temp from 2)) as normalized
+from
+(select regexp_replace(regexp_replace(value,'_gtt',''),'_',' ','g') as temp
+from enclave_cohort.med_use_frequency_for_export
+where value!~'systemic' and value!='Totals'
+) as foo;
+
+select distinct  doi,seqnum,sentnum,full_text,original from sentence,cohort_med where full_text ~ original or full_text ~  normalized limit  100;
