@@ -59,7 +59,9 @@ public class BioRxivLoader {
     static public void new_scan_feed() throws SQLException, IOException {
 	int count = 30;
 	int cursor = 0;
+	int total = Integer.MAX_VALUE;
 
+//	while (cursor < total) {
 	while (count == 30) {
 	    count = 0;
 
@@ -73,6 +75,11 @@ public class BioRxivLoader {
 	    JSONObject results = new JSONObject(new JSONTokener(reader));
 	    JSONArray resultArray = results.getJSONArray("collection");
 	    logger.trace("array: " + resultArray.toString(3));
+	    
+	    if (cursor == 0) {
+	    	total = results.getJSONArray("messages").getJSONObject(0).getInt("total");
+	    	logger.info("total: " + total);
+	    }
 	    
 	    for (int i = 0; i < resultArray.length(); i++) {
 		if (resultArray.isNull(i))
@@ -144,7 +151,7 @@ public class BioRxivLoader {
 	logger.info("");
 	// clean up previously failed downloads
 	simpleStmt("delete from covid_biorxiv.biorxiv_map where doi not in (select doi from covid_biorxiv.biorxiv_text)");
-	PreparedStatement fetchStmt = conn.prepareStatement("select doi,link from covid_biorxiv.biorxiv_current where doi not in (select doi from covid_biorxiv.biorxiv_map) and doi not in (select doi from covid_biorxiv.biorxiv_suppress)");
+	PreparedStatement fetchStmt = conn.prepareStatement("select doi,link from covid_biorxiv.biorxiv_current where doi not in (select doi from covid_biorxiv.biorxiv_map) and doi not in (select doi from covid_biorxiv.biorxiv_suppress) order by doi");
 	ResultSet rs = fetchStmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
