@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -13,13 +14,13 @@ import java.util.Vector;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
-import edu.uiowa.emr.CachingConceptRecognizer;
-import edu.uiowa.emr.Concept;
-import edu.uiowa.emr.ConceptRecognizer;
+import edu.uiowa.UMLS.recognizer.Concept;
+import edu.uiowa.UMLS.recognizer.ConceptRecognizer;
 
 public class BioRxivExtractor implements Runnable {
 	static Logger logger = Logger.getLogger(BioRxivExtractor.class);
 	static Vector<String> doiVector = new Vector<String>();
+    static DecimalFormat formatter = new DecimalFormat("00");
 
 	static Connection getConnection() throws ClassNotFoundException, SQLException {
 		Connection conn = null;
@@ -65,8 +66,12 @@ public class BioRxivExtractor implements Runnable {
 		}
 		fetchStmt.close();
 		logger.info("done.");
+		
+		if (doiVector.size() == 0)
+			return;
+		
 		for (int i = 0; i < maxCrawlerThreads; i++) {
-			Thread theThread = new Thread(new BioRxivExtractor());
+			Thread theThread = new Thread(new BioRxivExtractor(i));
 			theThread.setPriority(Math.max(theThread.getPriority() - 2, Thread.MIN_PRIORITY));
 			theThread.start();
 			matcherThreads[i] = theThread;
@@ -87,10 +92,12 @@ public class BioRxivExtractor implements Runnable {
 
 	ConceptRecognizer conceptRecognizer = null;
 	Connection conn = null;
+	int threadID = 0;
 
-	public BioRxivExtractor() throws ClassNotFoundException, SQLException {
+	public BioRxivExtractor(int threadID) throws ClassNotFoundException, SQLException {
+		this.threadID = threadID;
 		conn = getConnection();
-		conceptRecognizer = new CachingConceptRecognizer(conn);
+		conceptRecognizer = new ConceptRecognizer(conn);
 	}
 
 	@Override
@@ -117,10 +124,10 @@ public class BioRxivExtractor implements Runnable {
 			int sentnum = fetchRS.getInt(2);
 			String sentence = fetchRS.getString(3);
 
-			logger.info("preprint: " + doi);
-			logger.info("\tseqnum: " + seqnum +  "\tsentnum: " + sentnum + "\tsentence: " + sentence);
+			logger.info("["+formatter.format(threadID)+"] preprint: " + doi);
+			logger.info("["+formatter.format(threadID)+"]\tseqnum: " + seqnum +  "\tsentnum: " + sentnum + "\tsentence: " + sentence);
 
-			conceptRecognizer.parseSentence(sentence);
+			conceptRecognizer.parseSentences(sentence);
 
 			cacheCUIs(doi,seqnum,sentnum);
 			conceptRecognizer.reset();
@@ -151,7 +158,7 @@ public class BioRxivExtractor implements Runnable {
 
 		PreparedStatement cacheStmt = conn.prepareStatement("insert into covid_biorxiv.umls_sentence_concept values (?,?,?,?,?,?)");
 		for (Concept concept : conceptMap.values()) {
-			logger.trace("\t\tstoring cui: " + concept.getCui() + " : " + concept.getCount() + " : " + concept.getPhrase());
+			logger.debug("\t\tstoring cui: " + concept.getCui() + " : " + concept.getCount() + " : " + concept.getPhrase());
 			cacheStmt.setString(1, doi);
 			cacheStmt.setInt(2, seqnum);
 			cacheStmt.setInt(3, sentnum);
