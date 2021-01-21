@@ -101,6 +101,8 @@ public class CERMINEExtractor implements Runnable {
     static void scan() throws SQLException {
 	logger.info("scanning file map...");
 	PreparedStatement stmt = staticConn.prepareStatement("select doi,url from covid_biorxiv.biorxiv_map where doi not in (select doi from covid_biorxiv.document)");
+//	PreparedStatement stmt = staticConn.prepareStatement("select doi,url from covid_biorxiv.biorxiv_map where doi in (select doi from covid_biorxiv.n3c_mention_suppress where not suppress) and doi not in (select doi from covid_biorxiv.document)");
+//	PreparedStatement stmt = staticConn.prepareStatement("select doi,url from covid_biorxiv.biorxiv_map where doi in (select doi from covid_biorxiv.cohort_med_queue) and doi not in (select doi from covid_biorxiv.document)");
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
 	    String doi = rs.getString(1);
@@ -121,29 +123,32 @@ public class CERMINEExtractor implements Runnable {
 	simpleStmt(conn, "set constraints all deferred;");
     }
     
-    @Override
-    public void run() {
-	while (!documentQueue.isCompleted()) {
-	    Document document = documentQueue.dequeue();
-	    if (document == null)
-		return;
-	    document.setConnection(conn);
-	    logger.info("[" + threadID + "] processing " + document.getDoi());
-	    try {
-		acquireBxDocument(document);
-		document.section();
-		document.dump();
-		simpleStmt(conn, "commit work");
-	    } catch (java.io.FileNotFoundException e) {
-		logger.info("[" + threadID + "] exception raised processing " + document.getDoi() + " : ", e);
-	    } catch (pl.edu.icm.cermine.exception.AnalysisException e) {
-		logger.info("[" + threadID + "] exception raised processing " + document.getDoi() + " : ", e);
-	    } catch (Exception e) {
-		logger.info("[" + threadID + "] exception raised processing " + document.getDoi() + " : ", e);
-		System.exit(0);
-	    }
+	@Override
+	public void run() {
+		while (!documentQueue.isCompleted()) {
+			Document document = documentQueue.dequeue();
+			if (document == null)
+				return;
+			document.setConnection(conn);
+			logger.info("[" + threadID + "] processing " + document.getDoi());
+			try {
+				acquireBxDocument(document);
+				document.section();
+				document.dump();
+				simpleStmt(conn, "commit work");
+			} catch (java.lang.IllegalArgumentException e) {
+				// this is to trap a sort contract violation that we need to explore
+				logger.info("[" + threadID + "] exception raised processing " + document.getDoi() + " : ", e);
+			} catch (java.io.FileNotFoundException e) {
+				logger.info("[" + threadID + "] exception raised processing " + document.getDoi() + " : ", e);
+			} catch (pl.edu.icm.cermine.exception.AnalysisException e) {
+				logger.info("[" + threadID + "] exception raised processing " + document.getDoi() + " : ", e);
+			} catch (Exception e) {
+				logger.info("[" + threadID + "] fatal exception raised processing " + document.getDoi() + " : ", e);
+				System.exit(0);
+			}
+		}
 	}
-    }
 
     void process(String fileName) throws SQLException, AnalysisException, IOException, TransformationException, ClassNotFoundException {
 	

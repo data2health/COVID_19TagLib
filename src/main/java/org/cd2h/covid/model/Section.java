@@ -156,8 +156,8 @@ public class Section {
 	    scanNameYearReferences(nameYearReferencePattern);
 	} else {
 	    logger.info("*** unknown citation scheme");
-	    int[] leftMargin = new int[2000];
-	    int[] spacing = new int[2000];
+	    int[] leftMargin = new int[10000];
+	    int[] spacing = new int[10000];
 	    int trailingYearCount = 0;
 	    
 	    for (Line line : lines) {
