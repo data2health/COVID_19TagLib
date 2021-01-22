@@ -47,3 +47,26 @@ select doi,seqnum,sentnum,cui,str
 from covid_biorxiv.sentence,disease
 where full_text ~ normalized
 ;
+
+----------- PubChem ----------
+
+create materialized view compound as
+select cid,cmpdname as name, unnest(string_to_array(cmpdsynonym,'|')) as synonym from pubchem_compound_text_covid_19;
+
+create materialized view gene as
+select geneid,srcname,title as name, unnest(string_to_array(synos,'|')) as synonym from pubchem_gene_text_covid_19 where synos != 'NULL'
+union
+select geneid,srcname,title as name, trim(substring(title from '([^ ]+) - ')) as synonym from pubchem_gene_text_covid_19 where synos ='NULL'
+union
+select geneid,srcname,title as name, trim(substring(title from ' - ([^(]+)')) as synonym from pubchem_gene_text_covid_19 where synos ='NULL'
+;
+
+create materialized view protein as
+select protacxn,srcname,title as name, unnest(string_to_array(synos,'|')) as synonym from pubchem_protein_text_covid_19
+union
+select protacxn,srcname,title as name, trim(substring(title from '(.+)[(][^)]+[)]$')) as synonym from pubchem_protein_text_covid_19
+;
+
+create materialized view substance as
+select sid, substring(subssynonym from '[^|]+') as name, unnest(string_to_array(subssynonym,'|')) as synonym from pubchem_substance_text_covid_19
+;
