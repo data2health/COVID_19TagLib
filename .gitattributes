@@ -14,6 +14,7 @@ src/main/java/org/cd2h/covid/BioRxivExtractor.java -text
 src/main/java/org/cd2h/covid/BioRxivInstantiator.java -text
 src/main/java/org/cd2h/covid/BioRxivLoader.java -text
 src/main/java/org/cd2h/covid/BioRxivProcessor.java -text
+src/main/java/org/cd2h/covid/BioRxivPubChemExtractor.java -text
 src/main/java/org/cd2h/covid/CERMINEExtractor.java -text
 src/main/java/org/cd2h/covid/ChiCTRLoader.java -text
 src/main/java/org/cd2h/covid/CrossRefLoader.java -text
