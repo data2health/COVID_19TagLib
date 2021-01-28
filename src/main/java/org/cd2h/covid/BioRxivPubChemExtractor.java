@@ -166,7 +166,7 @@ public class BioRxivPubChemExtractor implements Runnable {
 
 		PreparedStatement cacheStmt = conn.prepareStatement("insert into covid_biorxiv."+tableName+" values (?,?,?,?,?,?)");
 		for (Concept concept : conceptMap.values()) {
-			logger.debug("\t\tstoring cui: " + concept.getID() + " : " + concept.getCount() + " : " + concept.getPhrase());
+			logger.info("\t\tstoring id: " + concept.getID() + " : " + concept.getCount() + " : " + concept.getPhrase() + " : " + tableName);
 			cacheStmt.setString(1, doi);
 			cacheStmt.setInt(2, seqnum);
 			cacheStmt.setInt(3, sentnum);
