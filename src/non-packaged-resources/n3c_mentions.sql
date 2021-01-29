@@ -48,6 +48,8 @@ from covid_biorxiv.sentence,disease
 where full_text ~ normalized
 ;
 
+create materialized view cohort_med_site_count as select original,site,count(*) from biorxiv_current natural join sentence,cohort_med where full_text ~ normalized group by 1,2;
+
 ----------- PubChem ----------
 
 create materialized view compound as
