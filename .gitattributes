@@ -23,6 +23,7 @@ src/main/java/org/cd2h/covid/EudraCTLoader.java -text
 src/main/java/org/cd2h/covid/FacetIndexer.java -text
 src/main/java/org/cd2h/covid/LineComparator.java -text
 src/main/java/org/cd2h/covid/LitCOVIDLoader.java -text
+src/main/java/org/cd2h/covid/LitCOVIDParser.java -text
 src/main/java/org/cd2h/covid/LocalProperties.java -text
 src/main/java/org/cd2h/covid/PropertyLoader.java -text
 src/main/java/org/cd2h/covid/StringQueue.java -text
