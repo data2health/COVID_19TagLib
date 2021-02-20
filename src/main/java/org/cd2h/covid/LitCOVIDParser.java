@@ -8,20 +8,15 @@ import org.apache.log4j.PropertyConfigurator;
 
 import edu.uiowa.lex.*;
 import edu.uiowa.NLP_grammar.*;
-
-import com.ibm.tspaces.*;
+import edu.uiowa.extraction.LocalProperties;
+import edu.uiowa.extraction.PropertyLoader;
 
 public class LitCOVIDParser implements Runnable {
 	static Logger logger = Logger.getLogger(LitCOVIDParser.class);
 
-	public static boolean localConnection = false;
-	public static String networkHostName = "deep-thought.local";
-//    public static final String networkHostName = "localhost";
-	static final String localFilePrefix = "http://127.0.0.1/eichmann/tagging/";
-
-	static TupleSpace ts = null;
-	static String host = "deep-thought.local";
-//    static final String host = "localhost";
+	protected static LocalProperties prop_file = null;
+	static IntegerQueue pmidQueue = new IntegerQueue();
+	static String mode = "parse";
 
 	static String idString = null;
 	int threadID = 0;
@@ -31,18 +26,30 @@ public class LitCOVIDParser implements Runnable {
 
 	public static void main(String[] args) throws Exception {
 		PropertyConfigurator.configure(args[0]);
+		prop_file = PropertyLoader.loadProperties("biorxiv");
+		Connection conn = getConnection();
 
-		if (args.length > 1) {
-			networkHostName = args[1];
-			host = args[1];
+		PreparedStatement stmt = null;
+		if (args.length > 1)
+			mode = args[1];
+		switch (mode) {
+		case "parse":
+			stmt = conn.prepareStatement("select pmid from covid_litcovid.article where pmid not in (select pmid from covid_litcovid.parse)");
+			break;
+		case "fragment":
+			stmt = conn.prepareStatement("select distinct pmid from covid_litcovid.parse where pmid not in (select pmid from covid_litcovid.fragment)");
+			break;
 		}
-
-		logger.info("initializing tspace...");
-		try {
-			ts = new TupleSpace("LitCOVID", host);
-		} catch (TupleSpaceException tse) {
-			logger.error("TSpace error: " + tse);
+		int skip = 0;
+		ResultSet rs = stmt.executeQuery();
+		while (rs.next()) {
+			int pmid = rs.getInt(1);
+			if (++skip < 10)
+				continue;
+			logger.debug("queueing : " + pmid);
+			pmidQueue.queue(pmid);
 		}
+		logger.info("\t" + pmidQueue.size() + " articles queued.");
 
 		int maxCrawlerThreads = Math.min(8, Runtime.getRuntime().availableProcessors());
 //	 int maxCrawlerThreads = 1;
@@ -50,7 +57,7 @@ public class LitCOVIDParser implements Runnable {
 
 		for (int i = 0; i < maxCrawlerThreads; i++) {
 			logger.info("starting thread " + i);
-			Thread theThread = new Thread(new LitCOVIDParser(i, getConnection(localConnection)));
+			Thread theThread = new Thread(new LitCOVIDParser(i, getConnection()));
 			theThread.setPriority(Math.max(theThread.getPriority() - 2, Thread.MIN_PRIORITY));
 			theThread.start();
 			scannerThreads[i] = theThread;
@@ -60,19 +67,12 @@ public class LitCOVIDParser implements Runnable {
 		}
 	}
 
-	static Connection getConnection(boolean local) throws ClassNotFoundException, SQLException {
-		Connection conn = null;
+	public static Connection getConnection() throws SQLException, ClassNotFoundException {
 		Class.forName("org.postgresql.Driver");
 		Properties props = new Properties();
-		props.setProperty("user", "eichmann");
-		props.setProperty("password", "translational");
-		if (local) {
-			conn = DriverManager.getConnection("jdbc:postgresql://localhost/loki", props);
-		} else {
-//	    props.setProperty("sslfactory", "org.postgresql.ssl.NonValidatingFactory");
-//	    props.setProperty("ssl", "true");
-			conn = DriverManager.getConnection("jdbc:postgresql://" + networkHostName + "/loki", props);
-		}
+		props.setProperty("user", prop_file.getProperty("jdbc.user"));
+		props.setProperty("password", prop_file.getProperty("jdbc.password"));
+		Connection conn = DriverManager.getConnection(prop_file.getProperty("jdbc.url"), props);
 		conn.setAutoCommit(false);
 		return conn;
 	}
@@ -90,63 +90,28 @@ public class LitCOVIDParser implements Runnable {
 	}
 
 	public void run() {
-		Tuple theTuple = null;
-
-		try {
-			theTuple = ts.waitToTake("litcovid_parse_request", new Field(String.class));
-
-			while (theTuple != null) {
-				idString = (String) theTuple.getField(1).getValue();
-				logger.info("[" + threadID + "] consuming " + idString);
-				try {
-					int id = Integer.parseInt(idString);
-					haveParseResults = false;
-
-					// we first flush any existing data, as this might be the result of an update to
-					// MEDLINE
-					PreparedStatement reqStmt = conn
-							.prepareStatement("delete from covid_litcovid.sentence where pmid = ?");
-					reqStmt.setInt(1, id);
-					reqStmt.execute();
-					reqStmt.close();
-
-					reqStmt = conn.prepareStatement("delete from covid_litcovid.parse where pmid = ?");
-					reqStmt.setInt(1, id);
-					reqStmt.execute();
-					reqStmt.close();
-
-					reqStmt = conn.prepareStatement("delete from covid_litcovid.miss where pmid = ?");
-					reqStmt.setInt(1, id);
-					reqStmt.execute();
-					reqStmt.close();
-
-					processTitle(id);
-					processAbstract(id);
-
-					if (!haveParseResults)
-						storeMiss(id);
-
-					reqStmt = conn.prepareStatement("delete from medline_local.parse_request where pmid = ?");
-					reqStmt.setInt(1, id);
-					reqStmt.execute();
-					reqStmt.close();
-
-					conn.commit();
-				} catch (Exception e) {
-					logger.error("exception raised: " + e);
+		while (!pmidQueue.isCompleted()) {
+			Integer pmid = pmidQueue.dequeue();
+			if (pmid == null)
+				return;
+			try {
+				switch (mode) {
+				case "parse":
 					try {
-						conn.rollback();
-					} catch (SQLException e1) {
-						logger.error("exception raised: " + e);
+						processTitle(pmid);
+						processAbstract(pmid);
+						conn.commit();
+					} catch (Exception e) {
+						logger.error("Exception raised parsing : " + pmid, e);
 					}
-					theParser = new SegmentParser(new biomedicalLexer(), new SimpleStanfordParserBridge(),
-							new basicSentenceGenerator());
+					break;
+				case "fragment":
+//					fragment(pmid);
+					break;
 				}
-				theTuple = ts.waitToTake("medline_parse_request", new Field(String.class));
+			} catch (Exception e) {
+				logger.error("error raised proccessing doi:", e);
 			}
-		} catch (TupleSpaceException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
 		}
 	}
 
@@ -160,7 +125,7 @@ public class LitCOVIDParser implements Runnable {
 
 	void processTitle(int id) throws Exception {
 		Statement stmt = conn.createStatement();
-		ResultSet rs = stmt.executeQuery("select title from covid_litcovid.article where pmid = " + id);
+		ResultSet rs = stmt.executeQuery("select article_title from covid_litcovid.article_title where pmid = " + id);
 
 		while (rs.next()) {
 			String title = rs.getString(1);
@@ -209,7 +174,7 @@ public class LitCOVIDParser implements Runnable {
 
 	void processAbstract(int id) throws Exception {
 		Statement stmt = conn.createStatement();
-		ResultSet rs = stmt.executeQuery("select seqnum,abstract_text from covid_litcovid.abstr where pmid = " + id);
+		ResultSet rs = stmt.executeQuery("select seqnum,abstract from covid_litcovid.abstract where pmid = " + id);
 
 		while (rs.next()) {
 			int seqnum = rs.getInt(1);
