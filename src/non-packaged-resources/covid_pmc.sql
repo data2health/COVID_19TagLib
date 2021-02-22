@@ -643,7 +643,7 @@ from section_paragraph;
 
 create view sec_para_bib_filter as
 select
-	regexp_replace(p, '\[<xref[^]]*bibr[^]]*</xref>\]', '', 'g') as p
+	regexp_replace(p, '([\[(]<xref [^>]*bibr[^>]*>[^<]*</xref>( *[,;] *<xref [^>]*bibr[^>]*>[^<]*</xref>)*[\])])', '', 'g') as p
 from sec_para_filter;
 
 create view sec_para_xref_filter as
@@ -663,16 +663,21 @@ from sec_para_fig_filter;
 
 create view sec_para_italic_filter as
 select
-	regexp_replace(p, '<italic>([^<*]*)</italic>', '\1', 'g') as p
+	regexp_replace(p, '<italic>([^<]*)</italic>', '\1', 'g') as p
 from sec_para_table_filter;
 
 create view sec_para_sub_filter as
 select
-	regexp_replace(p, '<sub>([^<*]*)</sub>', '\1', 'g') as p
+	regexp_replace(p, '<sub>([^<]*)</sub>', '\1', 'g') as p
 from sec_para_italic_filter;
 
 create view sec_para_sup_filter as
 select
-	regexp_replace(p, '<sup>([^<*]*)</sup>', '\1', 'g') as p
-from sec_para_sub_filter
+	regexp_replace(p, '<sup>([^<]*)</sup>', '\1', 'g') as p
+from sec_para_sub_filter;
+
+create view sec_para_link_filter as
+select
+	regexp_replace(p, '\(<ext-link ([^<]*)</ext-link>\)', '', 'g') as p
+from sec_para_sup_filter
 limit 1000;
