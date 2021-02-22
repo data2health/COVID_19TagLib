@@ -45,6 +45,7 @@ src/non-packaged-resources/biorxiv.sql -text
 src/non-packaged-resources/biorxiv_tag_sections.sql -text
 src/non-packaged-resources/chictr_views.sql -text
 src/non-packaged-resources/covid_model.sql -text
+src/non-packaged-resources/covid_pmc.sql -text
 src/non-packaged-resources/crossref_views.sql -text
 src/non-packaged-resources/dashboard.sql -text
 src/non-packaged-resources/dashboard_refresh.sql -text
