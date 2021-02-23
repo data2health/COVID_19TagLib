@@ -679,5 +679,55 @@ from sec_para_sub_filter;
 create view sec_para_link_filter as
 select
 	regexp_replace(p, '\(<ext-link ([^<]*)</ext-link>\)', '', 'g') as p
-from sec_para_sup_filter
+from sec_para_sup_filter;
+
+create view sec_para_math_space_filter as
+select
+	regexp_replace(p, '<mml:mspace[^>]*/>', ' ', 'g') as p
+from sec_para_link_filter;
+
+create view sec_para_math_text_filter as
+select
+	regexp_replace(p, '<mml:mtext[^>]*>([^<]*)</mml:mtext>', '\1', 'g') as p
+from sec_para_math_space_filter;
+
+create view sec_para_math_element_filter as
+select
+	regexp_replace(p, '<mml:m[ion][^>]*>([^<]*)</mml:m[ion]>', '\1', 'g') as p
+from sec_para_math_text_filter;
+
+create view sec_para_math_sup_filter as
+select
+	regexp_replace(p, '<mml:msup[^>]*>([^<]*)</mml:msup>', '\1', 'g') as p
+from sec_para_math_element_filter;
+
+create view sec_para_math_sub_filter as
+select
+	regexp_replace(p, '<mml:msub[^>]*>([^<]*)</mml:msub>', '\1', 'g') as p
+from sec_para_math_sup_filter;
+
+create view sec_para_math_subsup_filter as
+select
+	regexp_replace(p, '<mml:msubsup[^>]*>([^<]*)</mml:msubsup>', '\1', 'g') as p
+from sec_para_math_sub_filter;
+
+create view sec_para_math_frac_filter as
+select
+	regexp_replace(p, '<mml:mfrac[^>]*>([^<]*)</mml:mfrac>', '\1', 'g') as p
+from sec_para_math_subsup_filter;
+
+create view sec_para_math_row_filter as
+select
+	regexp_replace(p, '<mml:mrow[^>]*>([^<]*)</mml:mrow>', '\1', 'g') as p
+from sec_para_math_frac_filter;
+
+create view sec_para_math_math_filter as
+select
+	regexp_replace(p, '<mml:math[^>]*>([^<]*)</mml:math>', '\1', 'g') as p
+from sec_para_math_row_filter;
+
+create view sec_para_math_formula_filter as
+select
+	regexp_replace(p, '<inline-formula[^>]*>([^<]*)</inline-formula>', '\1', 'g') as p
+from sec_para_math_math_filter
 limit 1000;
