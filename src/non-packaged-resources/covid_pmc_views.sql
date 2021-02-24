@@ -3,7 +3,7 @@
 drop view sec_para_filter cascade;
 
 create view sec_para_filter as
-select regexp_replace(p::text, '<p[^>]*>(.*)</p>', '\1') as p
+select regexp_replace(p::text, '<p[^>]*>(.*)</p>', '\1') as p, p as orig
 from section_paragraph;
 
 create view sec_para_sup1_filter as
@@ -56,10 +56,15 @@ select
 	regexp_replace(p, '\(<ext-link ([^<]*)</ext-link>\)', '', 'g') as p
 from sec_para_sup_filter;
 
+create view sec_para_link2_filter as
+select
+	regexp_replace(p, '<ext-link[^>]*>([^<]*)</ext-link>', '\1', 'g') as p
+from sec_para_link_filter;
+
 create view sec_para_math_space_filter as
 select
 	regexp_replace(p, '<mml:mspace[^>]*/>', ' ', 'g') as p
-from sec_para_link_filter;
+from sec_para_link2_filter;
 
 create view sec_para_math_text_filter as
 select
@@ -86,15 +91,25 @@ select
 	regexp_replace(p, '<mml:msubsup[^>]*>([^<]*)</mml:msubsup>', '\1', 'g') as p
 from sec_para_math_sub_filter;
 
+create view sec_para_math_fenced_filter as
+select
+	regexp_replace(p, '<mml:mfenced[^>]*>([^<]*)</mml:mfenced>', '\1', 'g') as p
+from sec_para_math_subsup_filter;
+
 create view sec_para_math_frac_filter as
 select
 	regexp_replace(p, '<mml:mfrac[^>]*>([^<]*)</mml:mfrac>', '\1', 'g') as p
-from sec_para_math_subsup_filter;
+from sec_para_math_fenced_filter;
+
+create view sec_para_math_fenced2_filter as
+select
+	regexp_replace(p, '<mml:mfenced[^>]*>([^<]*)</mml:mfenced>', '\1', 'g') as p
+from sec_para_math_frac_filter;
 
 create view sec_para_math_sqrt_filter as
 select
 	regexp_replace(p, '<mml:msqrt[^>]*>([^<]*)</mml:msqrt>', '\1', 'g') as p
-from sec_para_math_frac_filter;
+from sec_para_math_fenced2_filter;
 
 create view sec_para_math_under_filter as
 select
@@ -121,15 +136,25 @@ select
 	regexp_replace(p, '<mml:msubsup[^>]*>([^<]*)</mml:msubsup>', '\1', 'g') as p
 from sec_para_row_sub_filter;
 
+create view sec_para_row_fenced_filter as
+select
+	regexp_replace(p, '<mml:mfenced[^>]*>([^<]*)</mml:mfenced>', '\1', 'g') as p
+from sec_para_row_subsup_filter;
+
 create view sec_para_row_frac_filter as
 select
 	regexp_replace(p, '<mml:mfrac[^>]*>([^<]*)</mml:mfrac>', '\1', 'g') as p
-from sec_para_row_subsup_filter;
+from sec_para_row_fenced_filter;
+
+create view sec_para_row_fenced2_filter as
+select
+	regexp_replace(p, '<mml:mfenced[^>]*>([^<]*)</mml:mfenced>', '\1', 'g') as p
+from sec_para_row_frac_filter;
 
 create view sec_para_row_sqrt_filter as
 select
 	regexp_replace(p, '<mml:msqrt[^>]*>([^<]*)</mml:msqrt>', '\1', 'g') as p
-from sec_para_row_subsup_filter;
+from sec_para_row_fenced2_filter;
 
 create view sec_para_row_under_filter as
 select
@@ -206,10 +231,15 @@ select
 	regexp_replace(p, '<sc>([^<]*)</sc>', '\1', 'g') as p
 from sec_para_bold_filter;
 
+create view sec_para_underline_filter as
+select
+	regexp_replace(p, '<underline>([^<]*)</underline>', '\1', 'g') as p
+from sec_para_sc_filter;
+
 create view sec_para_email_filter as
 select
 	regexp_replace(p, '<email>([^<]*)</email>', '\1', 'g') as p
-from sec_para_sc_filter;
+from sec_para_underline_filter;
 
 create view sec_para_ext_link_filter as
 select
