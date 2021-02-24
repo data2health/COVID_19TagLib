@@ -181,20 +181,20 @@ select
 	regexp_replace(p, '<disp-formula-group[^>]*>([^<]*)</disp-formula-group>', '', 'g') as p
 from sec_para_dformula_filter;
 
-create view sec_para_sub_filter as
+create view sec_para_sub2_filter as
 select
 	regexp_replace(p, '<sub>([^<]*)</sub>', '\1', 'g') as p
 from sec_para_dgroup_filter;
 
-create view sec_para_sup_filter as
+create view sec_para_sup2_filter as
 select
 	regexp_replace(p, '<sup>([^<]*)</sup>', '\1', 'g') as p
-from sec_para_sub_filter;
+from sec_para_sub2_filter;
 
 create view sec_para_italic_filter as
 select
 	regexp_replace(p, '<italic>([^<]*)</italic>', '\1', 'g') as p
-from sec_para_sup_filter;
+from sec_para_sup2_filter;
 
 create view sec_para_bold_filter as
 select
@@ -211,6 +211,25 @@ select
 	regexp_replace(p, '<email>([^<]*)</email>', '\1', 'g') as p
 from sec_para_sc_filter;
 
+create view sec_para_ext_link_filter as
+select
+	regexp_replace(p, '\((<underline>)?[^<]*<ext-link[^>]*>([^<]*)</ext-link>[^)]*(</underline>)?\)', '', 'g') as p
+from sec_para_email_filter;
 
-select p from sec_para_email_filter
+create view sec_para_list_p_filter as
+select
+	regexp_replace(p, '<p[^>]*>([^<]*)</p>', '\1', 'g') as p
+from sec_para_ext_link_filter;
+
+create view sec_para_list_item_filter as
+select
+	regexp_replace(p, '<list-item[^>]*>([^<]*)</list-item>', '\1', 'g') as p
+from sec_para_list_p_filter;
+
+create view sec_para_list_filter as
+select
+	regexp_replace(p, '<list[^>]*>([^<]*)</list>', '\1', 'g') as p
+from sec_para_list_item_filter;
+
+select p from sec_para_list_filter
 limit 1000;
