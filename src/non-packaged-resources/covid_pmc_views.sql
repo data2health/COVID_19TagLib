@@ -543,26 +543,117 @@ select
 	regexp_replace(p, '<mml:math[^>]*>.*?</mml:math>', '', 'g') as p
 from sec_para_final_disp_filter;
 
-create view sec_para_stat_para_filter as
+create view sec_para_def_filter as
 select
 	pmcid,
 	orig,
-	regexp_replace(p, '<p [^>]*>([^<]*)</p>', '\1', 'g') as p
+	regexp_replace(p, '<def[^>]*>([^<]*)</def>', '\1', 'g') as p
 from sec_para_final_math_filter;
+
+create view sec_para_term_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<term[^>]*>([^<]*)</term>', '\1', 'g') as p
+from sec_para_def_filter;
+
+create view sec_para_def_item_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<def-item[^>]*>([^<]*)</def-item>', '\1', 'g') as p
+from sec_para_term_filter;
+
+create view sec_para_def_list_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<def-list[^>]*>([^<]*)</def-list>', '\1', 'g') as p
+from sec_para_def_item_filter;
+
+create view sec_para_statement_p_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<p[^>]*>([^<]*)</p>', '\1', 'g') as p
+from sec_para_def_list_filter;
 
 create view sec_para_statement2_filter as
 select
 	pmcid,
 	orig,
 	regexp_replace(p, '<statement[^>]*>([^<]*)</statement>', '\1', 'g') as p
-from sec_para_stat_para_filter;
+from sec_para_statement_p_filter;
+
+create view sec_para_attrib_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<attrib(ution)?[^>]*>([^<]*)</attrib(ution)?>', '\1', 'g') as p
+from sec_para_statement2_filter;
+
+create view sec_para_named_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<named-content[^>]*>([^<]*)</named-content>', '\1', 'g') as p
+from sec_para_attrib_filter;
+
+create view sec_para_quote_p_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<p[^>]*>([^<]*)</p>', '\1', 'g') as p
+from sec_para_named_filter;
+
+create view sec_para_disp_quote2_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<disp-quote[^>]*>([^<]*)</disp-quote>', '\1', 'g') as p
+from sec_para_quote_p_filter;
+
+create view sec_para_box_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<boxed-text[^>]*>([^<]*)</boxed-text>', '\1', 'g') as p
+from sec_para_disp_quote2_filter;
+
+create view sec_para_final_xref1_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<xref[^>]*>([^<]*)</xref>', '\1', 'g') as p
+from sec_para_box_filter;
+
+create view sec_final_list_item_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<list-item[^>]*>([^<]*)</list-item>', '\1', 'g') as p
+from sec_para_final_xref1_filter;
+
+create view sec_final_list_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<list[^>]*>([^<]*)</list>', '\1', 'g') as p
+from sec_final_list_item_filter;
+
+create view sec_final_statement_filter as
+select
+	pmcid,
+	orig,
+	regexp_replace(p, '<statement[^>]*>([^<]*)</statement>', '\1', 'g') as p
+from sec_final_list_filter;
 
 create view sec_para_final as
 select
 	pmcid,
 	orig,
 	p
-from sec_para_statement2_filter;
+from sec_final_statement_filter;
 
 select * from sec_para_final where p ~ '<' limit 10;
 
