@@ -635,3 +635,14 @@ from
 	)
 ;
 
+create view paragraph_staging as
+select pmcid, pmid, seqnum, seqnum2, 0 as seqnum3, 0 as seqnum4, 0 as seqnum5, 0 as seqnum6, id, p from section_paragraph
+union all
+select pmcid, pmid, seqnum, seqnum2, seqnum3, 0 as seqnum4, 0 as seqnum5, 0 as seqnum6, id, p from sub1section_paragraph
+union all
+select pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, 0 as seqnum5, 0 as seqnum6, id, p from sub2section_paragraph
+union all
+select pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, seqnum5, 0 as seqnum6, id, p from sub3section_paragraph
+union all
+select pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, seqnum5, seqnum6, id, p from sub4section_paragraph
+;
