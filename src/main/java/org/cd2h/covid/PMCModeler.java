@@ -29,6 +29,7 @@ public class PMCModeler {
     static DecimalFormat formatter = new DecimalFormat("00");
 	static Connection conn = null;
 	static Hashtable<String, Tag> leaves = new Hashtable<String, Tag>();
+	static Hashtable<String, String> regExpHash = new Hashtable<String, String>();
 
 	public static void main(String[] args) throws Exception {
 		PropertyConfigurator.configure("log4j.info");
@@ -50,7 +51,7 @@ public class PMCModeler {
 				+ "\n"
 				+ "create view covid_pmc.paragraph_staging_filter as\n"
 				+ "select\n"
-				+ "	pmcid,\n"
+				+ "	pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, seqnum5, seqnum6, id,\n"
 				+ "	p as orig,\n"
 				+ "	p::text\n"
 				+ "from covid_pmc.paragraph_staging;\n"
@@ -58,14 +59,24 @@ public class PMCModeler {
 				+ "");
 		writer.println("create view covid_pmc.paragraph_staging_comment_filter as\n"
 				+ "select\n"
-				+ "	pmcid,\n"
+				+ "	pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, seqnum5, seqnum6, id,\n"
 				+ "	orig,\n"
 				+ "	regexp_replace(p, '<!--[^>]*>', '', 'g') as p\n"
 				+ "from covid_pmc.paragraph_staging_filter;\n"
 				+ "\n"
 				+ "");
 		
-		String previousView = "covid_pmc.paragraph_staging_comment_filter";
+		// handle bibliographic citations as a special case
+		writer.println("create view covid_pmc.paragraph_staging_cite_filter as\n"
+				+ "select\n"
+				+ "	pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, seqnum5, seqnum6, id,\n"
+				+ "	orig,\n"
+				+ "	regexp_replace(p, '([\\[(]<xref[^>]*bibr[^>]*>[^<]*</xref>( *[,;] *<xref[^>]*bibr[^>]*>[^<]*</xref>)*[\\])])', '', 'g') as p\n"
+				+ "from covid_pmc.paragraph_staging_comment_filter;\n"
+				+ "\n"
+				+ "");
+		
+		String previousView = "covid_pmc.paragraph_staging_cite_filter";
 		int iteration = 0;
 		while (root.children.size() > 0) {
 			logger.info("");
@@ -83,28 +94,30 @@ public class PMCModeler {
 				Tag current = leafEnum.nextElement();
 				logger.info("leaf: " + current.tag + " : " + current.count + " hasContent:" + current.hasContent + " isSingleton: " + current.isSingleton);
 				String viewName = generateViewName(iteration, current.tag);
-				String view = "create view " + viewName + " as\n"
-						+ "select\n"
-						+ "	pmcid,\n"
-						+ "	orig,\n"
-						+ "	regexp_replace(p, '<"+current.tag+"(?: [^>]*)?>([^<]*)</"+current.tag+">', '\\1', 'g') as p\n"
-						+ "from " + previousView + ";\n"
-						+ "";
-				writer.println(view);
-				previousView = viewName;
 				
+				// do the singleton first, if it exists
 				if (current.isSingleton) {
 					String viewName2 = generateViewName2(iteration, current.tag);
 					String view2 = "create view " + viewName2 + " as\n"
 							+ "select\n"
-							+ "	pmcid,\n"
+							+ "	pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, seqnum5, seqnum6, id,\n"
 							+ "	orig,\n"
-							+ "	regexp_replace(p, '<"+current.tag+"(?: [^>]*)?/>', '\\1', 'g') as p\n"
+							+ "	regexp_replace(p, '<"+current.tag+"(?: [^>]*)?/>', '', 'g') as p\n"
 							+ "from " + previousView + ";\n"
 							+ "";
 					writer.println(view2);
 					previousView = viewName2;
 				}
+
+				String view = "create view " + viewName + " as\n"
+						+ "select\n"
+						+ "	pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, seqnum5, seqnum6, id,\n"
+						+ "	orig,\n"
+						+ "	" + getRegExpCall(current.tag) + " as p\n"
+						+ "from " + previousView + ";\n"
+						+ "";
+				writer.println(view);
+				previousView = viewName;
 			}
 			
 			// prune current leaves from the tree
@@ -112,7 +125,7 @@ public class PMCModeler {
 		}
 		writer.println("create view covid_pmc.sec_para_final as\n"
 				+ "select\n"
-				+ "	pmcid,\n"
+				+ "	pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, seqnum5, seqnum6, id,\n"
 				+ "	orig,\n"
 				+ "	p\n"
 				+ "from " + previousView + ";\n"
@@ -120,6 +133,26 @@ public class PMCModeler {
 				+ "select * from covid_pmc.sec_para_final where p ~ '<' limit 10;\n"
 				+ "");
 		writer.close();
+	}
+	
+	static String getRegExpCall(String tag) {
+		if (regExpHash.containsKey(tag))
+			return regExpHash.get(tag);
+		return "regexp_replace(p, '<"+tag+"(?: [^>]*)?>([^<]*)</"+tag+">', '\\\\1', 'g')";
+	}
+	
+	static void initializeRegExpHash() {
+		regExpHash.put("fig", "regexp_replace(p, '<fig(?: [^>]*)?>.*</fig>', '', 'g')");
+		regExpHash.put("table-wrap", "regexp_replace(p, '<table-wrap(?: [^>]*)?>.*</table-wrap>', '', 'g')");
+		regExpHash.put("tex-math", "regexp_replace(p, '<tex-math(?: [^>]*)?>.*</tex-math>', '', 'g')");
+		regExpHash.put("graphic", "regexp_replace(p, '<graphic(?: [^>]*)?>.*</graphic>', '', 'g')");
+		regExpHash.put("inline-graphic", "regexp_replace(p, '<inline-graphic(?: [^>]*)?>.*</inline-graphic>', '', 'g')");
+		regExpHash.put("alternatives", "regexp_replace(p, '<alternatives(?: [^>]*)?>.*</alternatives>', '', 'g')");
+		regExpHash.put("disp-formula-group", "regexp_replace(p, '<disp-formula-group(?: [^>]*)?>.*</disp-formula-group>', '', 'g')");
+		regExpHash.put("supplementary-material", "regexp_replace(p, '<supplementary-material(?: [^>]*)?>.*</supplementary-material>', '', 'g')");
+		regExpHash.put("notes", "regexp_replace(p, '<notes(?: [^>]*)?>.*</notes>', '', 'g')");
+		regExpHash.put("disp-formula", "regexp_replace(p, '<disp-formula(?: [^>]*)?>.*</disp-formula>', '', 'g')");
+		regExpHash.put("mml:math", "regexp_replace(p, '<mml:math(?: [^>]*)?>.*</mml:math>', '', 'g')");
 	}
 	
 	static String generateViewName(int iteration, String tag) {
@@ -234,6 +267,7 @@ public class PMCModeler {
 		prop_file = PropertyLoader.loadProperties("pmc");
 
 		conn = getConnection();
+		initializeRegExpHash();
 	}
 
 	public static Connection getConnection() throws SQLException, ClassNotFoundException {
