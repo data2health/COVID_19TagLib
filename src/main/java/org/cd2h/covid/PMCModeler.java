@@ -57,12 +57,20 @@ public class PMCModeler {
 				+ "from covid_pmc.paragraph_staging;\n"
 				+ "\n"
 				+ "");
+		writer.println("create view covid_pmc.paragraph_fletten_filter as\n"
+				+ "select\n"
+				+ "	pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, seqnum5, seqnum6, id,\n"
+				+ "	orig,\n"
+				+ "	regexp_replace(p, '[\\n\\r\\t ]+', ' ', 'g') as p\n"
+				+ "from covid_pmc.paragraph_staging_filter;\n"
+				+ "\n"
+				+ "");
 		writer.println("create view covid_pmc.paragraph_staging_comment_filter as\n"
 				+ "select\n"
 				+ "	pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, seqnum5, seqnum6, id,\n"
 				+ "	orig,\n"
 				+ "	regexp_replace(p, '<!--[^>]*>', '', 'g') as p\n"
-				+ "from covid_pmc.paragraph_staging_filter;\n"
+				+ "from covid_pmc.paragraph_fletten_filter;\n"
 				+ "\n"
 				+ "");
 		
@@ -153,6 +161,13 @@ public class PMCModeler {
 		regExpHash.put("notes", "regexp_replace(p, '<notes(?: [^>]*)?>.*</notes>', '', 'g')");
 		regExpHash.put("disp-formula", "regexp_replace(p, '<disp-formula(?: [^>]*)?>.*</disp-formula>', '', 'g')");
 		regExpHash.put("mml:math", "regexp_replace(p, '<mml:math(?: [^>]*)?>.*</mml:math>', '', 'g')");
+
+		// fiddle with content
+		regExpHash.put("label", "regexp_replace(p, '<label(?: [^>]*)?>([^<]*)</label>', ' \1 . ', 'g')");
+		regExpHash.put("caption", "regexp_replace(p, '<caption(?: [^>]*)?>([^<]*)</caption>', ' \1 . ', 'g')");
+		regExpHash.put("td", "regexp_replace(p, '<td(?: [^>]*)?>([^<]*)</td>', ' \1 . ', 'g')");
+		regExpHash.put("th", "regexp_replace(p, '<th(?: [^>]*)?>([^<]*)</th>', ' \1 . ', 'g')");
+		regExpHash.put("list-item", "regexp_replace(p, '<list-item(?: [^>]*)?>([^<]*)</list-item>', ' \1 . ', 'g')");
 	}
 	
 	static String generateViewName(int iteration, String tag) {
