@@ -146,28 +146,28 @@ public class PMCModeler {
 	static String getRegExpCall(String tag) {
 		if (regExpHash.containsKey(tag))
 			return regExpHash.get(tag);
-		return "regexp_replace(p, '<"+tag+"(?: [^>]*)?>([^<]*)</"+tag+">', '\\\\1', 'g')";
+		return "regexp_replace(p, '<"+tag+"(?: [^>]*)?>([^<]*)</"+tag+">', '\\1', 'g')";
 	}
 	
 	static void initializeRegExpHash() {
-		regExpHash.put("fig", "regexp_replace(p, '<fig(?: [^>]*)?>.*</fig>', '', 'g')");
-		regExpHash.put("table-wrap", "regexp_replace(p, '<table-wrap(?: [^>]*)?>.*</table-wrap>', '', 'g')");
-		regExpHash.put("tex-math", "regexp_replace(p, '<tex-math(?: [^>]*)?>.*</tex-math>', '', 'g')");
-		regExpHash.put("graphic", "regexp_replace(p, '<graphic(?: [^>]*)?>.*</graphic>', '', 'g')");
-		regExpHash.put("inline-graphic", "regexp_replace(p, '<inline-graphic(?: [^>]*)?>.*</inline-graphic>', '', 'g')");
-		regExpHash.put("alternatives", "regexp_replace(p, '<alternatives(?: [^>]*)?>.*</alternatives>', '', 'g')");
-		regExpHash.put("disp-formula-group", "regexp_replace(p, '<disp-formula-group(?: [^>]*)?>.*</disp-formula-group>', '', 'g')");
-		regExpHash.put("supplementary-material", "regexp_replace(p, '<supplementary-material(?: [^>]*)?>.*</supplementary-material>', '', 'g')");
-		regExpHash.put("notes", "regexp_replace(p, '<notes(?: [^>]*)?>.*</notes>', '', 'g')");
-		regExpHash.put("disp-formula", "regexp_replace(p, '<disp-formula(?: [^>]*)?>.*</disp-formula>', '', 'g')");
-		regExpHash.put("mml:math", "regexp_replace(p, '<mml:math(?: [^>]*)?>.*</mml:math>', '', 'g')");
+		regExpHash.put("fig", "regexp_replace(p, '<fig(?: [^>]*)?>([^<]*)</fig>', '', 'g')");
+		regExpHash.put("table-wrap", "regexp_replace(p, '<table-wrap(?: [^>]*)?>([^<]*)</table-wrap>', '', 'g')");
+		regExpHash.put("tex-math", "regexp_replace(p, '<tex-math(?: [^>]*)?>([^<]*)</tex-math>', '', 'g')");
+		regExpHash.put("graphic", "regexp_replace(p, '<graphic(?: [^>]*)?>([^<]*)</graphic>', '', 'g')");
+//		regExpHash.put("inline-graphic", "regexp_replace(p, '<inline-graphic(?: [^>]*)?>([^<]*)</inline-graphic>', '', 'g')");
+		regExpHash.put("alternatives", "regexp_replace(p, '<alternatives(?: [^>]*)?>([^<]*)</alternatives>', '', 'g')");
+		regExpHash.put("disp-formula-group", "regexp_replace(p, '<disp-formula-group(?: [^>]*)?>([^<]*)</disp-formula-group>', '', 'g')");
+		regExpHash.put("supplementary-material", "regexp_replace(p, '<supplementary-material(?: [^>]*)?>([^<]*)</supplementary-material>', '', 'g')");
+		regExpHash.put("notes", "regexp_replace(p, '<notes(?: [^>]*)?>([^<]*)</notes>', '', 'g')");
+		regExpHash.put("disp-formula", "regexp_replace(p, '<disp-formula(?: [^>]*)?>([^<]*)</disp-formula>', '', 'g')");
+//		regExpHash.put("mml:math", "regexp_replace(p, '<mml:math(?: [^>]*)?>([^<]*)</mml:math>', '', 'g')");
 
 		// fiddle with content
-		regExpHash.put("label", "regexp_replace(p, '<label(?: [^>]*)?>([^<]*)</label>', ' \1 . ', 'g')");
-		regExpHash.put("caption", "regexp_replace(p, '<caption(?: [^>]*)?>([^<]*)</caption>', ' \1 . ', 'g')");
-		regExpHash.put("td", "regexp_replace(p, '<td(?: [^>]*)?>([^<]*)</td>', ' \1 . ', 'g')");
-		regExpHash.put("th", "regexp_replace(p, '<th(?: [^>]*)?>([^<]*)</th>', ' \1 . ', 'g')");
-		regExpHash.put("list-item", "regexp_replace(p, '<list-item(?: [^>]*)?>([^<]*)</list-item>', ' \1 . ', 'g')");
+		regExpHash.put("label", "regexp_replace(p, '<label(?: [^>]*)?>([^<]*)</label>', ' \\1 . ', 'g')");
+		regExpHash.put("caption", "regexp_replace(p, '<caption(?: [^>]*)?>([^<]*)</caption>', ' \\1 . ', 'g')");
+		regExpHash.put("td", "regexp_replace(p, '<td(?: [^>]*)?>([^<]*)</td>', ' \\1 . ', 'g')");
+		regExpHash.put("th", "regexp_replace(p, '<th(?: [^>]*)?>([^<]*)</th>', ' \\1 . ', 'g')");
+		regExpHash.put("list-item", "regexp_replace(p, '<list-item(?: [^>]*)?>([^<]*)</list-item>', ' \\1 . ', 'g')");
 	}
 	
 	static String generateViewName(int iteration, String tag) {
