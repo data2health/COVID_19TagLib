@@ -85,7 +85,7 @@ public class PMCCOVIDParser implements Runnable {
 		pathStmt.executeUpdate();
 		pathStmt.close();
 
-		theParser = new SegmentParser(new biomedicalLexer(), new SimpleStanfordParserBridge(), new basicSentenceGenerator());
+		theParser = new SegmentParser(new biomedicalLexer(), new basicSentenceGenerator());
 	}
 
 	public void run() {
@@ -123,10 +123,16 @@ public class PMCCOVIDParser implements Runnable {
 
 	void processParagraph(int id) throws Exception {
 		Statement stmt = conn.createStatement();
-		ResultSet rs = stmt.executeQuery("select p from covid_pmc.paragraph where pmcid = " + id);
+		ResultSet rs = stmt.executeQuery("select seqnum, seqnum2, seqnum3, seqnum4, seqnum5, seqnum6, p from covid_pmc.paragraph where pmcid = " + id);
 
 		while (rs.next()) {
-			String paragraph = rs.getString(1);
+			int seqnum = rs.getInt(1);
+			int seqnum2 = rs.getInt(2);
+			int seqnum3 = rs.getInt(3);
+			int seqnum4 = rs.getInt(4);
+			int seqnum5 = rs.getInt(5);
+			int seqnum6 = rs.getInt(6);
+			String paragraph = rs.getString(7);
 			logger.info("[" + threadID + "] pmcid: " + id + ":\t" + paragraph);
 			TextSegment segment = theParser.parse(paragraph);
 			int sentenceCount = 0;
@@ -134,12 +140,17 @@ public class PMCCOVIDParser implements Runnable {
 				logger.info("[" + threadID + "]\tsentence: " + element.getSentence());
 				haveParseResults = true;
 
-				PreparedStatement sentStmt = conn.prepareStatement("insert into covid_pmc.sentence values(?,?,?,?,?)");
+				PreparedStatement sentStmt = conn.prepareStatement("insert into covid_pmc.sentence values(?,?,?,?,?,?,?,?,?,?)");
 				sentStmt.setInt(1, id);
-				sentStmt.setInt(2, 0);
-				sentStmt.setInt(3, ++sentenceCount);
-				sentStmt.setString(4, element.getSentence().getText());
-				sentStmt.setString(5, element.getSentence().toString());
+				sentStmt.setInt(2, seqnum);
+				sentStmt.setInt(3, seqnum2);
+				sentStmt.setInt(4, seqnum3);
+				sentStmt.setInt(5, seqnum4);
+				sentStmt.setInt(6, seqnum5);
+				sentStmt.setInt(7, seqnum6);
+				sentStmt.setInt(8, ++sentenceCount);
+				sentStmt.setString(9, element.getSentence().getCleanText());
+				sentStmt.setString(10, element.getSentence().toString());
 				sentStmt.execute();
 				sentStmt.close();
 
@@ -147,12 +158,17 @@ public class PMCCOVIDParser implements Runnable {
 				for (syntaxTree theTree : element.getParseVector()) {
 					logger.info("[" + threadID + "]\t\tparse: " + theTree.treeString());
 
-					PreparedStatement parseStmt = conn.prepareStatement("insert into covid_pmc.parse values(?,?,?,?,?)");
+					PreparedStatement parseStmt = conn.prepareStatement("insert into covid_pmc.parse values(?,?,?,?,?,?,?,?,?,?)");
 					parseStmt.setInt(1, id);
-					parseStmt.setInt(2, 0);
-					parseStmt.setInt(3, sentenceCount);
-					parseStmt.setInt(4, ++parseCount);
-					parseStmt.setString(5, theTree.treeString());
+					parseStmt.setInt(2, seqnum);
+					parseStmt.setInt(3, seqnum2);
+					parseStmt.setInt(4, seqnum3);
+					parseStmt.setInt(5, seqnum4);
+					parseStmt.setInt(6, seqnum5);
+					parseStmt.setInt(7, seqnum6);
+					parseStmt.setInt(8, sentenceCount);
+					parseStmt.setInt(9, ++parseCount);
+					parseStmt.setString(10, theTree.treeString());
 					parseStmt.execute();
 					parseStmt.close();
 				}

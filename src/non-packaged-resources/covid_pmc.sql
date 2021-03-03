@@ -646,3 +646,49 @@ select pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, seqnum5, 0 as seqnum6, id
 union all
 select pmcid, pmid, seqnum, seqnum2, seqnum3, seqnum4, seqnum5, seqnum6, id, p from sub4section_paragraph
 ;
+
+create table paragraph (
+	pmcid int,
+	pmid int,
+	seqnum int,
+	seqnum2 int,
+	seqnum3 int,
+	seqnum4 int,
+	seqnum5 int,
+	seqnum6 int,
+	id text,
+	orig xml,
+	p text
+);
+
+create index paraid on paragraph(pmcid,seqnum,seqnum2);
+
+create table sentence (
+	pmcid int,
+	seqnum int,
+	seqnum2 int,
+	seqnum3 int,
+	seqnum4 int,
+	seqnum5 int,
+	seqnum6 int,
+	sentnum int,
+	string text,
+	tokens text
+);
+
+create index sentid on sentence(pmcid,seqnum,seqnum2);
+
+create table parse (
+	pmcid int,
+	seqnum int,
+	seqnum2 int,
+	seqnum3 int,
+	seqnum4 int,
+	seqnum5 int,
+	seqnum6 int,
+	sentnum int,
+	parsenum int,
+	parse text
+);
+
+create index parseid on parse(pmcid,seqnum,seqnum2);
