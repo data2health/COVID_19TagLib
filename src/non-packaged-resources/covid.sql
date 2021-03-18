@@ -126,3 +126,44 @@ create index s_doi on covid.sentence(doi);
 create index s_pmcid on covid.sentence(pmcid);
 create index s_pmid on covid.sentence(pmid);
 create index s_med on covid.sentence(medication);
+
+create materialized view covid.drugs_by_week as 
+select distinct
+	source,
+	doi,
+	pmcid,
+	sentence.pmid,
+	medication,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-WW') as week
+from covid.sentence,covid_litcovid.article
+where source='litcovid'
+  and sentence.pmid=article.pmid
+union
+select distinct
+	source,
+	doi,
+	sentence.pmcid,
+	sentence.pmid,
+	medication,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-WW') as week
+from covid.sentence,covid_litcovid.article natural join covid_pmc.link
+where source='pmc'
+  and sentence.pmcid=link.pmcid
+union
+select distinct
+	site as source,
+	sentence.doi,
+	null::int as pmcid,
+	null::int as pmid,
+	original as medication,
+	to_char(pub_date,'yyyy-WW') as week
+from covid.sentence, covid_biorxiv.cohort_match natural join covid_biorxiv.biorxiv_current
+where sentence.doi = cohort_match.doi
+;
+
+select source,bar.week,coalesce(count, 0) as count from 
+(select week from covid_biorxiv.weeks) as foo
+right outer join
+(select source,week,count(*) from drugs_by_week group by 1,2) as bar
+on (foo.week = bar.week)
+order by 1,2;
