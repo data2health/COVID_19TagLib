@@ -161,9 +161,24 @@ from covid.sentence, covid_biorxiv.cohort_match natural join covid_biorxiv.biorx
 where sentence.doi = cohort_match.doi
 ;
 
-select source,bar.week,coalesce(count, 0) as count from 
-(select week from covid_biorxiv.weeks) as foo
-right outer join
-(select source,week,count(*) from drugs_by_week group by 1,2) as bar
-on (foo.week = bar.week)
+create materialized view source_by_week as
+select source,week,coalesce(count, 0) as count from 
+	(select 'bioRxiv' as source,week from covid_biorxiv.weeks) as foo
+	natural left outer join
+	(select source,week,count(*) from drugs_by_week group by 1,2)  as bar
+union
+	select source,week,coalesce(count, 0) as count from 
+	(select 'medRxiv' as source,week from covid_biorxiv.weeks) as foo
+	natural left outer join
+	(select source,week,count(*) from drugs_by_week group by 1,2)  as bar
+union
+	select source,week,coalesce(count, 0) as count from 
+	(select 'litcovid' as source,week from covid_biorxiv.weeks) as foo
+	natural left outer join
+	(select source,week,count(*) from drugs_by_week group by 1,2)  as bar
+union
+	select source,week,coalesce(count, 0) as count from 
+	(select 'pmc' as source,week from covid_biorxiv.weeks) as foo
+	natural left outer join
+	(select source,week,count(*) from drugs_by_week group by 1,2)  as bar
 order by 1,2;
