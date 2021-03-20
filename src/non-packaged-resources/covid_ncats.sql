@@ -108,43 +108,43 @@ where sentence.doi = cohort_match.doi
 
 create materialized view covid_ncats.source_by_week as
 select source,week,coalesce(count, 0) as count from 
-	(select 'bioRxiv' as source,week from covid_biorxiv.weeks) as foo
+	(select 'bioRxiv' as source,week from covid.weeks) as foo
 	natural left outer join
 	(select source,week,count(*) from covid_ncats.drugs_by_week group by 1,2)  as bar
 union
 	select source,week,coalesce(count, 0) as count from 
-	(select 'medRxiv' as source,week from covid_biorxiv.weeks) as foo
+	(select 'medRxiv' as source,week from covid.weeks) as foo
 	natural left outer join
 	(select source,week,count(*) from covid_ncats.drugs_by_week group by 1,2)  as bar
 union
 	select source,week,coalesce(count, 0) as count from 
-	(select 'litcovid' as source,week from covid_biorxiv.weeks) as foo
+	(select 'litcovid' as source,week from covid.weeks) as foo
 	natural left outer join
 	(select source,week,count(*) from covid_ncats.drugs_by_week group by 1,2)  as bar
 union
 	select source,week,coalesce(count, 0) as count from 
-	(select 'pmc' as source,week from covid_biorxiv.weeks) as foo
+	(select 'pmc' as source,week from covid.weeks) as foo
 	natural left outer join
 	(select source,week,count(*) from covid_ncats.drugs_by_week group by 1,2)  as bar
 order by 1,2;
 
 select source,week,coalesce(count, 0) as count from
-	(select 'bioRxiv' as source,week from covid_biorxiv.weeks) as bar
+	(select 'bioRxiv' as source,week from covid.weeks) as bar
 	natural left outer join
 	(select source,week,count(*) from covid_ncats.drugs_by_week where medication='Chloroquine' group by 1,2) as foo
 union
 select source,week,coalesce(count, 0) as count from
-	(select 'medRxiv' as source,week from covid_biorxiv.weeks) as bar
+	(select 'medRxiv' as source,week from covid.weeks) as bar
 	natural left outer join
 	(select source,week,count(*) from covid_ncats.drugs_by_week where medication='Chloroquine' group by 1,2) as foo
 union
 select source,week,coalesce(count, 0) as count from
-	(select 'litcovid' as source,week from covid_biorxiv.weeks) as bar
+	(select 'litcovid' as source,week from covid.weeks) as bar
 	natural left outer join
 	(select source,week,count(*) from covid_ncats.drugs_by_week where medication='Chloroquine' group by 1,2) as foo
 union
 select source,week,coalesce(count, 0) as count from
-	(select 'pmc' as source,week from covid_biorxiv.weeks) as bar
+	(select 'pmc' as source,week from covid.weeks) as bar
 	natural left outer join
 	(select source,week,count(*) from covid_ncats.drugs_by_week where medication='Chloroquine' group by 1,2) as foo
 order by 1,2;
