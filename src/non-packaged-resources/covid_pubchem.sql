@@ -36,10 +36,13 @@ create table covid_pubchem.sentence_compound_match (
 	seqnum5 int,
 	seqnum6 int,
 	sentnum int,
-	id text,
+	pcid text,
 	phrase text,
 	count int
 );
+
+create index scms on covid_pubchem.sentence_compound_match(doi,pmcid,pmid);
+create index scmi on covid_pubchem.sentence_compound_match(pcid);
 
 create table covid_pubchem.sentence_gene_match (
 	doi text,
@@ -52,10 +55,13 @@ create table covid_pubchem.sentence_gene_match (
 	seqnum5 int,
 	seqnum6 int,
 	sentnum int,
-	id text,
+	pcid text,
 	phrase text,
 	count int
 );
+
+create index sgms2 on covid_pubchem.sentence_gene_match(doi,pmcid,pmid);
+create index sgmi2 on covid_pubchem.sentence_gene_match(pcid);
 
 create table covid_pubchem.sentence_protein_match (
 	doi text,
@@ -68,10 +74,13 @@ create table covid_pubchem.sentence_protein_match (
 	seqnum5 int,
 	seqnum6 int,
 	sentnum int,
-	id text,
+	pcid text,
 	phrase text,
 	count int
 );
+
+create index spms on covid_pubchem.sentence_protein_match(doi,pmcid,pmid);
+create index spmi on covid_pubchem.sentence_protein_match(pcid);
 
 create table covid_pubchem.sentence_substance_match (
 	doi text,
@@ -84,10 +93,13 @@ create table covid_pubchem.sentence_substance_match (
 	seqnum5 int,
 	seqnum6 int,
 	sentnum int,
-	id text,
+	pcid text,
 	phrase text,
 	count int
 );
+
+create index ssms on covid_pubchem.sentence_substance_match(doi,pmcid,pmid);
+create index ssmi on covid_pubchem.sentence_substance_match(pcid);
 
 create materialized view covid_pubchem.sentence_compound as
 select
@@ -207,4 +219,106 @@ select
 from covid_pubchem.sentence_substance_match
 natural join pubchem.substance
 natural join covid.sentence_filter
+;
+
+create materialized view covid_pubchem.genes_drugs_by_week as 
+select distinct
+	source,
+	doi,
+	pmcid,
+	sentence_gene.pmid,
+	sentence_gene.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-WW') as week
+from covid_pubchem.sentence_gene,covid_litcovid.article
+where source='litcovid'
+  and sentence_gene.pmid=article.pmid
+union
+select distinct
+	source,
+	doi,
+	sentence_gene.pmcid,
+	sentence_gene.pmid,
+	sentence_gene.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-WW') as week
+from covid_pubchem.sentence_gene,covid_litcovid.article natural join covid_pmc.link
+where source='pmc'
+  and sentence_gene.pmcid=link.pmcid
+union
+select distinct
+	site as source,
+	sentence_gene.doi,
+	null::int as pmcid,
+	null::int as pmid,
+	sentence_gene.name,
+	to_char(pub_date,'yyyy-WW') as week
+from covid_pubchem.sentence_gene, covid_biorxiv.cohort_match natural join covid_biorxiv.biorxiv_current
+where sentence_gene.doi = cohort_match.doi
+;
+
+create materialized view covid_pubchem.proteins_drugs_by_week as 
+select distinct
+	source,
+	doi,
+	pmcid,
+	sentence_protein.pmid,
+	sentence_protein.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-WW') as week
+from covid_pubchem.sentence_protein,covid_litcovid.article
+where source='litcovid'
+  and sentence_protein.pmid=article.pmid
+union
+select distinct
+	source,
+	doi,
+	sentence_protein.pmcid,
+	sentence_protein.pmid,
+	sentence_protein.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-WW') as week
+from covid_pubchem.sentence_protein,covid_litcovid.article natural join covid_pmc.link
+where source='pmc'
+  and sentence_protein.pmcid=link.pmcid
+union
+select distinct
+	site as source,
+	sentence_protein.doi,
+	null::int as pmcid,
+	null::int as pmid,
+	sentence_protein.name,
+	to_char(pub_date,'yyyy-WW') as week
+from covid_pubchem.sentence_protein, covid_biorxiv.cohort_match natural join covid_biorxiv.biorxiv_current
+where sentence_protein.doi = cohort_match.doi
+;
+
+create materialized view covid_pubchem.substances_drugs_by_week as 
+select distinct
+	source,
+	doi,
+	pmcid,
+	sentence_substance.pmid,
+	sentence_substance.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-WW') as week
+from covid_pubchem.sentence_substance,covid_litcovid.article
+where source='litcovid'
+  and sentence_substance.pmid=article.pmid
+union
+select distinct
+	source,
+	doi,
+	sentence_substance.pmcid,
+	sentence_substance.pmid,
+	sentence_substance.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-WW') as week
+from covid_pubchem.sentence_substance,covid_litcovid.article natural join covid_pmc.link
+where source='pmc'
+  and sentence_substance.pmcid=link.pmcid
+union
+select distinct
+	site as source,
+	sentence_substance.doi,
+	null::int as pmcid,
+	null::int as pmid,
+	sentence_substance.name,
+	to_char(pub_date,'yyyy-WW') as week
+from covid_pubchem.sentence_substance, covid_biorxiv.cohort_match natural join covid_biorxiv.biorxiv_current
+where sentence_substance.doi = cohort_match.doi
 ;
