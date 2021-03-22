@@ -10,11 +10,9 @@
 /pom.xml -text svneol=unset#application/xml
 src/main/java/org/cd2h/covid/ArXivLoader.java -text
 src/main/java/org/cd2h/covid/BioRxivDecorator.java -text
-src/main/java/org/cd2h/covid/BioRxivExtractor.java -text
 src/main/java/org/cd2h/covid/BioRxivInstantiator.java -text
 src/main/java/org/cd2h/covid/BioRxivLoader.java -text
 src/main/java/org/cd2h/covid/BioRxivProcessor.java -text
-src/main/java/org/cd2h/covid/BioRxivPubChemExtractor.java -text
 src/main/java/org/cd2h/covid/CERMINEExtractor.java -text
 src/main/java/org/cd2h/covid/ChiCTRLoader.java -text
 src/main/java/org/cd2h/covid/CrossRefLoader.java -text
@@ -26,9 +24,12 @@ src/main/java/org/cd2h/covid/LineComparator.java -text
 src/main/java/org/cd2h/covid/LitCOVIDLoader.java -text
 src/main/java/org/cd2h/covid/LitCOVIDParser.java -text
 src/main/java/org/cd2h/covid/LocalProperties.java -text
+src/main/java/org/cd2h/covid/N3CExtractor.java -text
 src/main/java/org/cd2h/covid/PMCCOVIDParser.java -text
 src/main/java/org/cd2h/covid/PMCModeler.java -text
 src/main/java/org/cd2h/covid/PropertyLoader.java -text
+src/main/java/org/cd2h/covid/PubChemExtractor.java -text
+src/main/java/org/cd2h/covid/QueueEntry.java -text
 src/main/java/org/cd2h/covid/StringQueue.java -text
 src/main/java/org/cd2h/covid/ZoteroLoader.java -text
 src/main/java/org/cd2h/covid/detectors/SectionDetector.java -text
@@ -48,12 +49,14 @@ src/non-packaged-resources/biorxiv_tag_sections.sql -text
 src/non-packaged-resources/chictr_views.sql -text
 src/non-packaged-resources/covid.sql -text
 src/non-packaged-resources/covid_model.sql -text
+src/non-packaged-resources/covid_n3c.sql -text
 src/non-packaged-resources/covid_ncats.sql -text
 src/non-packaged-resources/covid_pmc.sql -text
 src/non-packaged-resources/covid_pmc_generated_views.sql -text
 src/non-packaged-resources/covid_pmc_refresh.sql -text
 src/non-packaged-resources/covid_pmc_views.sql -text
 src/non-packaged-resources/covid_pmc_views2.sql -text
+src/non-packaged-resources/covid_pubchem.sql -text
 src/non-packaged-resources/crossref_views.sql -text
 src/non-packaged-resources/dashboard.sql -text
 src/non-packaged-resources/dashboard_refresh.sql -text

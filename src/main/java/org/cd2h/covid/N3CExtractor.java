@@ -17,9 +17,9 @@ import org.apache.log4j.PropertyConfigurator;
 import edu.uiowa.UMLS.recognizer.Concept;
 import edu.uiowa.UMLS.recognizer.ConceptRecognizer;
 
-public class BioRxivExtractor implements Runnable {
-	static Logger logger = Logger.getLogger(BioRxivExtractor.class);
-	static Vector<String> doiVector = new Vector<String>();
+public class N3CExtractor implements Runnable {
+	static Logger logger = Logger.getLogger(N3CExtractor.class);
+	static Vector<QueueEntry> queueVector = new Vector<QueueEntry>();
     static DecimalFormat formatter = new DecimalFormat("00");
 
 	static Connection getConnection() throws ClassNotFoundException, SQLException {
@@ -59,19 +59,19 @@ public class BioRxivExtractor implements Runnable {
 		Thread[] matcherThreads = new Thread[maxCrawlerThreads];
 
 		logger.info("populating queue...");
-		PreparedStatement fetchStmt = initialConn.prepareStatement("select distinct  doi from covid_biorxiv.sentence where not exists (select doi from covid_biorxiv.umls_sentence_concept where umls_sentence_concept.doi=sentence.doi) order by doi desc");
+		PreparedStatement fetchStmt = initialConn.prepareStatement("select distinct doi,pmcid,pmid from covid_n3c.process_queue order by doi,pmcid,pmid");
 		ResultSet fetchRS = fetchStmt.executeQuery();
 		while (fetchRS.next()) {
-			doiVector.add(fetchRS.getString(1));
+			queueVector.add(new QueueEntry(fetchRS.getString(1), fetchRS.getInt(2), fetchRS.getInt(3)));
 		}
 		fetchStmt.close();
 		logger.info("done.");
 		
-		if (doiVector.size() == 0)
+		if (queueVector.size() == 0)
 			return;
 		
 		for (int i = 0; i < maxCrawlerThreads; i++) {
-			Thread theThread = new Thread(new BioRxivExtractor(i));
+			Thread theThread = new Thread(new N3CExtractor(i));
 			theThread.setPriority(Math.max(theThread.getPriority() - 2, Thread.MIN_PRIORITY));
 			theThread.start();
 			matcherThreads[i] = theThread;
@@ -83,18 +83,18 @@ public class BioRxivExtractor implements Runnable {
 		initialConn.close();
 	}
 
-	public synchronized String dequeue() {
-		if (doiVector.size() == 0)
+	public synchronized QueueEntry dequeue() {
+		if (queueVector.size() == 0)
 			return null;
 		else
-			return doiVector.remove(0);
+			return queueVector.remove(0);
 	}
 
 	ConceptRecognizer conceptRecognizer = null;
 	Connection conn = null;
 	int threadID = 0;
 
-	public BioRxivExtractor(int threadID) throws ClassNotFoundException, SQLException {
+	public N3CExtractor(int threadID) throws ClassNotFoundException, SQLException {
 		this.threadID = threadID;
 		conn = getConnection();
 		conceptRecognizer = new ConceptRecognizer(conn);
@@ -102,40 +102,47 @@ public class BioRxivExtractor implements Runnable {
 
 	@Override
 	public void run() {
-		while (doiVector.size() > 0) {
+		while (queueVector.size() > 0) {
 			try {
-				String  doi = dequeue();
-				if (doi == null)
+				QueueEntry entry = dequeue();
+				if (entry == null)
 					return;
-				index(doi);
+				index(entry);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 
-	void index(String doi) throws SQLException {
-		logger.info("indexing " + doi);
-		PreparedStatement fetchStmt = conn.prepareStatement("select seqnum,sentnum,full_text from covid_biorxiv.sentence where doi = ?");
-		fetchStmt.setString(1, doi);
+	void index(QueueEntry entry) throws SQLException {
+		logger.info("indexing " + entry);
+		PreparedStatement fetchStmt = conn.prepareStatement("select seqnum,seqnum2,seqnum3,seqnum4,seqnum5,seqnum6,sentnum,sentence from covid.sentence_filter where doi = ? and pmcid = ? and pmid = ?");
+		fetchStmt.setString(1, entry.doi);
+		fetchStmt.setInt(2, entry.pmcid);
+		fetchStmt.setInt(3, entry.pmid);
 		ResultSet fetchRS = fetchStmt.executeQuery();
 		while (fetchRS.next()) {
-			int seqnum = fetchRS.getInt(1);
-			int sentnum = fetchRS.getInt(2);
-			String sentence = fetchRS.getString(3);
+			entry.seqnum = fetchRS.getInt(1);
+			entry.seqnum2 = fetchRS.getInt(2);
+			entry.seqnum3 = fetchRS.getInt(3);
+			entry.seqnum4 = fetchRS.getInt(4);
+			entry.seqnum5 = fetchRS.getInt(5);
+			entry.seqnum6 = fetchRS.getInt(6);
+			entry.sentnum = fetchRS.getInt(7);
+			String sentence = fetchRS.getString(8);
 
-			logger.info("["+formatter.format(threadID)+"] preprint: " + doi);
-			logger.info("["+formatter.format(threadID)+"]\tseqnum: " + seqnum +  "\tsentnum: " + sentnum + "\tsentence: " + sentence);
+			logger.info("["+formatter.format(threadID)+"] preprint: " + entry);
+			logger.info("["+formatter.format(threadID)+"]\tsentence: " + sentence);
 
 			conceptRecognizer.parseSentences(sentence);
 
-			cacheCUIs(doi,seqnum,sentnum);
+			cacheCUIs(entry);
 			conceptRecognizer.reset();
 			conn.commit();
 		}
 	}
 
-	void cacheCUIs(String doi, int seqnum, int sentnum) throws SQLException {
+	void cacheCUIs(QueueEntry entry) throws SQLException {
 		Map<String, Concept> conceptMap = new HashMap<String, Concept>();
 
 		for (Concept concept : conceptRecognizer.getLeftCUIs()) {
@@ -156,28 +163,25 @@ public class BioRxivExtractor implements Runnable {
 			}
 		}
 
-		PreparedStatement cacheStmt = conn.prepareStatement("insert into covid_biorxiv.umls_sentence_concept values (?,?,?,?,?,?)");
+		PreparedStatement cacheStmt = conn.prepareStatement("insert into covid_n3c.sentence_concept_match values (?,?,?,?,?,?,?,?,?,?,?,?,?)");
 		for (Concept concept : conceptMap.values()) {
-			logger.debug("\t\tstoring cui: " + concept.getCui() + " : " + concept.getCount() + " : " + concept.getPhrase());
-			cacheStmt.setString(1, doi);
-			cacheStmt.setInt(2, seqnum);
-			cacheStmt.setInt(3, sentnum);
-			cacheStmt.setString(4, concept.getCui());
-			cacheStmt.setString(5, concept.getPhrase());
-			cacheStmt.setInt(6, concept.getCount());
+			logger.debug("\t\tstoring id: " + concept.getCui() + " : " + concept.getCount() + " : " + concept.getPhrase());
+			cacheStmt.setString(1, entry.doi);
+			cacheStmt.setInt(2, entry.pmcid);
+			cacheStmt.setInt(3, entry.pmid);
+			cacheStmt.setInt(4, entry.seqnum);
+			cacheStmt.setInt(5, entry.seqnum2);
+			cacheStmt.setInt(6, entry.seqnum3);
+			cacheStmt.setInt(7, entry.seqnum4);
+			cacheStmt.setInt(8, entry.seqnum5);
+			cacheStmt.setInt(9, entry.seqnum6);
+			cacheStmt.setInt(10, entry.sentnum);
+			cacheStmt.setString(11, concept.getCui());
+			cacheStmt.setString(12, concept.getPhrase());
+			cacheStmt.setInt(13, concept.getCount());
 			cacheStmt.execute();
 		}
 
-		if (conceptMap.size() == 0) {
-			// insert dummy to prevent subsequent scans
-			cacheStmt.setString(1, doi);
-			cacheStmt.setInt(2, seqnum);
-			cacheStmt.setInt(3, sentnum);
-			cacheStmt.setString(4, "");
-			cacheStmt.setString(5, "");
-			cacheStmt.setInt(6, 0);
-			cacheStmt.execute();
-		}
 		cacheStmt.close();
 	}
 

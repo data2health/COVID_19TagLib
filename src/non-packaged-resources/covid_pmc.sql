@@ -692,3 +692,6 @@ create table parse (
 );
 
 create index parseid on parse(pmcid,seqnum,seqnum2);
+
+------------------------------------
+

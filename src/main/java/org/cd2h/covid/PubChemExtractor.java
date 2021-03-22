@@ -17,9 +17,9 @@ import org.apache.log4j.PropertyConfigurator;
 import edu.uiowa.PubChem.recognizer.Concept;
 import edu.uiowa.PubChem.recognizer.ConceptRecognizer;
 
-public class BioRxivPubChemExtractor implements Runnable {
-	static Logger logger = Logger.getLogger(BioRxivPubChemExtractor.class);
-	static Vector<String> doiVector = new Vector<String>();
+public class PubChemExtractor implements Runnable {
+	static Logger logger = Logger.getLogger(PubChemExtractor.class);
+	static Vector<QueueEntry> queueVector = new Vector<QueueEntry>();
     static DecimalFormat formatter = new DecimalFormat("00");
 
 	static Connection getConnection() throws ClassNotFoundException, SQLException {
@@ -59,19 +59,19 @@ public class BioRxivPubChemExtractor implements Runnable {
 		Thread[] matcherThreads = new Thread[maxCrawlerThreads];
 
 		logger.info("populating queue...");
-		PreparedStatement fetchStmt = initialConn.prepareStatement("select distinct doi from covid_biorxiv.sentence where not exists (select doi from covid_biorxiv.pubchem_processed where pubchem_processed.doi=sentence.doi) order by doi desc");
+		PreparedStatement fetchStmt = initialConn.prepareStatement("select distinct doi,pmcid,pmid from covid_pubchem.process_queue order by doi,pmcid,pmid");
 		ResultSet fetchRS = fetchStmt.executeQuery();
 		while (fetchRS.next()) {
-			doiVector.add(fetchRS.getString(1));
+			queueVector.add(new QueueEntry(fetchRS.getString(1), fetchRS.getInt(2), fetchRS.getInt(3)));
 		}
 		fetchStmt.close();
 		logger.info("done.");
 		
-		if (doiVector.size() == 0)
+		if (queueVector.size() == 0)
 			return;
 		
 		for (int i = 0; i < maxCrawlerThreads; i++) {
-			Thread theThread = new Thread(new BioRxivPubChemExtractor(i));
+			Thread theThread = new Thread(new PubChemExtractor(i));
 			theThread.setPriority(Math.max(theThread.getPriority() - 2, Thread.MIN_PRIORITY));
 			theThread.start();
 			matcherThreads[i] = theThread;
@@ -83,18 +83,18 @@ public class BioRxivPubChemExtractor implements Runnable {
 		initialConn.close();
 	}
 
-	public synchronized String dequeue() {
-		if (doiVector.size() == 0)
+	public synchronized QueueEntry dequeue() {
+		if (queueVector.size() == 0)
 			return null;
 		else
-			return doiVector.remove(0);
+			return queueVector.remove(0);
 	}
 
 	ConceptRecognizer conceptRecognizer = null;
 	Connection conn = null;
 	int threadID = 0;
 
-	public BioRxivPubChemExtractor(int threadID) throws ClassNotFoundException, SQLException {
+	public PubChemExtractor(int threadID) throws ClassNotFoundException, SQLException {
 		this.threadID = threadID;
 		conn = getConnection();
 		conceptRecognizer = new ConceptRecognizer(conn);
@@ -102,48 +102,57 @@ public class BioRxivPubChemExtractor implements Runnable {
 
 	@Override
 	public void run() {
-		while (doiVector.size() > 0) {
+		while (queueVector.size() > 0) {
 			try {
-				String  doi = dequeue();
-				if (doi == null)
+				QueueEntry entry = dequeue();
+				if (entry == null)
 					return;
-				index(doi);
+				index(entry);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 
-	void index(String doi) throws SQLException {
-		logger.info("indexing " + doi);
-		PreparedStatement fetchStmt = conn.prepareStatement("select seqnum,sentnum,full_text from covid_biorxiv.sentence where doi = ?");
-		fetchStmt.setString(1, doi);
+	void index(QueueEntry entry) throws SQLException {
+		logger.info("indexing " + entry);
+		PreparedStatement fetchStmt = conn.prepareStatement("select seqnum,seqnum2,seqnum3,seqnum4,seqnum5,seqnum6,sentnum,sentence from covid.sentence_filter where doi = ? and pmcid = ? and pmid = ?");
+		fetchStmt.setString(1, entry.doi);
+		fetchStmt.setInt(2, entry.pmcid);
+		fetchStmt.setInt(3, entry.pmid);
 		ResultSet fetchRS = fetchStmt.executeQuery();
 		while (fetchRS.next()) {
-			int seqnum = fetchRS.getInt(1);
-			int sentnum = fetchRS.getInt(2);
-			String sentence = fetchRS.getString(3);
+			entry.seqnum = fetchRS.getInt(1);
+			entry.seqnum2 = fetchRS.getInt(2);
+			entry.seqnum3 = fetchRS.getInt(3);
+			entry.seqnum4 = fetchRS.getInt(4);
+			entry.seqnum5 = fetchRS.getInt(5);
+			entry.seqnum6 = fetchRS.getInt(6);
+			entry.sentnum = fetchRS.getInt(7);
+			String sentence = fetchRS.getString(8);
 
-			logger.info("["+formatter.format(threadID)+"] preprint: " + doi);
-			logger.info("["+formatter.format(threadID)+"]\tseqnum: " + seqnum +  "\tsentnum: " + sentnum + "\tsentence: " + sentence);
+			logger.info("["+formatter.format(threadID)+"] preprint: " + entry);
+			logger.info("["+formatter.format(threadID)+"]\tsentence: " + sentence);
 
 			conceptRecognizer.parseSentences(sentence);
 
-			cacheMatches(doi,seqnum,sentnum, conceptRecognizer.getLeftCompounds(), conceptRecognizer.getRightCompounds(), "pubchem_sentence_compound");
-			cacheMatches(doi,seqnum,sentnum, conceptRecognizer.getLeftGenes(), conceptRecognizer.getRightGenes(), "pubchem_sentence_gene");
-			cacheMatches(doi,seqnum,sentnum, conceptRecognizer.getLeftProteins(), conceptRecognizer.getRightProteins(), "pubchem_sentence_protein");
-			cacheMatches(doi,seqnum,sentnum, conceptRecognizer.getLeftSubstances(), conceptRecognizer.getRightSubstances(), "pubchem_sentence_substance");
+			cacheMatches(entry, conceptRecognizer.getLeftCompounds(), conceptRecognizer.getRightCompounds(), "sentence_compound_match");
+			cacheMatches(entry, conceptRecognizer.getLeftGenes(), conceptRecognizer.getRightGenes(), "sentence_gene_match");
+			cacheMatches(entry, conceptRecognizer.getLeftProteins(), conceptRecognizer.getRightProteins(), "sentence_protein_match");
+			cacheMatches(entry, conceptRecognizer.getLeftSubstances(), conceptRecognizer.getRightSubstances(), "sentence_substance_match");
 			conceptRecognizer.reset();
 		}
 		
-		PreparedStatement cacheStmt = conn.prepareStatement("insert into covid_biorxiv.pubchem_processed values (?)");
-		cacheStmt.setString(1, doi);
+		PreparedStatement cacheStmt = conn.prepareStatement("insert into covid_pubchem.processed values (?,?,?)");
+		cacheStmt.setString(1, entry.doi);
+		cacheStmt.setInt(2, entry.pmcid);
+		cacheStmt.setInt(3, entry.pmid);
 		cacheStmt.execute();
 
 		conn.commit();
 	}
 
-	void cacheMatches(String doi, int seqnum, int sentnum,  Vector<Concept> leftVector, Vector<Concept> rightVector, String tableName) throws SQLException {
+	void cacheMatches(QueueEntry entry,  Vector<Concept> leftVector, Vector<Concept> rightVector, String tableName) throws SQLException {
 		Map<String, Concept> conceptMap = new HashMap<String, Concept>();
 
 		for (Concept concept : leftVector) {
@@ -164,28 +173,25 @@ public class BioRxivPubChemExtractor implements Runnable {
 			}
 		}
 
-		PreparedStatement cacheStmt = conn.prepareStatement("insert into covid_biorxiv."+tableName+" values (?,?,?,?,?,?)");
+		PreparedStatement cacheStmt = conn.prepareStatement("insert into covid_pubchem."+tableName+" values (?,?,?,?,?,?,?,?,?,?,?,?,?)");
 		for (Concept concept : conceptMap.values()) {
 			logger.info("\t\tstoring id: " + concept.getID() + " : " + concept.getCount() + " : " + concept.getPhrase() + " : " + tableName);
-			cacheStmt.setString(1, doi);
-			cacheStmt.setInt(2, seqnum);
-			cacheStmt.setInt(3, sentnum);
-			cacheStmt.setString(4, concept.getID());
-			cacheStmt.setString(5, concept.getPhrase());
-			cacheStmt.setInt(6, concept.getCount());
+			cacheStmt.setString(1, entry.doi);
+			cacheStmt.setInt(2, entry.pmcid);
+			cacheStmt.setInt(3, entry.pmid);
+			cacheStmt.setInt(4, entry.seqnum);
+			cacheStmt.setInt(5, entry.seqnum2);
+			cacheStmt.setInt(6, entry.seqnum3);
+			cacheStmt.setInt(7, entry.seqnum4);
+			cacheStmt.setInt(8, entry.seqnum5);
+			cacheStmt.setInt(9, entry.seqnum6);
+			cacheStmt.setInt(10, entry.sentnum);
+			cacheStmt.setString(11, concept.getID());
+			cacheStmt.setString(12, concept.getPhrase());
+			cacheStmt.setInt(13, concept.getCount());
 			cacheStmt.execute();
 		}
 
-//		if (conceptMap.size() == 0) {
-//			// insert dummy to prevent subsequent scans
-//			cacheStmt.setString(1, doi);
-//			cacheStmt.setInt(2, seqnum);
-//			cacheStmt.setInt(3, sentnum);
-//			cacheStmt.setString(4, "");
-//			cacheStmt.setString(5, "");
-//			cacheStmt.setInt(6, 0);
-//			cacheStmt.execute();
-//		}
 		cacheStmt.close();
 	}
 
