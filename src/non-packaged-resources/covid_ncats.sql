@@ -37,7 +37,7 @@ select
 	id	
 from covid_ncats.sentence_match;
 
-create materialized view covid_ncats.sentence as
+create view covid_ncats.sentence_staging as
 select
 	source,
 	doi,
@@ -66,6 +66,18 @@ from covid_ncats.sentence_match_filter
 natural join covid_ncats.medication
 natural join covid.sentence_filter
 ;
+
+create table covid_ncats.sentence (
+	source text,
+	doi text,
+	pmcid int,
+	pmid int,
+	title text,
+	url text,
+	section text,
+	medication text,
+	sentence text
+);
 
 create index s_doi on covid_ncats.sentence(doi);
 create index s_pmcid on covid_ncats.sentence(pmcid);

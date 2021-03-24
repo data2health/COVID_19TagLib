@@ -5,16 +5,7 @@ create view covid_n3c.cohort_med as {
            FROM enclave_cohort_release_18.med_use_frequency_for_export
           WHERE med_use_frequency_for_export.value !~ 'systemic'::text AND med_use_frequency_for_export.value <> 'Totals'::text) foo;
 
-create materialized view covid_n3c.sentence as 
-select
-	sentence_filter.*,
-	original
-from covid.sentence_filter,cohort_med
-where sentence ~ normalized
-   or sentence ~ original
-;
-
-create materialized view covid_n3c.sentence2 as
+create view covid_n3c.sentence_staging as
 select
 	source,
 	doi,
@@ -42,6 +33,23 @@ select
 from covid_n3c.cohort_med, covid.sentence_filter
 where sentence ~ normalized
 ;
+
+create table covid_n3c.sentence (
+	source text,
+	doi text,
+	pmcid int,
+	pmid int,
+	title text,
+	url text,
+	section text,
+	original text,
+	sentence text
+);
+
+create index s_doi on covid_n3c.sentence(doi);
+create index s_pmcid on covid_n3c.sentence(pmcid);
+create index s_pmid on covid_n3c.sentence(pmid);
+create index s_med on covid_n3c.sentence(original);
 
 create materialized view covid_n3c.drugs_by_week as 
 select distinct

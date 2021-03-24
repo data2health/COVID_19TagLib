@@ -1,3 +1,6 @@
+create view covid.weeks as
+SELECT DISTINCT to_char(generate_series('2020-01-01 00:00:00-06'::timestamp with time zone, now(), '7 days'::interval), 'yyyy-WW'::text) AS week;
+
 create view covid.sentence_staging as
 select distinct * from (
 	select

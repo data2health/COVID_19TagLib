@@ -101,7 +101,7 @@ create table covid_pubchem.sentence_substance_match (
 create index ssms on covid_pubchem.sentence_substance_match(doi,pmcid,pmid);
 create index ssmi on covid_pubchem.sentence_substance_match(pcid);
 
-create materialized view covid_pubchem.sentence_compound as
+create view covid_pubchem.sentence_compound_staging as
 select
 	source,
 	doi,
@@ -131,7 +131,7 @@ natural join pubchem.compound
 natural join covid.sentence_filter
 ;
 
-create materialized view covid_pubchem.sentence_gene as
+create view covid_pubchem.sentence_gene_staging as
 select
 	source,
 	doi,
@@ -161,7 +161,7 @@ natural join pubchem.gene
 natural join covid.sentence_filter
 ;
 
-create materialized view covid_pubchem.sentence_protein as
+create view covid_pubchem.sentence_protein_staging as
 select
 	source,
 	doi,
@@ -191,7 +191,7 @@ natural join pubchem.protein
 natural join covid.sentence_filter
 ;
 
-create materialized view covid_pubchem.sentence_substance as
+create view covid_pubchem.sentence_substance_staging as
 select
 	source,
 	doi,
@@ -220,6 +220,74 @@ from covid_pubchem.sentence_substance_match
 natural join pubchem.substance
 natural join covid.sentence_filter
 ;
+
+create table covid_pubchem.sentence_compound (
+	source text,
+	doi text,
+	pmcid int,
+	pmid int,
+	title text,
+	url text,
+	section text,
+	name text,
+	sentence text
+);
+
+create index s_c_doi on covid_pubchem.sentence_compound(doi);
+create index s_c_pmcid on covid_pubchem.sentence_compound(pmcid);
+create index s_c_pmid on covid_pubchem.sentence_compound(pmid);
+create index s_c_med on covid_pubchem.sentence_compound(name);
+
+create table covid_pubchem.sentence_gene (
+	source text,
+	doi text,
+	pmcid int,
+	pmid int,
+	title text,
+	url text,
+	section text,
+	name text,
+	sentence text
+);
+
+create index s_g_doi on covid_pubchem.sentence_gene(doi);
+create index s_g_pmcid on covid_pubchem.sentence_gene(pmcid);
+create index s_g_pmid on covid_pubchem.sentence_gene(pmid);
+create index s_g_med on covid_pubchem.sentence_gene(name);
+
+create table covid_pubchem.sentence_protein (
+	source text,
+	doi text,
+	pmcid int,
+	pmid int,
+	title text,
+	url text,
+	section text,
+	name text,
+	sentence text
+);
+
+create index s_p_doi on covid_pubchem.sentence_protein(doi);
+create index s_p_pmcid on covid_pubchem.sentence_protein(pmcid);
+create index s_p_pmid on covid_pubchem.sentence_protein(pmid);
+create index s_p_med on covid_pubchem.sentence_protein(name);
+
+create table covid_pubchem.sentence_substance (
+	source text,
+	doi text,
+	pmcid int,
+	pmid int,
+	title text,
+	url text,
+	section text,
+	name text,
+	sentence text
+);
+
+create index s_s_doi on covid_pubchem.sentence_substance(doi);
+create index s_s_pmcid on covid_pubchem.sentence_substance(pmcid);
+create index s_s_pmid on covid_pubchem.sentence_substance(pmid);
+create index s_s_med on covid_pubchem.sentence_substance(name);
 
 create materialized view covid_pubchem.compounds_drugs_by_week as 
 select distinct
