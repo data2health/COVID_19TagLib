@@ -138,8 +138,16 @@ public class N3CExtractor implements Runnable {
 
 			cacheCUIs(entry);
 			conceptRecognizer.reset();
-			conn.commit();
 		}
+		
+		PreparedStatement procStmt = conn.prepareStatement("insert into covid_n3c.processed values (?,?,?)");
+		procStmt.setString(1, entry.doi);
+		procStmt.setInt(2, entry.pmcid);
+		procStmt.setInt(3, entry.pmid);
+		procStmt.execute();
+		procStmt.close();
+		
+		conn.commit();
 	}
 
 	void cacheCUIs(QueueEntry entry) throws SQLException {
