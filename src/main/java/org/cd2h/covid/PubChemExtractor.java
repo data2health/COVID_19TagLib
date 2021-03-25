@@ -186,7 +186,7 @@ public class PubChemExtractor implements Runnable {
 			cacheStmt.setInt(8, entry.seqnum5);
 			cacheStmt.setInt(9, entry.seqnum6);
 			cacheStmt.setInt(10, entry.sentnum);
-			cacheStmt.setString(11, concept.getID());
+			cacheStmt.setInt(11, Integer.parseInt(concept.getID()));
 			cacheStmt.setString(12, concept.getPhrase());
 			cacheStmt.setInt(13, concept.getCount());
 			cacheStmt.execute();
