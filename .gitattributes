@@ -25,6 +25,10 @@ src/main/java/org/cd2h/covid/LitCOVIDLoader.java -text
 src/main/java/org/cd2h/covid/LitCOVIDParser.java -text
 src/main/java/org/cd2h/covid/LocalProperties.java -text
 src/main/java/org/cd2h/covid/N3CExtractor.java -text
+src/main/java/org/cd2h/covid/NCATS/Cache.java -text
+src/main/java/org/cd2h/covid/NCATS/Concept.java -text
+src/main/java/org/cd2h/covid/NCATS/ConceptRecognizer.java -text
+src/main/java/org/cd2h/covid/NCATSExtractor.java -text
 src/main/java/org/cd2h/covid/PMCCOVIDParser.java -text
 src/main/java/org/cd2h/covid/PMCModeler.java -text
 src/main/java/org/cd2h/covid/PropertyLoader.java -text

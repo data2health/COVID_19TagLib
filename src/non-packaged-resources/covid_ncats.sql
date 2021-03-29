@@ -11,11 +11,21 @@ from covid_ncats.medications_concept_sets as bar
 where class__atc_ is null
   and med_name__generic_ is not null;
 
-create materialized view covid_ncats.sentence_match as
-select doi,pmcid,pmid,seqnum,seqnum2,seqnum3,seqnum4,seqnum5,seqnum6,sentnum,id
-from covid.sentence_staging,covid_ncats.medication
-where sentence~pattern
-;
+create table covid_ncats.sentence_match (
+	doi text,
+	pmcid int,
+	pmid int,
+	seqnum int,
+	seqnum2 int,
+	seqnum3 int,
+	seqnum4 int,
+	seqnum5 int,
+	seqnum6 int,
+	sentnum int,
+	id int,
+	phrase text,
+	count int
+);
 
 create index sent_doi on covid_ncats.sentence_match(doi);
 create index sent_pmcid on covid_ncats.sentence_match(pmcid);
