@@ -35,13 +35,12 @@ public class CrossRefLoader {
 	initialize();
 
 	if (args.length == 0) {
-	scan_biorxiv();
-	scan_litcovid();
-	
-	scan_n3c_expertise();
-	scan_oag();
+		scan_biorxiv();
+		scan_litcovid();
+
+		scan_n3c_expertise();
 	} else if (args[0].equals("oag")) {
-	    scan_oag();
+		scan_oag();
 	}
     }
 
