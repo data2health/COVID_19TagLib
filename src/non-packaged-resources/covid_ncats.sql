@@ -71,7 +71,7 @@ select
 	end as url,
 	section,
 	medication,
-	regexp_replace(sentence, '('||pattern||')', '<b>\1</b>', 'i') as sentence
+	regexp_replace(sentence, '('||pattern||')', '<b>\1</b>', 'ig') as sentence
 from covid_ncats.sentence_match_filter
 natural join covid_ncats.medication
 natural join covid.sentence_filter

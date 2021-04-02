@@ -29,7 +29,7 @@ select
 	end as url,
 	section,
 	original,
-	regexp_replace(sentence, '('||normalized||')', '<b>\1</b>', 'i') as sentence
+	regexp_replace(sentence, '('||normalized||')', '<b>\1</b>', 'ig') as sentence
 from covid_n3c.cohort_med, covid.sentence_filter
 where sentence ~ normalized
 ;

@@ -125,7 +125,7 @@ select
 	end as url,
 	section,
 	name,
-	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'i') as sentence
+	regexp_replace(sentence, '('||regexp_replace(phrase, '([\[\]\(\)])' , '\\\1', 'g')||')', '<b>\1</b>', 'ig') as sentence
 from covid_pubchem.sentence_compound_match
 natural join pubchem.compound
 natural join covid.sentence_filter
@@ -155,7 +155,7 @@ select
 	end as url,
 	section,
 	name,
-	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'i') as sentence
+	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'ig') as sentence
 from covid_pubchem.sentence_gene_match
 natural join pubchem.gene
 natural join covid.sentence_filter
@@ -185,7 +185,7 @@ select
 	end as url,
 	section,
 	name,
-	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'i') as sentence
+	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'ig') as sentence
 from covid_pubchem.sentence_protein_match
 natural join pubchem.protein
 natural join covid.sentence_filter
@@ -215,7 +215,7 @@ select
 	end as url,
 	section,
 	name,
-	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'i') as sentence
+	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'ig') as sentence
 from covid_pubchem.sentence_substance_match
 natural join pubchem.substance
 natural join covid.sentence_filter
