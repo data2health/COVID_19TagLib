@@ -34,7 +34,7 @@ public class PMCCOVIDParser implements Runnable {
 			mode = args[1];
 		switch (mode) {
 		case "parse":
-			stmt = conn.prepareStatement("select distinct pmcid from covid_pmc.paragraph where pmcid not in (select pmcid from covid_pmc.parse)");
+			stmt = conn.prepareStatement("select distinct pmcid from covid_pmc.paragraph where pmcid not in (select pmcid from covid_pmc.sentence)");
 			break;
 		case "fragment":
 			stmt = conn.prepareStatement("select distinct pmcid from covid_pmc.parse where pmcid not in (select pmcid from covid_pmc.fragment)");
