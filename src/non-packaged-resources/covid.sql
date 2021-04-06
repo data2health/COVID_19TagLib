@@ -17,7 +17,7 @@ select distinct * from (
 		null as seqnum6,
 		sentnum,
 		full_text as sentence
-	from covid_biorxiv.sentence natural join covid_biorxiv.cohort_match
+	from covid_biorxiv.sentence natural join covid_biorxiv.section
 	union
 	select
 		'pmc' as source,
