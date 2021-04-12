@@ -47,6 +47,20 @@ select
 	id	
 from covid_ncats.sentence_match;
 
+create view covid_ncats.process_queue as
+select distinct
+	doi,
+	pmcid,
+	pmid
+from covid.sentence_filter
+where not exists (select doi
+				 from covid_ncats.processed
+				 where processed.doi=sentence_filter.doi
+				   and processed.pmcid = sentence_filter.pmcid
+				   and processed.pmid = sentence_filter.pmid
+				 )
+order by doi,pmcid,pmid;
+
 create view covid_ncats.sentence_staging as
 select
 	source,
