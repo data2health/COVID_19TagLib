@@ -62,6 +62,12 @@ src/non-packaged-resources/covid_pmc_views.sql -text
 src/non-packaged-resources/covid_pmc_views2.sql -text
 src/non-packaged-resources/covid_pubchem.sql -text
 src/non-packaged-resources/covid_sentence_refresh.sql -text
+src/non-packaged-resources/covid_sentence_refresh_n3c.sql -text
+src/non-packaged-resources/covid_sentence_refresh_ncats.sql -text
+src/non-packaged-resources/covid_sentence_refresh_pubchem_compounds.sql -text
+src/non-packaged-resources/covid_sentence_refresh_pubchem_genes.sql -text
+src/non-packaged-resources/covid_sentence_refresh_pubchem_proteins.sql -text
+src/non-packaged-resources/covid_sentence_refresh_pubchem_substances.sql -text
 src/non-packaged-resources/crossref_views.sql -text
 src/non-packaged-resources/dashboard.sql -text
 src/non-packaged-resources/dashboard_refresh.sql -text
