@@ -69,3 +69,39 @@ select
 	sentence
 from covid.sentence_staging;
 
+create view covid.source_by_week as
+select week,source,coalesce(count,0) as count
+from
+	covid.weeks
+natural left join (
+	select 'litcovid' as source, to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-WW') as week,count(*)
+	from covid_litcovid.article group by 1,2
+	) as foo
+union
+select week,'pmc' as source,coalesce(count,0) as count
+from
+	covid.weeks
+natural left join (
+	select 'pmc' as source, to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-WW') as week,count(*)
+	from covid_litcovid.article natural join covid_pmc.xml_link group by 1,2 order by 2
+	) as foo
+union
+select week, 'medRxiv' as source, coalesce(count,0) as count
+from
+	covid.weeks
+natural left join (
+	select site as source, to_char(pub_date,'yyyy-WW') as week, count(*)
+from covid_biorxiv.biorxiv_current
+where site='medRxiv' group by 1,2
+) as foo
+union
+select week, 'bioRxiv' as source, coalesce(count,0) as count
+from
+	covid.weeks
+natural left join (
+	select site as source, to_char(pub_date,'yyyy-WW') as week, count(*)
+from covid_biorxiv.biorxiv_current
+where site='bioRxiv' group by 1,2
+) as foo
+;
+
