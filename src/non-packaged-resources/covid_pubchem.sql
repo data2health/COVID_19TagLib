@@ -108,7 +108,7 @@ select
 	pmcid,
 	pmid,
 	case
-		when source = 'biorxiv' then (select title from covid_biorxiv.document where document.doi = sentence_filter.doi)
+		when source = 'biorxiv' then (select title from covid_biorxiv.biorxiv_current where biorxiv_current.doi = sentence_filter.doi)
 		when source = 'litcovid' then (select article_title from covid_litcovid.article_title where article_title.pmid = sentence_filter.pmid)
 		when source = 'pmc' then (select article_title from covid_litcovid.article_title natural join covid_pmc.xml_link where xml_link.pmcid = sentence_filter.pmcid limit 1)
 		else ''
@@ -138,7 +138,7 @@ select
 	pmcid,
 	pmid,
 	case
-		when source = 'biorxiv' then (select title from covid_biorxiv.document where document.doi = sentence_filter.doi)
+		when source = 'biorxiv' then (select title from covid_biorxiv.biorxiv_current where biorxiv_current.doi = sentence_filter.doi)
 		when source = 'litcovid' then (select article_title from covid_litcovid.article_title where article_title.pmid = sentence_filter.pmid)
 		when source = 'pmc' then (select article_title from covid_litcovid.article_title natural join covid_pmc.xml_link where xml_link.pmcid = sentence_filter.pmcid limit 1)
 		else ''
@@ -168,7 +168,7 @@ select
 	pmcid,
 	pmid,
 	case
-		when source = 'biorxiv' then (select title from covid_biorxiv.document where document.doi = sentence_filter.doi)
+		when source = 'biorxiv' then (select title from covid_biorxiv.biorxiv_current where biorxiv_current.doi = sentence_filter.doi)
 		when source = 'litcovid' then (select article_title from covid_litcovid.article_title where article_title.pmid = sentence_filter.pmid)
 		when source = 'pmc' then (select article_title from covid_litcovid.article_title natural join covid_pmc.xml_link where xml_link.pmcid = sentence_filter.pmcid limit 1)
 		else ''
@@ -198,7 +198,7 @@ select
 	pmcid,
 	pmid,
 	case
-		when source = 'biorxiv' then (select title from covid_biorxiv.document where document.doi = sentence_filter.doi)
+		when source = 'biorxiv' then (select title from covid_biorxiv.biorxiv_current where biorxiv_current.doi = sentence_filter.doi)
 		when source = 'litcovid' then (select article_title from covid_litcovid.article_title where article_title.pmid = sentence_filter.pmid)
 		when source = 'pmc' then (select article_title from covid_litcovid.article_title natural join covid_pmc.xml_link where xml_link.pmcid = sentence_filter.pmcid limit 1)
 		else ''
