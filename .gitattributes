@@ -76,6 +76,7 @@ src/non-packaged-resources/drupal_views.sql -text
 src/non-packaged-resources/integration.ddl -text
 src/non-packaged-resources/kg.sql -text
 src/non-packaged-resources/n3c_mentions.sql -text
+src/non-packaged-resources/n3c_pubs.sql -text
 src/non-packaged-resources/training.clay -text
 src/non-packaged-resources/training.sql -text
 src/non-packaged-resources/views.sql -text
