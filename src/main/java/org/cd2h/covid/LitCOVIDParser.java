@@ -51,7 +51,7 @@ public class LitCOVIDParser implements Runnable {
 		}
 		logger.info("\t" + pmidQueue.size() + " articles queued.");
 
-		int maxCrawlerThreads = Math.min(8, Runtime.getRuntime().availableProcessors());
+		int maxCrawlerThreads = Math.min(16, Runtime.getRuntime().availableProcessors());
 //	 int maxCrawlerThreads = 1;
 		Thread[] scannerThreads = new Thread[maxCrawlerThreads];
 
