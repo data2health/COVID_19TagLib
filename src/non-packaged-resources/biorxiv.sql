@@ -14,6 +14,21 @@ CREATE MATERIALIZED VIEW covid_biorxiv.biorxiv_current AS
    FROM covid_biorxiv.raw_biorxiv
   WITH NO DATA;
 
+create view covid_biorxiv.biorxiv_current_author as
+select
+    doi,
+    rank,
+    author->>'author_name' as name,
+    author->>'author_inst' as institution
+from (
+    select doi,t.*
+    from
+        covid_biorxiv.biorxiv_current
+    cross join lateral
+        jsonb_array_elements(authors::jsonb) with ordinality as t(author,rank)
+    ) as foo
+;
+
 create table document (
 	doi text,
 	title text,
