@@ -1,6 +1,58 @@
 create view covid.weeks as
 SELECT DISTINCT to_char(generate_series('2020-01-01 00:00:00-06'::timestamp with time zone, now(), '7 days'::interval), 'yyyy-WW'::text) AS week;
 
+create view covid_biorxiv.sentence_staging as 
+	select
+		(select site from covid_biorxiv.biorxiv_current where biorxiv_current.doi = sentence.doi) as source,
+		doi,
+		null::int as pmcid,
+		null::int as pmid,
+		seqnum,
+		lower(name) as section,
+		null as seqnum2,
+		null as seqnum3,
+		null as seqnum4,
+		null as seqnum5,
+		null as seqnum6,
+		sentnum,
+		full_text as sentence
+	from covid_biorxiv.sentence natural join covid_biorxiv.section
+;
+create view covid_litcovid.sentence_staging as
+	select
+		'litcovid' as source,
+		null as doi,
+		null::int as pmcid,
+		pmid,
+		seqnum,
+		(case when seqnum = 0 then 'title' else 'abstract' end) as section,
+		null as seqnum2,
+		null as seqnum3,
+		null as seqnum4,
+		null as seqnum5,
+		null as seqnum6,
+		sentence as sentnum,
+		string as sentence
+	from covid_litcovid.sentence
+;
+create view covid_pmc.sentence_staging as
+	select
+		'pmc' as source,
+		null as doi,
+		pmcid,
+		null as pmid,
+		seqnum,
+		regexp_replace(lower(title), '^[0-9]+[.]? *', '') as section,
+		seqnum2,
+		seqnum3,
+		seqnum4,
+		seqnum5,
+		seqnum6,
+		sentnum,
+		string as sentence
+	from covid_pmc.sentence natural join covid_pmc.section
+;
+
 create view covid.sentence_staging as
 select distinct * from (
 	select
