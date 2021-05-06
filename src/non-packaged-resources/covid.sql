@@ -40,7 +40,7 @@ create view covid_pmc.sentence_staging as
 		'pmc' as source,
 		null as doi,
 		pmcid,
-		null as pmid,
+		null::int as pmid,
 		seqnum,
 		regexp_replace(lower(title), '^[0-9]+[.]? *', '') as section,
 		seqnum2,
