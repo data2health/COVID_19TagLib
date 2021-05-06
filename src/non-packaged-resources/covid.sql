@@ -9,11 +9,11 @@ create view covid_biorxiv.sentence_staging as
 		null::int as pmid,
 		seqnum,
 		lower(name) as section,
-		null as seqnum2,
-		null as seqnum3,
-		null as seqnum4,
-		null as seqnum5,
-		null as seqnum6,
+		null::int as seqnum2,
+		null::int as seqnum3,
+		null::int as seqnum4,
+		null::int as seqnum5,
+		null::int as seqnum6,
 		sentnum,
 		full_text as sentence
 	from covid_biorxiv.sentence natural join covid_biorxiv.section
@@ -26,11 +26,11 @@ create view covid_litcovid.sentence_staging as
 		pmid,
 		seqnum,
 		(case when seqnum = 0 then 'title' else 'abstract' end) as section,
-		null as seqnum2,
-		null as seqnum3,
-		null as seqnum4,
-		null as seqnum5,
-		null as seqnum6,
+		null::int as seqnum2,
+		null::int as seqnum3,
+		null::int as seqnum4,
+		null::int as seqnum5,
+		null::int as seqnum6,
 		sentence as sentnum,
 		string as sentence
 	from covid_litcovid.sentence
@@ -53,7 +53,27 @@ create view covid_pmc.sentence_staging as
 	from covid_pmc.sentence natural join covid_pmc.section
 ;
 
-create view covid.sentence_staging as
+CREATE TABLE covid.sentence_staging (
+    source text,
+    doi text,
+    pmcid integer,
+    pmid integer,
+    seqnum integer,
+    section text,
+    seqnum2 text,
+    seqnum3 text,
+    seqnum4 text,
+    seqnum5 text,
+    seqnum6 text,
+    sentnum integer,
+    sentence text
+);
+
+CREATE INDEX ss_doi ON covid.sentence_staging2 USING btree (doi);
+CREATE INDEX ss_pmcid ON covid.sentence_staging2 USING btree (pmcid);
+CREATE INDEX ss_pmid ON covid.sentence_staging2 USING btree (pmid);
+
+create view covid.sentence_staging_old as
 select distinct * from (
 	select
 		(select site from covid_biorxiv.biorxiv_current where biorxiv_current.doi = sentence.doi) as source,
