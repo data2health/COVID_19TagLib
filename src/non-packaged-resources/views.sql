@@ -433,7 +433,12 @@ xmltable(
     );
 
 create materialized view reference as
-select pmid,xmltable.* from 
+select
+	pmid,
+	seqnum,
+	unnest(regexp_match(citation::text,'<Citation>(.*)</Citation>')) as citation,
+	article_ids
+from 
 raw,
 xmltable(
     '//ReferenceList/Reference'
@@ -441,7 +446,7 @@ xmltable(
     columns
         seqnum FOR ORDINALITY,
         title text path '../Title/text()',
-        citation text path 'Citation/text()',
+        citation xml path 'Citation',
         article_ids xml path 'ArticleIdList'
     );
 
