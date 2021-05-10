@@ -48,3 +48,29 @@ where article_title.pmid=author.pmid
   and not exists (select pmid from n3c_pubs.suppress where suppress.pmid=article_title.pmid)
   and author.last_name='Haendel'
 ;
+
+create view n3c_pubs.litcovid_staging as
+SELECT 
+	match.pmid,
+	article_title as title,
+	medline_ta as journal,
+	volume,
+	issue,
+	(pub_date_year||'-'||pub_date_month||'-'||pub_date_day)::date as published,
+	medline_pgn as pages,
+	(select jsonb_agg(bar) from (select seqnum,last_name,fore_name as first_name from covid_litcovid.author where author.pmid=article.pmid order by seqnum) as bar) as authors
+FROM covid_litcovid.medline_journal_info natural join covid_litcovid.article_title natural join covid_litcovid.article natural join n3c_pubs.match
+;
+
+create table n3c_pubs.litcovid_cache as select * from n3c_pubs.litcovid_staging ;
+
+create view n3c_pubs.biorxiv_staging as
+select
+	doi,
+	title,
+	site,
+	pub_date,
+	(select jsonb_agg(bar) from (select rank,name,institution from covid_biorxiv.biorxiv_current_author where biorxiv_current_author.doi=biorxiv_current.doi order by rank) as bar) as authors
+from covid_biorxiv.biorxiv_current natural join n3c_pubs.match
+;
+create table n3c_pubs.biorxiv_cache as select * from n3c_pubs.biorxiv_staging;
