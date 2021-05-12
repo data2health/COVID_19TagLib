@@ -161,7 +161,10 @@ public class BioRxivLoader {
 			String link = rs.getString(2);
 			logger.info("doi: " + doi + "\tlink: " + link);
 			try {
-				Document doc = Jsoup.connect(link).timeout(0).get();
+				Document doc = Jsoup
+								.connect(link)
+								.userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15")
+								.timeout(0).get();
 				Element element = doc.getElementsByClass("article-dl-pdf-link").first();
 				logger.trace("element: " + element);
 				String href = element.attr("href");
