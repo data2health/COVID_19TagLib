@@ -1,7 +1,7 @@
 create materialized view n3c_admin.personnel as
 select
 	timestamp::timestamp as onboarded,
-	email_address,
+	email,
 	first_name,
 	last_name,
     google__g_suite_enabled_email_ as gmail,
@@ -32,5 +32,5 @@ select
     substring(informatics_maturity_and_best_practices from '^[^ ]+')::boolean as maturity,
     substring(resource_discovery from '^[^ ]+')::boolean as resource_discovery
 from n3c_admin.onboard_master
-where email_address is not null
+where email is not null
 ;
