@@ -16,8 +16,8 @@ import java.util.Vector;
 
 import javax.servlet.jsp.JspTagException;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.facet.index.FacetFields;
@@ -38,7 +38,7 @@ import edu.uiowa.slis.GitHubTagLib.util.LocalProperties;
 import edu.uiowa.slis.GitHubTagLib.util.PropertyLoader;
 
 public class FacetIndexer implements Runnable {
-    static Logger logger = Logger.getLogger(FacetIndexer.class);
+	static Logger logger = LogManager.getLogger(FacetIndexer.class);
     static DecimalFormat formatter = new DecimalFormat("00");
     LocalProperties prop_file = null;
     static Connection wintermuteConn = null;
@@ -54,11 +54,10 @@ public class FacetIndexer implements Runnable {
     
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, SQLException, JspTagException, InterruptedException {
-        PropertyConfigurator.configure(args[0]);
 	wintermuteConn = getConnection("lucene");
 	deepConn = getConnection("lucene");
 
-	switch (args[1]) {
+	switch (args[0]) {
 	case "-index":
 	    indexBioRxiv();
 	    indexLitCOVID();
