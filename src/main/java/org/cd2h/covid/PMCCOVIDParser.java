@@ -3,8 +3,8 @@ package org.cd2h.covid;
 import java.sql.*;
 import java.util.*;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import edu.uiowa.lex.*;
 import edu.uiowa.NLP_grammar.*;
@@ -12,7 +12,7 @@ import edu.uiowa.extraction.LocalProperties;
 import edu.uiowa.extraction.PropertyLoader;
 
 public class PMCCOVIDParser implements Runnable {
-	static Logger logger = Logger.getLogger(PMCCOVIDParser.class);
+	static Logger logger = LogManager.getLogger(PMCCOVIDParser.class);
 
 	protected static LocalProperties prop_file = null;
 	static IntegerQueue pmcidQueue = new IntegerQueue();
@@ -25,13 +25,12 @@ public class PMCCOVIDParser implements Runnable {
 	boolean haveParseResults = false;
 
 	public static void main(String[] args) throws Exception {
-		PropertyConfigurator.configure(args[0]);
 		prop_file = PropertyLoader.loadProperties("biorxiv");
 		Connection conn = getConnection();
 
 		PreparedStatement stmt = null;
-		if (args.length > 1)
-			mode = args[1];
+		if (args.length > 0)
+			mode = args[0];
 		switch (mode) {
 		case "parse":
 			stmt = conn.prepareStatement("select distinct pmcid from covid_pmc.paragraph where pmcid not in (select pmcid from covid_pmc.sentence)");

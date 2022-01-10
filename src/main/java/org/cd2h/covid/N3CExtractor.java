@@ -11,14 +11,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import edu.uiowa.UMLS.recognizer.Concept;
 import edu.uiowa.UMLS.recognizer.ConceptRecognizer;
 
 public class N3CExtractor implements Runnable {
-	static Logger logger = Logger.getLogger(N3CExtractor.class);
+	static Logger logger = LogManager.getLogger(N3CExtractor.class);
 	static Vector<QueueEntry> queueVector = new Vector<QueueEntry>();
     static DecimalFormat formatter = new DecimalFormat("00");
 
@@ -53,7 +53,6 @@ public class N3CExtractor implements Runnable {
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException, SQLException, InterruptedException {
-		PropertyConfigurator.configure(args[0]);
 		Connection initialConn = getConnection();
 		int maxCrawlerThreads = Runtime.getRuntime().availableProcessors();
 		Thread[] matcherThreads = new Thread[maxCrawlerThreads];

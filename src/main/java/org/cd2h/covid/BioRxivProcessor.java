@@ -21,7 +21,7 @@ import edu.uiowa.PubMedCentral.BiomedicalSentenceGenerator;
 import edu.uiowa.extraction.LocalProperties;
 import edu.uiowa.extraction.PropertyLoader;
 import edu.uiowa.extraction.TemplatePromoter;
-import edu.uiowa.lex.biomedicalLexerMod;
+import edu.uiowa.lex.biomedicalLexer;
 
 public class BioRxivProcessor implements Runnable {
     static Logger logger = Logger.getLogger(BioRxivProcessor.class);
@@ -81,7 +81,7 @@ public class BioRxivProcessor implements Runnable {
     public BioRxivProcessor(int threadID) throws Exception {
 	this.threadID = threadID;
 	conn = getConnection();
-	theParser = new SegmentParser(new biomedicalLexerMod(), new SimpleStanfordParserBridge(), new BiomedicalSentenceGenerator(conn));
+	theParser = new SegmentParser(new biomedicalLexer(), new SimpleStanfordParserBridge(), new BiomedicalSentenceGenerator(conn));
     }
 
     @Override

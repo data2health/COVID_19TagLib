@@ -11,14 +11,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import edu.uiowa.PubChem.recognizer.Concept;
 import edu.uiowa.PubChem.recognizer.ConceptRecognizer;
 
 public class PubChemExtractor implements Runnable {
-	static Logger logger = Logger.getLogger(PubChemExtractor.class);
+	static Logger logger = LogManager.getLogger(PubChemExtractor.class);
 	static Vector<QueueEntry> queueVector = new Vector<QueueEntry>();
     static DecimalFormat formatter = new DecimalFormat("00");
 
@@ -53,7 +53,6 @@ public class PubChemExtractor implements Runnable {
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException, SQLException, InterruptedException {
-		PropertyConfigurator.configure(args[0]);
 		Connection initialConn = getConnection();
 		int maxCrawlerThreads = Runtime.getRuntime().availableProcessors();
 		Thread[] matcherThreads = new Thread[maxCrawlerThreads];
