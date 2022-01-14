@@ -7,20 +7,18 @@ import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Vector;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import edu.uiowa.UMLS.Concept;
 
 public class Cache {
-	static Logger logger = Logger.getLogger(Cache.class);
+	static Logger logger = LogManager.getLogger(Cache.class);
 	static boolean initialized = false;
 	static boolean localInitialization = false;
 	static String networkHostName = "deep-thought.slis.uiowa.edu";
 
 	static {
-		if (!logger.isAttached(null))
-			PropertyConfigurator.configure("log4j.debug");
 		try {
 			logger.info("GeoNames initializing...");
 			init();

@@ -1,11 +1,12 @@
 package org.cd2h.covid.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import pl.edu.icm.cermine.structure.model.BxLine;
 
 public class Line {
-    static Logger logger = Logger.getLogger(Line.class);
+	static Logger logger = LogManager.getLogger(Line.class);
     BxLine internalLine = null;
     String mostPopularFont = null;
     double x = 0.0;

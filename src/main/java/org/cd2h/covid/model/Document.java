@@ -7,7 +7,8 @@ import java.util.Hashtable;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cd2h.covid.detectors.SectionDetector;
 import org.cd2h.covid.model.Section.Category;
 
@@ -15,7 +16,7 @@ import pl.edu.icm.cermine.structure.model.BxChunk;
 import pl.edu.icm.cermine.structure.model.BxWord;
 
 public class Document {
-    static Logger logger = Logger.getLogger(Document.class);
+	static Logger logger = LogManager.getLogger(Document.class);
     Connection conn = null;
     String doi = null;
     String fileName = null;

@@ -13,8 +13,8 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.Node;
@@ -24,7 +24,7 @@ import edu.uiowa.slis.GitHubTagLib.util.LocalProperties;
 import edu.uiowa.slis.GitHubTagLib.util.PropertyLoader;
 
 public class PMCModeler {
-	static Logger logger = Logger.getLogger(PMCModeler.class);
+	static Logger logger = LogManager.getLogger(PMCModeler.class);
 	protected static LocalProperties prop_file = null;
     static DecimalFormat formatter = new DecimalFormat("00");
 	static Connection conn = null;
@@ -32,7 +32,6 @@ public class PMCModeler {
 	static Hashtable<String, String> regExpHash = new Hashtable<String, String>();
 
 	public static void main(String[] args) throws Exception {
-		PropertyConfigurator.configure("log4j.info");
 		initialize();
 		
 		Tag root = new Tag("root");

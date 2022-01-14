@@ -2,7 +2,8 @@ package org.cd2h.covid;
 
 import java.sql.Connection;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import edu.uiowa.NLP_grammar.syntaxTree;
 import edu.uiowa.NLP_grammar.syntaxMatch.syntaxMatch;
@@ -69,8 +70,8 @@ import edu.uiowa.UMLS.comparators.transcriptionFactorComparator;
 import edu.uiowa.extraction.Decorator;
 
 public class BioRxivDecorator extends Decorator {
-    static Logger logger = Logger.getLogger(BioRxivDecorator.class);
-    
+	static Logger logger = LogManager.getLogger(BioRxivDecorator.class);
+   
     Connection conn = null;
 
     public BioRxivDecorator(Connection conn) throws Exception {

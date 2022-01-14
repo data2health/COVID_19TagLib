@@ -8,14 +8,15 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cd2h.covid.model.Reference.Style;
 
 import pl.edu.icm.cermine.structure.model.BxChunk;
 import pl.edu.icm.cermine.structure.model.BxWord;
 
 public class Sentence {
-    static Logger logger = Logger.getLogger(Sentence.class);
+	static Logger logger = LogManager.getLogger(Sentence.class);
     static Pattern numberedCitationPattern = Pattern.compile("^([^\\[(]+)?\\[(([0-9]+([-–][0-9]+)?)(,([0-9]+([-–][0-9]+)?))*)[\\])]([..,:;?!])?");
     static Pattern numberedPrefixCitationPattern = Pattern.compile("^([^\\[(]+)?\\[(([0-9]+([-–][0-9]+)?)),");
     static Pattern numberedSuffixCitationPattern = Pattern.compile("^(([0-9]+([-–][0-9]+)?)*)[\\])]([..,:;?!])?");

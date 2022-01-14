@@ -1,9 +1,10 @@
 package org.cd2h.covid.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Affiliation {
-    static Logger logger = Logger.getLogger(Section.class);
+	static Logger logger = LogManager.getLogger(Affiliation.class);
 
     String link = null;
     String affiliation = "";

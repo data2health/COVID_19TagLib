@@ -13,8 +13,9 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
@@ -23,7 +24,7 @@ import edu.uiowa.slis.GitHubTagLib.util.LocalProperties;
 import edu.uiowa.slis.GitHubTagLib.util.PropertyLoader;
 
 public class LitCOVIDLoader implements Runnable {
-	static Logger logger = Logger.getLogger(LitCOVIDLoader.class);
+	static Logger logger = LogManager.getLogger(LitCOVIDLoader.class);
 	protected static LocalProperties prop_file = null;
 	static Connection conn = null;
 	// https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=31978945&retmode=xml
@@ -31,7 +32,6 @@ public class LitCOVIDLoader implements Runnable {
 	static IntegerQueue pmidQueue = new IntegerQueue();
 
 	public static void main(String[] args) throws Exception {
-		PropertyConfigurator.configure("log4j.info");
 		initialize();
 
 		stageList();

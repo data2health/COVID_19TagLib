@@ -16,8 +16,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -34,7 +34,7 @@ import edu.uiowa.slis.GitHubTagLib.util.LocalProperties;
 import edu.uiowa.slis.GitHubTagLib.util.PropertyLoader;
 
 public class BioRxivLoader {
-	static Logger logger = Logger.getLogger(BioRxivLoader.class);
+	static Logger logger = LogManager.getLogger(BioRxivLoader.class);
 	protected static LocalProperties prop_file = null;
 	static Connection conn = null;
 	static int apiLimit = 100;
@@ -43,7 +43,6 @@ public class BioRxivLoader {
 	public static void main(String[] args) throws IOException, SQLException, ClassNotFoundException, InterruptedException, SAXException, TikaException {
 		System.setProperty("java.awt.headless", "true");
 
-		PropertyConfigurator.configure("/Users/eichmann/Documents/Components/log4j.info");
 		initialize();
 
 		new_scan_feed();

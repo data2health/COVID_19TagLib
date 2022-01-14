@@ -10,8 +10,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -20,13 +20,12 @@ import edu.uiowa.slis.GitHubTagLib.util.LocalProperties;
 import edu.uiowa.slis.GitHubTagLib.util.PropertyLoader;
 
 public class ZoteroLoader {
-    static Logger logger = Logger.getLogger(ZoteroLoader.class);
+	static Logger logger = LogManager.getLogger(ZoteroLoader.class);
     protected static LocalProperties prop_file = null;
     static Connection conn = null;
     static int apiLimit = 100;
 
     public static void main(String[] args) throws IOException, SQLException, ClassNotFoundException {
-	PropertyConfigurator.configure(args[0]);
 	initialize();
 
 	simpleStmt("truncate covid_zotero.raw_zotero");

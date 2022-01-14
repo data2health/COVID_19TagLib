@@ -7,14 +7,14 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
-import org.cd2h.covid.CERMINEExtractor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cd2h.covid.model.Reference.Style;
 
 import pl.edu.icm.cermine.structure.model.BxWord;
 
 public class Section {
-    static Logger logger = Logger.getLogger(Section.class);
+	static Logger logger = LogManager.getLogger(Section.class);
     static DecimalFormat formatter = new DecimalFormat("0000.00");
     public static enum Category {FRONT, ABSTRACT, BODY, REFERENCES, MISC, SUPPLEMENTAL};
     

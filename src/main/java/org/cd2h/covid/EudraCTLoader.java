@@ -25,22 +25,21 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import edu.uiowa.slis.GitHubTagLib.util.LocalProperties;
 import edu.uiowa.slis.GitHubTagLib.util.PropertyLoader;
 // https://www.clinicaltrialsregister.eu/ctr-search/rest/download/full?query=eudract_number:2020-000890-25&mode=current_page
 
 public class EudraCTLoader {
-    static Logger logger = Logger.getLogger(EudraCTLoader.class);
+	static Logger logger = LogManager.getLogger(BioRxivProcessor.class);
     protected static LocalProperties prop_file = null;
     static Connection conn = null;
     static String requestTemplate = "https://www.clinicaltrialsregister.eu/ctr-search/rest/download/full?query=eudract_number:xxx&mode=current_page";
     static Pattern pattern = Pattern.compile("^([A-Z](\\.[0-9]+|\\.)*)( ([^:]+)(: (.*))?)?$");
 
     public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException, InterruptedException, KeyManagementException, NoSuchAlgorithmException {
-	PropertyConfigurator.configure("/Users/eichmann/Documents/Components/log4j.info");
 	initialize();
 	trustAllCerts();
 	

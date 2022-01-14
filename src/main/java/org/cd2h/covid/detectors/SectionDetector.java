@@ -1,12 +1,14 @@
 package org.cd2h.covid.detectors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import org.cd2h.covid.BioRxivProcessor;
 import org.cd2h.covid.model.Line;
-import org.cd2h.covid.model.Section;
 import org.cd2h.covid.model.Section.Category;
 
 public class SectionDetector {
-    static Logger logger = Logger.getLogger(Section.class);
+	static Logger logger = LogManager.getLogger(BioRxivProcessor.class);
     Line prevLine = null;
 
     public Category newSection(Line line) {

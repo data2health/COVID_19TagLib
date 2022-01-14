@@ -18,8 +18,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Vector;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cd2h.covid.model.Document;
 import org.cd2h.covid.model.Line;
 import org.cd2h.covid.model.Page;
@@ -44,7 +44,7 @@ import pl.edu.icm.cermine.structure.model.BxZone;
 import pl.edu.icm.cermine.structure.transformers.TrueVizToBxDocumentReader;
 
 public class CERMINEExtractor implements Runnable {
-    static Logger logger = Logger.getLogger(CERMINEExtractor.class);
+	static Logger logger = LogManager.getLogger(CERMINEExtractor.class);
     static DecimalFormat formatter = new DecimalFormat("0000.00");
     protected static LocalProperties prop_file = null;
     public static Connection staticConn = null;
@@ -60,7 +60,6 @@ public class CERMINEExtractor implements Runnable {
 
     public static void main(String[] args) throws Exception {
 	System.setProperty("java.awt.headless", "true");
-	PropertyConfigurator.configure(args[0]);
 	prop_file = PropertyLoader.loadProperties("zotero");
 	staticConn = getConnection();
 	

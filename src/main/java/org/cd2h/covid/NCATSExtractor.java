@@ -11,13 +11,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cd2h.covid.NCATS.Concept;
 import org.cd2h.covid.NCATS.ConceptRecognizer;
 
 public class NCATSExtractor implements Runnable {
-	static Logger logger = Logger.getLogger(NCATSExtractor.class);
+	static Logger logger = LogManager.getLogger(NCATSExtractor.class);
 	static Vector<QueueEntry> queueVector = new Vector<QueueEntry>();
     static DecimalFormat formatter = new DecimalFormat("00");
 
@@ -52,7 +52,6 @@ public class NCATSExtractor implements Runnable {
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException, SQLException, InterruptedException {
-		PropertyConfigurator.configure(args[0]);
 		Connection initialConn = getConnection();
 		int maxCrawlerThreads = Runtime.getRuntime().availableProcessors();
 		Thread[] matcherThreads = new Thread[maxCrawlerThreads];

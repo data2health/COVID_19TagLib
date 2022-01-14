@@ -2,12 +2,13 @@ package org.cd2h.covid.model;
 
 import java.util.Vector;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import pl.edu.icm.cermine.structure.model.BxPage;
 
 public class Page {
-    static Logger logger = Logger.getLogger(Page.class);
+	static Logger logger = LogManager.getLogger(Page.class);
     BxPage internalPage = null;
     int pageNumber = 0;
     String mostPopularFont = null;

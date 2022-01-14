@@ -13,7 +13,8 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import edu.uiowa.lex.Sentence;
 import edu.uiowa.lex.SentenceGenerator;
@@ -29,7 +30,7 @@ public class ConceptRecognizer implements Observer {
 	public enum Direction { LEFT, RIGHT, BOTH };
 	
 	boolean use_ssl = false;
-	static Logger logger = Logger.getLogger(ConceptRecognizer.class);
+	static Logger logger = LogManager.getLogger(ConceptRecognizer.class);
 	static final boolean parseNPs = false;
 
 	Direction theDirection = Direction.LEFT;

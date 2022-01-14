@@ -2,10 +2,11 @@ package org.cd2h.covid.model;
 
 import java.util.Vector;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Reference {
-    static Logger logger = Logger.getLogger(Reference.class);
+	static Logger logger = LogManager.getLogger(Reference.class);
     static enum Style {UNKNOWN, NUMBERED, BRACKETED, PARENTHESIZED, NAME_YEAR};
     
     static public boolean numberedReferenceStyle(Style candidate) {
