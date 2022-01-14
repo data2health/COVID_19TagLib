@@ -7,8 +7,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import edu.uiowa.NLP_grammar.FragmentGenerator;
 import edu.uiowa.NLP_grammar.ParseFragment;
@@ -24,13 +24,12 @@ import edu.uiowa.extraction.TemplatePromoter;
 import edu.uiowa.lex.biomedicalLexer;
 
 public class BioRxivProcessor implements Runnable {
-    static Logger logger = Logger.getLogger(BioRxivProcessor.class);
+	static Logger logger = LogManager.getLogger(BioRxivProcessor.class);
     protected static LocalProperties prop_file = null;
     static StringQueue doiQueue = new StringQueue();
     static String mode = "";
 
     public static void main(String[] args) throws Exception {
-	PropertyConfigurator.configure(args[0]);
 	prop_file = PropertyLoader.loadProperties("biorxiv");
 	Connection conn = getConnection();
 	PreparedStatement stmt = null;
