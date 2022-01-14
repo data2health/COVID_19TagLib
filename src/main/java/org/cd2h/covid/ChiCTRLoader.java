@@ -12,8 +12,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.io.SAXReader;
@@ -23,7 +23,7 @@ import edu.uiowa.slis.GitHubTagLib.util.LocalProperties;
 import edu.uiowa.slis.GitHubTagLib.util.PropertyLoader;
 
 public class ChiCTRLoader {
-    static Logger logger = Logger.getLogger(ChiCTRLoader.class);
+	static Logger logger = LogManager.getLogger(ChiCTRLoader.class);
     protected static LocalProperties prop_file = null;
     static Connection conn = null;
     static int apiLimit = 100;
@@ -31,7 +31,6 @@ public class ChiCTRLoader {
     // http://www.chictr.org.cn/exportxml.aspx?v=49543&users=13e469d6
 
     public static void main(String[] args) throws IOException, SQLException, ClassNotFoundException, DocumentException, InterruptedException {
-	PropertyConfigurator.configure(args[0]);
 	initialize();
 
 //	simpleStmt("truncate covid_chictr.raw");
