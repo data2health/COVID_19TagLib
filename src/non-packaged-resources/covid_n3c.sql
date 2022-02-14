@@ -43,7 +43,8 @@ create table covid_n3c.sentence (
 	url text,
 	section text,
 	original text,
-	sentence text
+	sentence text,
+	week text
 );
 
 create index s_doi on covid_n3c.sentence(doi);

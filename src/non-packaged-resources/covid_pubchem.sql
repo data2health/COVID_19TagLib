@@ -230,7 +230,8 @@ create table covid_pubchem.sentence_compound (
 	url text,
 	section text,
 	name text,
-	sentence text
+	sentence text,
+	week text
 );
 
 create index s_c_doi on covid_pubchem.sentence_compound(doi);
@@ -247,7 +248,8 @@ create table covid_pubchem.sentence_gene (
 	url text,
 	section text,
 	name text,
-	sentence text
+	sentence text,
+	week text
 );
 
 create index s_g_doi on covid_pubchem.sentence_gene(doi);
@@ -264,7 +266,8 @@ create table covid_pubchem.sentence_protein (
 	url text,
 	section text,
 	name text,
-	sentence text
+	sentence text,
+	week text
 );
 
 create index s_p_doi on covid_pubchem.sentence_protein(doi);
@@ -281,7 +284,8 @@ create table covid_pubchem.sentence_substance (
 	url text,
 	section text,
 	name text,
-	sentence text
+	sentence text,
+	week text
 );
 
 create index s_s_doi on covid_pubchem.sentence_substance(doi);

@@ -15,8 +15,9 @@ create view covid_biorxiv.sentence_staging as
 		null::int as seqnum5,
 		null::int as seqnum6,
 		sentnum,
-		full_text as sentence
-	from covid_biorxiv.sentence natural join covid_biorxiv.section
+		full_text as sentence,
+		to_char(biorxiv_current.pub_date::timestamp with time zone, 'yyyy-WW'::text) AS week
+	from covid_biorxiv.sentence natural join covid_biorxiv.section natural join covid.biorxiv.biorxiv_current
 ;
 create view covid_litcovid.sentence_staging as
 	select
@@ -32,8 +33,9 @@ create view covid_litcovid.sentence_staging as
 		null::int as seqnum5,
 		null::int as seqnum6,
 		sentence as sentnum,
-		string as sentence
-	from covid_litcovid.sentence
+		string as sentence,
+		to_char((((((article.pub_date_year || '-'::text) || article.pub_date_month) || '-'::text) || COALESCE(article.pub_date_day, '01'::text))::date)::timestamp with time zone, 'yyyy-WW'::text) AS week
+	from covid_litcovid.sentence natural join covid_litcovid.article
 ;
 create view covid_pmc.sentence_staging as
 	select
@@ -49,8 +51,9 @@ create view covid_pmc.sentence_staging as
 		seqnum5,
 		seqnum6,
 		sentnum,
-		string as sentence
-	from covid_pmc.sentence natural join covid_pmc.section
+		string as sentence,
+		to_char((((((article.pub_date_year || '-'::text) || article.pub_date_month) || '-'::text) || COALESCE(article.pub_date_day, '01'::text))::date)::timestamp with time zone, 'yyyy-WW'::text) AS week
+	from covid_pmc.sentence natural join covid_pmc.section natural join covid_pmc.link natural join covid_litcovid.article
 ;
 
 CREATE TABLE covid.sentence_staging (
@@ -66,7 +69,8 @@ CREATE TABLE covid.sentence_staging (
     seqnum5 text,
     seqnum6 text,
     sentnum integer,
-    sentence text
+    sentence text,
+    week text
 );
 
 CREATE INDEX ss_doi ON covid.sentence_staging2 USING btree (doi);

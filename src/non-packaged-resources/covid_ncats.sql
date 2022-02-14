@@ -100,7 +100,8 @@ create table covid_ncats.sentence (
 	url text,
 	section text,
 	medication text,
-	sentence text
+	sentence text,
+	week text
 );
 
 create index s_doi on covid_ncats.sentence(doi);
