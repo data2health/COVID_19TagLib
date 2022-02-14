@@ -145,6 +145,13 @@ select
 	sentence
 from covid.sentence_staging;
 
+create table covid.section_map (
+	section text,
+	label text
+);
+
+create index sms on covid.section_map(section);
+
 create view covid.source_by_week as
 select week,source,coalesce(count,0) as count
 from
