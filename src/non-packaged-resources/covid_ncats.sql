@@ -61,6 +61,12 @@ where not exists (select doi
 				 )
 order by doi,pmcid,pmid;
 
+create materialized view covid_ncats.refresh_queue as
+ SELECT process_queue.doi,
+    process_queue.pmcid,
+    process_queue.pmid
+   FROM covid_ncats.process_queue;
+
 create view covid_ncats.sentence_staging as
 select
 	source,
@@ -83,12 +89,14 @@ select
 		when source = 'pmc' then 'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC'||pmcid
 		else ''
 	end as url,
-	section,
+	coalesce(section_map.label, '** undetermined **') as section,
 	medication,
-	regexp_replace(sentence, '('||pattern||')', '<b>\1</b>', 'ig') as sentence
+	regexp_replace(sentence, '('||pattern||')', '<b>\1</b>', 'ig') as sentence,
+	week
 from covid_ncats.sentence_match_filter
 natural join covid_ncats.medication
 natural join covid.sentence_filter
+natural join covid.section_map
 ;
 
 create table covid_ncats.sentence (

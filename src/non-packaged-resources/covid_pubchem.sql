@@ -24,6 +24,11 @@ where not exists (select doi
 				 )
 order by doi,pmcid,pmid;
 
+create materialized view covid_pubchem.refresh_queue as
+ SELECT process_queue.doi,
+    process_queue.pmcid,
+    process_queue.pmid
+   FROM covid_pubchem.process_queue;
 
 create table covid_pubchem.sentence_compound_match (
 	doi text,
@@ -123,12 +128,14 @@ select
 		when source = 'pmc' then 'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC'||pmcid
 		else ''
 	end as url,
-	section,
+	coalesce(section_map.label, '** undetermined **') as section,
 	name,
-	regexp_replace(sentence, '('||regexp_replace(phrase, '([\[\]\(\)])' , '\\\1', 'g')||')', '<b>\1</b>', 'ig') as sentence
+	regexp_replace(sentence, '('||regexp_replace(phrase, '([\[\]\(\)])' , '\\\1', 'g')||')', '<b>\1</b>', 'ig') as sentence,
+	week
 from covid_pubchem.sentence_compound_match
 natural join pubchem.compound
 natural join covid.sentence_filter
+natural join covid.section_map
 ;
 
 create view covid_pubchem.sentence_gene_staging as
@@ -153,12 +160,14 @@ select
 		when source = 'pmc' then 'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC'||pmcid
 		else ''
 	end as url,
-	section,
+	coalesce(section_map.label, '** undetermined **') as section,
 	name,
-	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'ig') as sentence
+	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'ig') as sentence,
+	week
 from covid_pubchem.sentence_gene_match
 natural join pubchem.gene
 natural join covid.sentence_filter
+natural join covid.section_map
 ;
 
 create view covid_pubchem.sentence_protein_staging as
@@ -183,12 +192,14 @@ select
 		when source = 'pmc' then 'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC'||pmcid
 		else ''
 	end as url,
-	section,
+	coalesce(section_map.label, '** undetermined **') as section,
 	name,
-	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'ig') as sentence
+	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'ig') as sentence,
+	week
 from covid_pubchem.sentence_protein_match
 natural join pubchem.protein
 natural join covid.sentence_filter
+natural join covid.section_map
 ;
 
 create view covid_pubchem.sentence_substance_staging as
@@ -213,12 +224,14 @@ select
 		when source = 'pmc' then 'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC'||pmcid
 		else ''
 	end as url,
-	section,
+	coalesce(section_map.label, '** undetermined **') as section,
 	name,
-	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'ig') as sentence
+	regexp_replace(sentence, '('||phrase||')', '<b>\1</b>', 'ig') as sentence,
+	week
 from covid_pubchem.sentence_substance_match
 natural join pubchem.substance
 natural join covid.sentence_filter
+natural join covid.section_map
 ;
 
 create table covid_pubchem.sentence_compound (

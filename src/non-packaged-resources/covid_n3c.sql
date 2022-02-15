@@ -27,11 +27,13 @@ select
 		when source = 'pmc' then 'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC'||pmcid
 		else ''
 	end as url,
-	section,
+	coalesce(section_map.label, '** undetermined **') as section,
 	original,
-	regexp_replace(sentence, '('||normalized||')', '<b>\1</b>', 'ig') as sentence
-from covid_n3c.cohort_med, covid.sentence_filter
+	regexp_replace(sentence, '('||normalized||')', '<b>\1</b>', 'ig') as sentence,
+	week
+from covid_n3c.cohort_med, covid.sentence_filter, covid.section_map
 where sentence ~ normalized
+  and sentence_filter.section = section_map.section
 ;
 
 create table covid_n3c.sentence (
@@ -118,19 +120,11 @@ create index procdoi on covid_n3c.processed(doi);
 create index procpmcid on covid_n3c.processed(pmcid);
 create index procpmid on covid_n3c.processed(pmid);
 
-create view covid_n3c.process_queue as
-select distinct
-	doi,
-	pmcid,
-	pmid
-from covid.sentence_filter
-where not exists (select doi
-				 from covid_n3c.processed
-				 where processed.doi=sentence_filter.doi
-				   and processed.pmcid = sentence_filter.pmcid
-				   and processed.pmid = sentence_filter.pmid
-				 )
-order by doi,pmcid,pmid;
+create materialized view covid_n3c.refresh_queue as
+ SELECT process_queue.doi,
+    process_queue.pmcid,
+    process_queue.pmid
+   FROM covid_n3c.process_queue;
 
 create table covid_n3c.sentence_concept_match (
 	doi text,

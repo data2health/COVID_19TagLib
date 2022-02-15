@@ -142,7 +142,8 @@ select
 	coalesce(seqnum5, -1) as seqnum5,
 	coalesce(seqnum6, -1) as seqnum6,
 	coalesce(sentnum, -1) as sentnum,
-	sentence
+	sentence,
+	week
 from covid.sentence_staging;
 
 create table covid.section_map (
