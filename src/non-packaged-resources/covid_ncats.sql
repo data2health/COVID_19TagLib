@@ -74,13 +74,15 @@ select
 	pmcid,
 	pmid,
 	case
-		when source = 'biorxiv' then (select title from covid_biorxiv.biorxiv_current where biorxiv_current.doi = sentence_filter.doi)
+		when source = 'bioRxiv' then (select title from covid_biorxiv.biorxiv_current where biorxiv_current.doi = sentence_filter.doi)
+		when source = 'medRxiv' then (select title from covid_biorxiv.biorxiv_current where biorxiv_current.doi = sentence_filter.doi)
 		when source = 'litcovid' then (select article_title from covid_litcovid.article_title where article_title.pmid = sentence_filter.pmid)
 		when source = 'pmc' then (select article_title from covid_litcovid.article_title natural join covid_pmc.xml_link where xml_link.pmcid = sentence_filter.pmcid limit 1)
 		else ''
 	end as title,
 	case
-		when source = 'biorxiv' then 'http://dx.doi.org/'||doi
+		when source = 'bioRxiv' then 'http://dx.doi.org/'||doi
+		when source = 'medRxiv' then 'http://dx.doi.org/'||doi
 		when source = 'litcovid' and exists (select article_id from covid_litcovid.article_id where article_id.pmid = sentence_filter.pmid and id_type='doi' limit 1)
 			then 'http://dx.doi.org/'||(select article_id from covid_litcovid.article_id where article_id.pmid = sentence_filter.pmid and id_type='doi' limit 1)
 		when source = 'litcovid' then 'https://pubmed.ncbi.nlm.nih.gov/'||pmid
