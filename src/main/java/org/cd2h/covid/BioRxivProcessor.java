@@ -54,7 +54,8 @@ public class BioRxivProcessor implements Runnable {
 	}
 	logger.info("\t" + doiQueue.size() + " files queued.");
 
-	int maxCrawlerThreads = Runtime.getRuntime().availableProcessors() == 8 ? Runtime.getRuntime().availableProcessors() / 4 : (Runtime.getRuntime().availableProcessors() * 3) / 4;
+//	int maxCrawlerThreads = Runtime.getRuntime().availableProcessors() == 8 ? Runtime.getRuntime().availableProcessors() / 4 : (Runtime.getRuntime().availableProcessors() * 3) / 4;
+	int maxCrawlerThreads = Runtime.getRuntime().availableProcessors();
 //	maxCrawlerThreads = 1;
 	Thread[] scannerThreads = new Thread[maxCrawlerThreads];
 
