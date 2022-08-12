@@ -212,24 +212,24 @@ where sentence.doi = cohort_match.doi
 create materialized view covid_ncats.source_by_month as
 select * from 
 	(select * from
-	(select * from covid.months,(select distinct medication from drugs_by_month) as med) as foo
+	(select * from covid.months,(select distinct medication from covid_ncats.drugs_by_month) as med) as foo
 	natural left outer join
-	(select medication,month,count(*) as biorxiv from drugs_by_month where source='bioRxiv' group by 1,2) as bar ) as bio
+	(select medication,month,count(*) as biorxiv from covid_ncats.drugs_by_month where source='bioRxiv' group by 1,2) as bar ) as bio
 natural join
 	(select * from
-	(select * from covid.months,(select distinct medication from drugs_by_month) as med) as foo
+	(select * from covid.months,(select distinct medication from covid_ncats.drugs_by_month) as med) as foo
 	natural left outer join
-	(select medication,month,count(*) as medrxiv from drugs_by_month where source='medRxiv' group by 1,2) as bar ) as med
+	(select medication,month,count(*) as medrxiv from covid_ncats.drugs_by_month where source='medRxiv' group by 1,2) as bar ) as med
 natural join
 	(select * from
-	(select * from covid.months,(select distinct medication from drugs_by_month) as med) as foo
+	(select * from covid.months,(select distinct medication from covid_ncats.drugs_by_month) as med) as foo
 	natural left outer join
-	(select medication,month,count(*) as litcovid from drugs_by_month where source='litcovid' group by 1,2) as bar ) as lit
+	(select medication,month,count(*) as litcovid from covid_ncats.drugs_by_month where source='litcovid' group by 1,2) as bar ) as lit
 natural join
 	(select * from
-	(select * from covid.months,(select distinct medication from drugs_by_month) as med) as foo
+	(select * from covid.months,(select distinct medication from covid_ncats.drugs_by_month) as med) as foo
 	natural left outer join
-	(select medication,month,count(*) as pmc from drugs_by_month where source='pmc' group by 1,2) as bar ) as pmc
+	(select medication,month,count(*) as pmc from covid_ncats.drugs_by_month where source='pmc' group by 1,2) as bar ) as pmc
 order by 1,2;
 
 select source,week,coalesce(count, 0) as count from
