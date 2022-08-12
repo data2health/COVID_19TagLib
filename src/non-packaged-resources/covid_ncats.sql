@@ -175,6 +175,63 @@ union
 	(select source,week,count(*) from covid_ncats.drugs_by_week group by 1,2)  as bar
 order by 1,2;
 
+create materialized view covid_ncats.drugs_by_month as 
+select distinct
+	source,
+	doi,
+	pmcid,
+	sentence.pmid,
+	medication,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-mm') as month
+from covid_ncats.sentence,covid_litcovid.article
+where source='litcovid'
+  and sentence.pmid=article.pmid
+union
+select distinct
+	source,
+	doi,
+	sentence.pmcid,
+	sentence.pmid,
+	medication,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-mm') as month
+from covid_ncats.sentence,covid_litcovid.article natural join covid_pmc.link
+where source='pmc'
+  and sentence.pmcid=link.pmcid
+union
+select distinct
+	site as source,
+	sentence.doi,
+	null::int as pmcid,
+	null::int as pmid,
+	original as medication,
+	to_char(pub_date,'yyyy-mm') as month
+from covid_ncats.sentence, covid_biorxiv.cohort_match natural join covid_biorxiv.biorxiv_current
+where sentence.doi = cohort_match.doi
+;
+
+create materialized view covid_ncats.source_by_month as
+select * from 
+	(select * from
+	(select * from covid.months,(select distinct medication from drugs_by_month) as med) as foo
+	natural left outer join
+	(select medication,month,count(*) as biorxiv from drugs_by_month where source='bioRxiv' group by 1,2) as bar ) as bio
+natural join
+	(select * from
+	(select * from covid.months,(select distinct medication from drugs_by_month) as med) as foo
+	natural left outer join
+	(select medication,month,count(*) as medrxiv from drugs_by_month where source='medRxiv' group by 1,2) as bar ) as med
+natural join
+	(select * from
+	(select * from covid.months,(select distinct medication from drugs_by_month) as med) as foo
+	natural left outer join
+	(select medication,month,count(*) as litcovid from drugs_by_month where source='litcovid' group by 1,2) as bar ) as lit
+natural join
+	(select * from
+	(select * from covid.months,(select distinct medication from drugs_by_month) as med) as foo
+	natural left outer join
+	(select medication,month,count(*) as pmc from drugs_by_month where source='pmc' group by 1,2) as bar ) as pmc
+order by 1,2;
+
 select source,week,coalesce(count, 0) as count from
 	(select 'bioRxiv' as source,week from covid.weeks) as bar
 	natural left outer join
@@ -195,3 +252,4 @@ select source,week,coalesce(count, 0) as count from
 	natural left outer join
 	(select source,week,count(*) from covid_ncats.drugs_by_week where medication='Chloroquine' group by 1,2) as foo
 order by 1,2;
+
