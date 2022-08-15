@@ -449,3 +449,231 @@ select distinct
 from covid_pubchem.sentence_substance, covid_biorxiv.cohort_match natural join covid_biorxiv.biorxiv_current
 where sentence_substance.doi = cohort_match.doi
 ;
+
+create materialized view covid_pubchem.compounds_drugs_by_month as 
+select distinct
+	source,
+	doi,
+	pmcid,
+	sentence_compound.pmid,
+	sentence_compound.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-mm') as month
+from covid_pubchem.sentence_compound,covid_litcovid.article
+where source='litcovid'
+  and sentence_compound.pmid=article.pmid
+union
+select distinct
+	source,
+	doi,
+	sentence_compound.pmcid,
+	sentence_compound.pmid,
+	sentence_compound.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-mm') as month
+from covid_pubchem.sentence_compound,covid_litcovid.article natural join covid_pmc.link
+where source='pmc'
+  and sentence_compound.pmcid=link.pmcid
+union
+select distinct
+	site as source,
+	sentence_compound.doi,
+	null::int as pmcid,
+	null::int as pmid,
+	sentence_compound.name,
+	to_char(pub_date,'yyyy-mm') as month
+from covid_pubchem.sentence_compound, covid_biorxiv.cohort_match natural join covid_biorxiv.biorxiv_current
+where sentence_compound.doi = cohort_match.doi
+;
+
+create materialized view covid_pubchem.genes_drugs_by_month as 
+select distinct
+	source,
+	doi,
+	pmcid,
+	sentence_gene.pmid,
+	sentence_gene.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-mm') as month
+from covid_pubchem.sentence_gene,covid_litcovid.article
+where source='litcovid'
+  and sentence_gene.pmid=article.pmid
+union
+select distinct
+	source,
+	doi,
+	sentence_gene.pmcid,
+	sentence_gene.pmid,
+	sentence_gene.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-mm') as month
+from covid_pubchem.sentence_gene,covid_litcovid.article natural join covid_pmc.link
+where source='pmc'
+  and sentence_gene.pmcid=link.pmcid
+union
+select distinct
+	site as source,
+	sentence_gene.doi,
+	null::int as pmcid,
+	null::int as pmid,
+	sentence_gene.name,
+	to_char(pub_date,'yyyy-mm') as month
+from covid_pubchem.sentence_gene, covid_biorxiv.cohort_match natural join covid_biorxiv.biorxiv_current
+where sentence_gene.doi = cohort_match.doi
+;
+
+create materialized view covid_pubchem.proteins_drugs_by_month as 
+select distinct
+	source,
+	doi,
+	pmcid,
+	sentence_protein.pmid,
+	sentence_protein.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-mm') as month
+from covid_pubchem.sentence_protein,covid_litcovid.article
+where source='litcovid'
+  and sentence_protein.pmid=article.pmid
+union
+select distinct
+	source,
+	doi,
+	sentence_protein.pmcid,
+	sentence_protein.pmid,
+	sentence_protein.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-mm') as month
+from covid_pubchem.sentence_protein,covid_litcovid.article natural join covid_pmc.link
+where source='pmc'
+  and sentence_protein.pmcid=link.pmcid
+union
+select distinct
+	site as source,
+	sentence_protein.doi,
+	null::int as pmcid,
+	null::int as pmid,
+	sentence_protein.name,
+	to_char(pub_date,'yyyy-mm') as month
+from covid_pubchem.sentence_protein, covid_biorxiv.cohort_match natural join covid_biorxiv.biorxiv_current
+where sentence_protein.doi = cohort_match.doi
+;
+
+create materialized view covid_pubchem.substances_drugs_by_month as 
+select distinct
+	source,
+	doi,
+	pmcid,
+	sentence_substance.pmid,
+	sentence_substance.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-mm') as month
+from covid_pubchem.sentence_substance,covid_litcovid.article
+where source='litcovid'
+  and sentence_substance.pmid=article.pmid
+union
+select distinct
+	source,
+	doi,
+	sentence_substance.pmcid,
+	sentence_substance.pmid,
+	sentence_substance.name,
+	to_char((pub_date_year||'-'||pub_date_month||'-'||coalesce(pub_date_day,'01'))::date,'yyyy-mm') as month
+from covid_pubchem.sentence_substance,covid_litcovid.article natural join covid_pmc.link
+where source='pmc'
+  and sentence_substance.pmcid=link.pmcid
+union
+select distinct
+	site as source,
+	sentence_substance.doi,
+	null::int as pmcid,
+	null::int as pmid,
+	sentence_substance.name,
+	to_char(pub_date,'yyyy-mm') as month
+from covid_pubchem.sentence_substance, covid_biorxiv.cohort_match natural join covid_biorxiv.biorxiv_current
+where sentence_substance.doi = cohort_match.doi
+;
+
+create materialized view covid_pubchem.compounds_source_by_month as
+select * from 
+	(select * from
+	(select * from covid.months,(select distinct name as compound from covid_pubchem.compounds_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as compound,month,count(*) as biorxiv from covid_pubchem.compounds_drugs_by_month where source='bioRxiv' group by 1,2) as bar ) as bio
+natural join
+	(select * from
+	(select * from covid.months,(select distinct name as compound from covid_pubchem.compounds_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as compound,month,count(*) as medrxiv from covid_pubchem.compounds_drugs_by_month where source='medRxiv' group by 1,2) as bar ) as med
+natural join
+	(select * from
+	(select * from covid.months,(select distinct name as compound from covid_pubchem.compounds_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as compound,month,count(*) as litcovid from covid_pubchem.compounds_drugs_by_month where source='litcovid' group by 1,2) as bar ) as lit
+natural join
+	(select * from
+	(select * from covid.months,(select distinct name as compound from covid_pubchem.compounds_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as compound,month,count(*) as pmc from covid_pubchem.compounds_drugs_by_month where source='pmc' group by 1,2) as bar ) as pmc
+order by 1,2;
+
+create materialized view covid_pubchem.genes_source_by_month as
+select * from 
+	(select * from
+	(select * from covid.months,(select distinct name as gene from covid_pubchem.genes_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as gene,month,count(*) as biorxiv from covid_pubchem.genes_drugs_by_month where source='bioRxiv' group by 1,2) as bar ) as bio
+natural join
+	(select * from
+	(select * from covid.months,(select distinct name as gene from covid_pubchem.genes_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as gene,month,count(*) as medrxiv from covid_pubchem.genes_drugs_by_month where source='medRxiv' group by 1,2) as bar ) as med
+natural join
+	(select * from
+	(select * from covid.months,(select distinct name as gene from covid_pubchem.genes_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as gene,month,count(*) as litcovid from covid_pubchem.genes_drugs_by_month where source='litcovid' group by 1,2) as bar ) as lit
+natural join
+	(select * from
+	(select * from covid.months,(select distinct name as gene from covid_pubchem.genes_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as gene,month,count(*) as pmc from covid_pubchem.genes_drugs_by_month where source='pmc' group by 1,2) as bar ) as pmc
+order by 1,2;
+
+create materialized view covid_pubchem.proteins_source_by_month as
+select * from 
+	(select * from
+	(select * from covid.months,(select distinct name as protein from covid_pubchem.proteins_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as protein,month,count(*) as biorxiv from covid_pubchem.proteins_drugs_by_month where source='bioRxiv' group by 1,2) as bar ) as bio
+natural join
+	(select * from
+	(select * from covid.months,(select distinct name as protein from covid_pubchem.proteins_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as protein,month,count(*) as medrxiv from covid_pubchem.proteins_drugs_by_month where source='medRxiv' group by 1,2) as bar ) as med
+natural join
+	(select * from
+	(select * from covid.months,(select distinct name as protein from covid_pubchem.proteins_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as protein,month,count(*) as litcovid from covid_pubchem.proteins_drugs_by_month where source='litcovid' group by 1,2) as bar ) as lit
+natural join
+	(select * from
+	(select * from covid.months,(select distinct name as protein from covid_pubchem.proteins_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as protein,month,count(*) as pmc from covid_pubchem.proteins_drugs_by_month where source='pmc' group by 1,2) as bar ) as pmc
+order by 1,2;
+
+create materialized view covid_pubchem.substances_source_by_month as
+select * from 
+	(select * from
+	(select * from covid.months,(select distinct name as substance from covid_pubchem.substances_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as substance,month,count(*) as biorxiv from covid_pubchem.substances_drugs_by_month where source='bioRxiv' group by 1,2) as bar ) as bio
+natural join
+	(select * from
+	(select * from covid.months,(select distinct name as substance from covid_pubchem.substances_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as substance,month,count(*) as medrxiv from covid_pubchem.substances_drugs_by_month where source='medRxiv' group by 1,2) as bar ) as med
+natural join
+	(select * from
+	(select * from covid.months,(select distinct name as substance from covid_pubchem.substances_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as substance,month,count(*) as litcovid from covid_pubchem.substances_drugs_by_month where source='litcovid' group by 1,2) as bar ) as lit
+natural join
+	(select * from
+	(select * from covid.months,(select distinct name as substance from covid_pubchem.substances_drugs_by_month) as med) as foo
+	natural left outer join
+	(select name as substance,month,count(*) as pmc from covid_pubchem.substances_drugs_by_month where source='pmc' group by 1,2) as bar ) as pmc
+order by 1,2;
