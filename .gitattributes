@@ -37,6 +37,9 @@ src/main/java/org/cd2h/covid/QueueEntry.java -text
 src/main/java/org/cd2h/covid/StringQueue.java -text
 src/main/java/org/cd2h/covid/ZoteroLoader.java -text
 src/main/java/org/cd2h/covid/detectors/SectionDetector.java -text
+src/main/java/org/cd2h/covid/gkg/Crawler.java -text
+src/main/java/org/cd2h/covid/gkg/Fragmenter.java -text
+src/main/java/org/cd2h/covid/gkg/Parser.java -text
 src/main/java/org/cd2h/covid/model/Affiliation.java -text
 src/main/java/org/cd2h/covid/model/Author.java -text
 src/main/java/org/cd2h/covid/model/Citation.java -text
@@ -73,10 +76,14 @@ src/non-packaged-resources/dashboard.sql -text
 src/non-packaged-resources/dashboard_refresh.sql -text
 src/non-packaged-resources/drupal_schema.sql -text
 src/non-packaged-resources/drupal_views.sql -text
+src/non-packaged-resources/extraction.sql -text
+src/non-packaged-resources/gkg.sql -text
 src/non-packaged-resources/integration.ddl -text
 src/non-packaged-resources/kg.sql -text
 src/non-packaged-resources/n3c_mentions.sql -text
 src/non-packaged-resources/n3c_pubs.sql -text
+src/non-packaged-resources/pubchem.sql -text
+src/non-packaged-resources/test.csh -text
 src/non-packaged-resources/training.clay -text
 src/non-packaged-resources/training.sql -text
 src/non-packaged-resources/views.sql -text

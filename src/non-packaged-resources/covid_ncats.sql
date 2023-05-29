@@ -67,6 +67,10 @@ create materialized view covid_ncats.refresh_queue as
     process_queue.pmid
    FROM covid_ncats.process_queue;
 
+create index rqdoi on covid_ncats.refresh_queue(doi);
+create index rqpmcid on covid_ncats.refresh_queue(pmcid);
+create index rqpmid on covid_ncats.refresh_queue(pmid);
+
 create view covid_ncats.sentence_staging as
 select
 	source,

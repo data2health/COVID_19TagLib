@@ -5,6 +5,30 @@ create view covid_n3c.cohort_med as {
            FROM enclave_cohort_release_18.med_use_frequency_for_export
           WHERE med_use_frequency_for_export.value !~ 'systemic'::text AND med_use_frequency_for_export.value <> 'Totals'::text) foo;
 
+create view covid_n3c.process_queue as
+select distinct
+	doi,
+	pmcid,
+	pmid
+from covid.sentence_filter
+where not exists (select doi
+				 from covid_n3c.processed
+				 where processed.doi=sentence_filter.doi
+				   and processed.pmcid = sentence_filter.pmcid
+				   and processed.pmid = sentence_filter.pmid
+				 )
+order by doi,pmcid,pmid;
+
+create materialized view covid_n3c.refresh_queue as
+ SELECT process_queue.doi,
+    process_queue.pmcid,
+    process_queue.pmid
+   FROM covid_n3c.process_queue;
+
+create index rqdoi on covid_n3c.refresh_queue(doi);
+create index rqpmcid on covid_n3c.refresh_queue(pmcid);
+create index rqpmid on covid_n3c.refresh_queue(pmid);
+
 create view covid_n3c.sentence_staging as
 select
 	source,

@@ -30,6 +30,10 @@ create materialized view covid_pubchem.refresh_queue as
     process_queue.pmid
    FROM covid_pubchem.process_queue;
 
+create index rqdoi on covid_pubchem.refresh_queue(doi);
+create index rqpmcid on covid_pubchem.refresh_queue(pmcid);
+create index rqpmid on covid_pubchem.refresh_queue(pmid);
+
 create table covid_pubchem.sentence_compound_match (
 	doi text,
 	pmcid int,
