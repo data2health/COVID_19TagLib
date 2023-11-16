@@ -15,6 +15,10 @@ returns xml as $$
 </xsl:stylesheet>')::xml
 $$ language sql immutable strict;
 
+-- this has be supplanted by
+
+select xmlserialize(content xml as text indent) from xml;
+
 create materialized view section as
 select
 	pmcid,
