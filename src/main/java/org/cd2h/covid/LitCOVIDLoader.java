@@ -79,7 +79,7 @@ public class LitCOVIDLoader implements Runnable {
 
 	static void fetchRecords() throws Exception {
 		PreparedStatement fetchStmt = conn.prepareStatement(
-				"select pmid from covid_litcovid.litcovid where pmid not in (select pmid from covid_litcovid.raw)");
+				"select pmid from covid_litcovid.litcovid where not exists (select pmid from covid_litcovid.raw where raw.pmid=litcovid.pmid)");
 		ResultSet rs = fetchStmt.executeQuery();
 		while (rs.next()) {
 			int pmid = rs.getInt(1);
