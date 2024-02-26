@@ -27,6 +27,7 @@ public class LitCOVIDLoader implements Runnable {
 	static Logger logger = LogManager.getLogger(LitCOVIDLoader.class);
 	protected static LocalProperties prop_file = null;
 	static Connection conn = null;
+	static int retries = 5;
 	// https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=31978945&retmode=xml
 
 	static IntegerQueue pmidQueue = new IntegerQueue();
@@ -56,25 +57,38 @@ public class LitCOVIDLoader implements Runnable {
 		refreshViews();
 	}
 
-	static void stageList() throws IOException, SQLException {
+	static void stageList() throws IOException, SQLException, InterruptedException {
 		simpleStmt("truncate covid_litcovid.litcovid");
 
 		URL theURL = new URL("https://www.ncbi.nlm.nih.gov/research/coronavirus-api/export");
-		BufferedReader reader = new BufferedReader(new InputStreamReader(theURL.openConnection().getInputStream()));
-		String buffer = null;
-		while ((buffer = reader.readLine()) != null) {
-			if (buffer.startsWith("#") || buffer.startsWith("pmid"))
-				continue;
-			logger.debug(buffer);
-			String[] split = buffer.split("\t");
+		int count = 0;
+		while (count++ < retries) {
+			try {
+				BufferedReader reader = new BufferedReader(new InputStreamReader(theURL.openConnection().getInputStream()));
+				logger.info("successful retrieval...");
+				String buffer = null;
+				while ((buffer = reader.readLine()) != null) {
+					if (buffer.startsWith("#") || buffer.startsWith("pmid"))
+						continue;
+					logger.debug(buffer);
+					String[] split = buffer.split("\t");
 
-			PreparedStatement citeStmt = conn.prepareStatement("insert into covid_litcovid.litcovid values (?,?,?)");
-			citeStmt.setInt(1, Integer.parseInt(split[0]));
-			citeStmt.setString(2, split[1]);
-			citeStmt.setString(3, split.length > 2 ? split[2] : null);
-			citeStmt.executeUpdate();
-			citeStmt.close();
+					PreparedStatement citeStmt = conn.prepareStatement("insert into covid_litcovid.litcovid values (?,?,?)");
+					citeStmt.setInt(1, Integer.parseInt(split[0]));
+					citeStmt.setString(2, split[1]);
+					citeStmt.setString(3, split.length > 2 ? split[2] : null);
+					citeStmt.executeUpdate();
+					citeStmt.close();
+				}
+				return;
+			} catch (IOException e) {
+				logger.info("retrying...");
+				Thread.sleep(5*1000);
+			}
 		}
+		
+		if (count >= retries)
+			throw(new IOException("failed retrieval"));
 	}
 
 	static void fetchRecords() throws Exception {
