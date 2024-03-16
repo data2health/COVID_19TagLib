@@ -181,7 +181,7 @@ public class LitCOVIDLoader implements Runnable {
 		Element root = document.getRootElement();
 		logger.trace("[" + threadID + "] document root: " + root.asXML());
 		for (Element citation : (List<Element>) root.selectNodes("PubmedArticle")) {
-			logger.info("[" + threadID + "] citation:" + citation.asXML());
+			logger.info("[" + threadID + "] article citation:" + pmid);
 
 			PreparedStatement citeStmt = conn.prepareStatement("insert into covid_litcovid.raw values (?,?::xml)");
 			citeStmt.setInt(1, pmid);
@@ -190,7 +190,7 @@ public class LitCOVIDLoader implements Runnable {
 			citeStmt.close();
 		}
 		for (Element citation : (List<Element>) root.selectNodes("PubmedBookArticle")) {
-			logger.info("[" + threadID + "] citation:" + citation.asXML());
+			logger.info("[" + threadID + "] book citation:" + pmid);
 
 			PreparedStatement citeStmt = conn.prepareStatement("insert into covid_litcovid.raw values (?,?::xml)");
 			citeStmt.setInt(1, pmid);
