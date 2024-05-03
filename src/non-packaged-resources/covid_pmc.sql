@@ -18,6 +18,11 @@ $$ language sql immutable strict;
 -- this has be supplanted by
 
 select xmlserialize(content xml as text indent) from xml;
+create or replace function xml_pretty(xml)
+returns xml as $$
+  select xmlserialize(content $1::xml as text indent)
+::xml
+$$ language sql immutable strict;
 
 create materialized view section as
 select
